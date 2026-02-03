@@ -13,8 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Truck,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -31,6 +34,7 @@ const navigation = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <aside
@@ -84,19 +88,44 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        {!collapsed && (
-          <div className="border-t border-sidebar-border p-4 animate-fade-in">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <span className="text-sm font-medium text-sidebar-foreground">AD</span>
+        <div className="border-t border-sidebar-border p-4">
+          {!collapsed ? (
+            <div className="animate-fade-in">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-full bg-sidebar-accent flex items-center justify-center">
+                  <span className="text-sm font-medium text-sidebar-foreground">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {user?.user_metadata?.nome || user?.email}
+                  </p>
+                  <p className="text-xs text-sidebar-muted truncate">{user?.email}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">Admin</p>
-                <p className="text-xs text-sidebar-muted truncate">admin@pactum.com.br</p>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={signOut}
+                className="w-full justify-start text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
             </div>
-          </div>
-        )}
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="w-full text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              title="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </aside>
   );

@@ -14,7 +14,312 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      boletos: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          data_pagamento: string | null
+          empresa: string
+          id: string
+          referencia: string | null
+          status: string | null
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          empresa: string
+          id?: string
+          referencia?: string | null
+          status?: string | null
+          updated_at?: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          empresa?: string
+          id?: string
+          referencia?: string | null
+          status?: string | null
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: []
+      }
+      certificados: {
+        Row: {
+          created_at: string
+          data_renovacao_agendada: string | null
+          empresa: string
+          id: string
+          observacoes: string | null
+          status: string | null
+          tipo: string
+          updated_at: string
+          vencimento: string
+        }
+        Insert: {
+          created_at?: string
+          data_renovacao_agendada?: string | null
+          empresa: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string
+          vencimento: string
+        }
+        Update: {
+          created_at?: string
+          data_renovacao_agendada?: string | null
+          empresa?: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+          vencimento?: string
+        }
+        Relationships: []
+      }
+      contratos: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          data_assinatura: string | null
+          data_envio: string | null
+          empresa: string
+          id: string
+          observacoes: string | null
+          status: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          data_envio?: string | null
+          empresa: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          data_envio?: string | null
+          empresa?: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documentos_empresa: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          empresa: string
+          id: string
+          status: string | null
+          tipo: string
+          updated_at: string
+          vencimento: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          empresa: string
+          id?: string
+          status?: string | null
+          tipo: string
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          empresa?: string
+          id?: string
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Relationships: []
+      }
+      motoristas: {
+        Row: {
+          antt_numero: string | null
+          antt_vencimento: string | null
+          cidade: string | null
+          cnh_numero: string | null
+          cnh_vencimento: string | null
+          cpf: string
+          created_at: string
+          email: string | null
+          estado: string | null
+          id: string
+          mopp_numero: string | null
+          mopp_vencimento: string | null
+          nome: string
+          status: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          antt_numero?: string | null
+          antt_vencimento?: string | null
+          cidade?: string | null
+          cnh_numero?: string | null
+          cnh_vencimento?: string | null
+          cpf: string
+          created_at?: string
+          email?: string | null
+          estado?: string | null
+          id?: string
+          mopp_numero?: string | null
+          mopp_vencimento?: string | null
+          nome: string
+          status?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          antt_numero?: string | null
+          antt_vencimento?: string | null
+          cidade?: string | null
+          cnh_numero?: string | null
+          cnh_vencimento?: string | null
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          estado?: string | null
+          id?: string
+          mopp_numero?: string | null
+          mopp_vencimento?: string | null
+          nome?: string
+          status?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pins_confins: {
+        Row: {
+          competencia: string
+          created_at: string
+          data_lancamento: string | null
+          empresa: string
+          id: string
+          observacoes: string | null
+          status: string | null
+          updated_at: string
+          valor_cofins: number | null
+          valor_pis: number | null
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          data_lancamento?: string | null
+          empresa: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          valor_cofins?: number | null
+          valor_pis?: number | null
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          data_lancamento?: string | null
+          empresa?: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          valor_cofins?: number | null
+          valor_pis?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pronampe: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          data_compartilhamento: string | null
+          empresa: string
+          id: string
+          observacoes: string | null
+          status: string | null
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          data_compartilhamento?: string | null
+          empresa: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          data_compartilhamento?: string | null
+          empresa?: string
+          id?: string
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

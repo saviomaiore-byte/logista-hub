@@ -1,0 +1,240 @@
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Building2, 
+  Plus, 
+  FileText, 
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Send
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface DocumentoEmpresa {
+  id: string;
+  empresa: string;
+  tipo: string;
+  descricao: string | null;
+  vencimento: string | null;
+  status: string;
+}
+
+const tiposDocumento = [
+  { value: "contrato_social", label: "Contrato Social" },
+  { value: "cnd_federal", label: "CND Federal" },
+  { value: "cnd_estadual", label: "CND Estadual" },
+  { value: "cnd_municipal", label: "CND Municipal" },
+  { value: "fgts", label: "FGTS" },
+  { value: "outros", label: "Outros" },
+];
+
+export default function DocumentosEmpresa() {
+  const [documentos, setDocumentos] = useState<DocumentoEmpresa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    empresa: "",
+    tipo: "",
+    descricao: "",
+    vencimento: "",
+  });
+
+  const fetchDocumentos = async () => {
+    const { data, error } = await supabase
+      .from("documentos_empresa")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar documentos");
+    } else {
+      setDocumentos(data || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchDocumentos();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { error } = await supabase.from("documentos_empresa").insert({
+      empresa: formData.empresa,
+      tipo: formData.tipo,
+      descricao: formData.descricao || null,
+      vencimento: formData.vencimento || null,
+      status: "valido",
+    });
+
+    if (error) {
+      toast.error("Erro ao salvar documento");
+    } else {
+      toast.success("Documento adicionado!");
+      setOpen(false);
+      setFormData({ empresa: "", tipo: "", descricao: "", vencimento: "" });
+      fetchDocumentos();
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const config: Record<string, { class: string; icon: typeof CheckCircle }> = {
+      valido: { class: "status-success", icon: CheckCircle },
+      proximo_vencer: { class: "status-warning", icon: Clock },
+      vencido: { class: "status-danger", icon: AlertTriangle },
+    };
+    const { class: className, icon: Icon } = config[status] || config.valido;
+    return (
+      <span className={cn("status-badge inline-flex items-center gap-1", className)}>
+        <Icon className="h-3 w-3" />
+        {status === "valido" ? "Válido" : status === "proximo_vencer" ? "Próximo" : "Vencido"}
+      </span>
+    );
+  };
+
+  const getTipoLabel = (tipo: string) => {
+    return tiposDocumento.find(t => t.value === tipo)?.label || tipo;
+  };
+
+  return (
+    <MainLayout>
+      <div className="animate-fade-in">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Documentos de Empresa</h1>
+            <p className="text-muted-foreground mt-1">
+              Gerencie contratos sociais, CNDs e outros documentos
+            </p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Documento
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Documento</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Empresa</Label>
+                  <Input
+                    value={formData.empresa}
+                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select
+                    value={formData.tipo}
+                    onValueChange={(value) => setFormData({ ...formData, tipo: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposDocumento.map((tipo) => (
+                        <SelectItem key={tipo.value} value={tipo.value}>
+                          {tipo.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Descrição</Label>
+                  <Input
+                    value={formData.descricao}
+                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vencimento</Label>
+                  <Input
+                    type="date"
+                    value={formData.vencimento}
+                    onChange={(e) => setFormData({ ...formData, vencimento: e.target.value })}
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Salvar
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+        ) : documentos.length === 0 ? (
+          <div className="text-center py-12">
+            <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Nenhum documento cadastrado</p>
+          </div>
+        ) : (
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="table-header">
+                  <th className="text-left px-6 py-4">Empresa</th>
+                  <th className="text-left px-6 py-4">Tipo</th>
+                  <th className="text-left px-6 py-4">Descrição</th>
+                  <th className="text-left px-6 py-4">Vencimento</th>
+                  <th className="text-left px-6 py-4">Status</th>
+                  <th className="text-right px-6 py-4">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {documentos.map((doc) => (
+                  <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-6 py-4 font-medium">{doc.empresa}</td>
+                    <td className="px-6 py-4">
+                      <span className="status-badge bg-primary/10 text-primary">
+                        {getTipoLabel(doc.tipo)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">{doc.descricao || "-"}</td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {doc.vencimento ? new Date(doc.vencimento).toLocaleDateString("pt-BR") : "-"}
+                    </td>
+                    <td className="px-6 py-4">{getStatusBadge(doc.status)}</td>
+                    <td className="px-6 py-4 text-right">
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        <Send className="h-3 w-3" />
+                        Enviar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}

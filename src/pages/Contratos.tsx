@@ -26,11 +26,14 @@ import {
   Clock, 
   CheckCircle,
   XCircle,
-  Plus
+  Plus,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { FileUpload } from "@/components/FileUpload";
 
 interface Contrato {
   id: string;
@@ -41,17 +44,20 @@ interface Contrato {
   data_assinatura: string | null;
   status: string;
   observacoes: string | null;
+  arquivo_url: string | null;
 }
 
 export default function Contratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [formData, setFormData] = useState({
     tipo: "",
     empresa: "",
     cnpj: "",
     observacoes: "",
+    arquivo_url: "",
   });
 
   const fetchContratos = async () => {
@@ -72,23 +78,73 @@ export default function Contratos() {
     fetchContratos();
   }, []);
 
+  const resetForm = () => {
+    setFormData({ tipo: "", empresa: "", cnpj: "", observacoes: "", arquivo_url: "" });
+    setEditingContrato(null);
+  };
+
+  const handleEdit = (contrato: Contrato) => {
+    setEditingContrato(contrato);
+    setFormData({
+      tipo: contrato.tipo,
+      empresa: contrato.empresa,
+      cnpj: contrato.cnpj || "",
+      observacoes: contrato.observacoes || "",
+      arquivo_url: contrato.arquivo_url || "",
+    });
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { error } = await supabase.from("contratos").insert({
-      tipo: formData.tipo,
-      empresa: formData.empresa,
-      cnpj: formData.cnpj || null,
-      observacoes: formData.observacoes || null,
-      status: "pendente",
-    });
+    if (editingContrato) {
+      const { error } = await supabase
+        .from("contratos")
+        .update({
+          tipo: formData.tipo,
+          empresa: formData.empresa,
+          cnpj: formData.cnpj || null,
+          observacoes: formData.observacoes || null,
+          arquivo_url: formData.arquivo_url || null,
+        })
+        .eq("id", editingContrato.id);
 
-    if (error) {
-      toast.error("Erro ao salvar contrato");
+      if (error) {
+        toast.error("Erro ao atualizar contrato");
+      } else {
+        toast.success("Contrato atualizado!");
+        setOpen(false);
+        resetForm();
+        fetchContratos();
+      }
     } else {
-      toast.success("Contrato adicionado!");
-      setOpen(false);
-      setFormData({ tipo: "", empresa: "", cnpj: "", observacoes: "" });
+      const { error } = await supabase.from("contratos").insert({
+        tipo: formData.tipo,
+        empresa: formData.empresa,
+        cnpj: formData.cnpj || null,
+        observacoes: formData.observacoes || null,
+        arquivo_url: formData.arquivo_url || null,
+        status: "pendente",
+      });
+
+      if (error) {
+        toast.error("Erro ao salvar contrato");
+      } else {
+        toast.success("Contrato adicionado!");
+        setOpen(false);
+        resetForm();
+        fetchContratos();
+      }
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("contratos").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir contrato");
+    } else {
+      toast.success("Contrato excluído!");
       fetchContratos();
     }
   };
@@ -168,22 +224,38 @@ export default function Contratos() {
                 </td>
                 <td className="px-6 py-4">{getStatusBadge(contrato.status)}</td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 gap-1">
-                      <Download className="h-3 w-3" />
-                      Baixar
+                  <div className="flex items-center justify-end gap-1">
+                    {contrato.arquivo_url && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(contrato.arquivo_url!, "_blank")}
+                        title="Baixar Arquivo"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(contrato)}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     {contrato.status === "pendente" && (
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8 gap-1"
+                        size="icon"
                         onClick={() => enviarContrato(contrato.id)}
+                        title="Enviar"
                       >
-                        <Send className="h-3 w-3" />
-                        Enviar
+                        <Send className="h-4 w-4" />
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(contrato.id)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -204,7 +276,7 @@ export default function Contratos() {
               Gerencie contratos, distratos e termos de adesão
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
@@ -213,7 +285,7 @@ export default function Contratos() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Contrato</DialogTitle>
+                <DialogTitle>{editingContrato ? "Editar Contrato" : "Adicionar Contrato"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -255,8 +327,19 @@ export default function Contratos() {
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Anexar Documento (PDF)</Label>
+                  <FileUpload
+                    currentUrl={formData.arquivo_url || undefined}
+                    onUpload={(url) => setFormData({ ...formData, arquivo_url: url })}
+                    onRemove={() => setFormData({ ...formData, arquivo_url: "" })}
+                    folder="contratos"
+                    accept=".pdf,.doc,.docx"
+                    label="Anexar Contrato"
+                  />
+                </div>
                 <Button type="submit" className="w-full" disabled={!formData.tipo || !formData.empresa}>
-                  Salvar
+                  {editingContrato ? "Salvar" : "Cadastrar"}
                 </Button>
               </form>
             </DialogContent>

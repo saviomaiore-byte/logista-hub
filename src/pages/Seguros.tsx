@@ -29,10 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Shield, Search, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Shield, Search, Pencil, Trash2, AlertTriangle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FileUpload } from "@/components/FileUpload";
 
 interface Seguro {
   id: string;
@@ -45,6 +46,7 @@ interface Seguro {
   vigencia_fim: string;
   status: string | null;
   observacoes: string | null;
+  arquivo_url: string | null;
   motoristas?: { nome: string; cpf: string } | null;
 }
 
@@ -73,6 +75,7 @@ export default function Seguros() {
     vigencia_fim: "",
     status: "ativo",
     observacoes: "",
+    arquivo_url: "",
   });
 
   const { data: seguros, isLoading } = useQuery({
@@ -111,6 +114,7 @@ export default function Seguros() {
         vigencia_fim: data.vigencia_fim,
         status: data.status,
         observacoes: data.observacoes || null,
+        arquivo_url: data.arquivo_url || null,
       };
       const { error } = await supabase.from("seguros").insert(insertData);
       if (error) throw error;
@@ -138,6 +142,7 @@ export default function Seguros() {
         vigencia_fim: data.vigencia_fim,
         status: data.status,
         observacoes: data.observacoes || null,
+        arquivo_url: data.arquivo_url || null,
       };
       const { error } = await supabase.from("seguros").update(updateData).eq("id", id);
       if (error) throw error;
@@ -178,6 +183,7 @@ export default function Seguros() {
       vigencia_fim: "",
       status: "ativo",
       observacoes: "",
+      arquivo_url: "",
     });
     setEditingSeguro(null);
   };
@@ -194,6 +200,7 @@ export default function Seguros() {
       vigencia_fim: seguro.vigencia_fim,
       status: seguro.status || "ativo",
       observacoes: seguro.observacoes || "",
+      arquivo_url: seguro.arquivo_url || "",
     });
     setOpen(true);
   };
@@ -346,6 +353,17 @@ export default function Seguros() {
                     rows={3}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Anexar Apólice (PDF)</Label>
+                  <FileUpload
+                    currentUrl={formData.arquivo_url || undefined}
+                    onUpload={(url) => setFormData({ ...formData, arquivo_url: url })}
+                    onRemove={() => setFormData({ ...formData, arquivo_url: "" })}
+                    folder="seguros"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    label="Anexar Apólice"
+                  />
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
                     Cancelar
@@ -468,7 +486,17 @@ export default function Seguros() {
                     </TableCell>
                     <TableCell>{getStatusBadge(seguro)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
+                        {seguro.arquivo_url && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(seguro.arquivo_url!, "_blank")}
+                            title="Baixar Apólice"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(seguro)}>
                           <Pencil className="h-4 w-4" />
                         </Button>

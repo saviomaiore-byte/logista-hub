@@ -55,6 +55,7 @@ export type Database = {
       }
       certificados: {
         Row: {
+          arquivo_url: string | null
           created_at: string
           data_renovacao_agendada: string | null
           empresa: string
@@ -66,6 +67,7 @@ export type Database = {
           vencimento: string
         }
         Insert: {
+          arquivo_url?: string | null
           created_at?: string
           data_renovacao_agendada?: string | null
           empresa: string
@@ -77,6 +79,7 @@ export type Database = {
           vencimento: string
         }
         Update: {
+          arquivo_url?: string | null
           created_at?: string
           data_renovacao_agendada?: string | null
           empresa?: string
@@ -91,6 +94,7 @@ export type Database = {
       }
       contratos: {
         Row: {
+          arquivo_url: string | null
           cnpj: string | null
           created_at: string
           data_assinatura: string | null
@@ -103,6 +107,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          arquivo_url?: string | null
           cnpj?: string | null
           created_at?: string
           data_assinatura?: string | null
@@ -115,6 +120,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          arquivo_url?: string | null
           cnpj?: string | null
           created_at?: string
           data_assinatura?: string | null
@@ -130,6 +136,7 @@ export type Database = {
       }
       documentos_empresa: {
         Row: {
+          arquivo_url: string | null
           created_at: string
           descricao: string | null
           empresa: string
@@ -140,6 +147,7 @@ export type Database = {
           vencimento: string | null
         }
         Insert: {
+          arquivo_url?: string | null
           created_at?: string
           descricao?: string | null
           empresa: string
@@ -150,6 +158,7 @@ export type Database = {
           vencimento?: string | null
         }
         Update: {
+          arquivo_url?: string | null
           created_at?: string
           descricao?: string | null
           empresa?: string
@@ -322,6 +331,7 @@ export type Database = {
       }
       seguros: {
         Row: {
+          arquivo_url: string | null
           created_at: string
           id: string
           motorista_id: string | null
@@ -336,6 +346,7 @@ export type Database = {
           vigencia_inicio: string
         }
         Insert: {
+          arquivo_url?: string | null
           created_at?: string
           id?: string
           motorista_id?: string | null
@@ -350,6 +361,7 @@ export type Database = {
           vigencia_inicio: string
         }
         Update: {
+          arquivo_url?: string | null
           created_at?: string
           id?: string
           motorista_id?: string | null

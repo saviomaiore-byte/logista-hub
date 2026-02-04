@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Motoristas from "./pages/Motoristas";
+import Seguros from "./pages/Seguros";
 import Contratos from "./pages/Contratos";
 import Financeiro from "./pages/Financeiro";
 import Conferencia from "./pages/Conferencia";
@@ -15,7 +16,6 @@ import Pronampe from "./pages/Pronampe";
 import Certificados from "./pages/Certificados";
 import PinsConfins from "./pages/PinsConfins";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -59,6 +59,7 @@ function AppRoutes() {
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/motoristas" element={<ProtectedRoute><Motoristas /></ProtectedRoute>} />
+      <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
       <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />

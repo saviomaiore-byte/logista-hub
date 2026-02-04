@@ -320,6 +320,59 @@ export type Database = {
         }
         Relationships: []
       }
+      seguros: {
+        Row: {
+          created_at: string
+          id: string
+          motorista_id: string | null
+          numero_apolice: string | null
+          observacoes: string | null
+          seguradora: string
+          status: string | null
+          tipo: string
+          updated_at: string
+          valor_premio: number | null
+          vigencia_fim: string
+          vigencia_inicio: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motorista_id?: string | null
+          numero_apolice?: string | null
+          observacoes?: string | null
+          seguradora: string
+          status?: string | null
+          tipo: string
+          updated_at?: string
+          valor_premio?: number | null
+          vigencia_fim: string
+          vigencia_inicio: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motorista_id?: string | null
+          numero_apolice?: string | null
+          observacoes?: string | null
+          seguradora?: string
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+          valor_premio?: number | null
+          vigencia_fim?: string
+          vigencia_inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seguros_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

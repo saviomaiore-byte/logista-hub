@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Truck,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Motoristas", href: "/motoristas", icon: Users },
+  { name: "Seguros", href: "/seguros", icon: Shield },
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Financeiro", href: "/financeiro", icon: CreditCard },
   { name: "Documentos Empresa", href: "/documentos-empresa", icon: Building2 },

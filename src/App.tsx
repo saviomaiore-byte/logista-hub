@@ -14,7 +14,7 @@ import Conferencia from "./pages/Conferencia";
 import DocumentosEmpresa from "./pages/DocumentosEmpresa";
 import Pronampe from "./pages/Pronampe";
 import Certificados from "./pages/Certificados";
-import PinsConfins from "./pages/PinsConfins";
+
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -66,7 +66,7 @@ function AppRoutes() {
       <Route path="/documentos-empresa" element={<ProtectedRoute><DocumentosEmpresa /></ProtectedRoute>} />
       <Route path="/pronampe" element={<ProtectedRoute><Pronampe /></ProtectedRoute>} />
       <Route path="/certificados" element={<ProtectedRoute><Certificados /></ProtectedRoute>} />
-      <Route path="/pins-confins" element={<ProtectedRoute><PinsConfins /></ProtectedRoute>} />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

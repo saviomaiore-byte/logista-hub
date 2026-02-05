@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Dialog, 
@@ -34,6 +32,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
+import { contratoSchema } from "@/lib/validationSchemas";
+import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 
 interface Contrato {
   id: string;
@@ -47,18 +47,20 @@ interface Contrato {
   arquivo_url: string | null;
 }
 
+const initialValues = {
+  tipo: "",
+  empresa: "",
+  cnpj: "",
+  observacoes: "",
+  arquivo_url: "",
+};
+
 export default function Contratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
-  const [formData, setFormData] = useState({
-    tipo: "",
-    empresa: "",
-    cnpj: "",
-    observacoes: "",
-    arquivo_url: "",
-  });
+  const [formInitialValues, setFormInitialValues] = useState(initialValues);
 
   const fetchContratos = async () => {
     const { data, error } = await supabase
@@ -79,13 +81,13 @@ export default function Contratos() {
   }, []);
 
   const resetForm = () => {
-    setFormData({ tipo: "", empresa: "", cnpj: "", observacoes: "", arquivo_url: "" });
+    setFormInitialValues(initialValues);
     setEditingContrato(null);
   };
 
   const handleEdit = (contrato: Contrato) => {
     setEditingContrato(contrato);
-    setFormData({
+    setFormInitialValues({
       tipo: contrato.tipo,
       empresa: contrato.empresa,
       cnpj: contrato.cnpj || "",
@@ -95,18 +97,16 @@ export default function Contratos() {
     setOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm: formikReset }: any) => {
     if (editingContrato) {
       const { error } = await supabase
         .from("contratos")
         .update({
-          tipo: formData.tipo,
-          empresa: formData.empresa,
-          cnpj: formData.cnpj || null,
-          observacoes: formData.observacoes || null,
-          arquivo_url: formData.arquivo_url || null,
+          tipo: values.tipo,
+          empresa: values.empresa,
+          cnpj: values.cnpj || null,
+          observacoes: values.observacoes || null,
+          arquivo_url: values.arquivo_url || null,
         })
         .eq("id", editingContrato.id);
 
@@ -116,15 +116,16 @@ export default function Contratos() {
         toast.success("Contrato atualizado!");
         setOpen(false);
         resetForm();
+        formikReset();
         fetchContratos();
       }
     } else {
       const { error } = await supabase.from("contratos").insert({
-        tipo: formData.tipo,
-        empresa: formData.empresa,
-        cnpj: formData.cnpj || null,
-        observacoes: formData.observacoes || null,
-        arquivo_url: formData.arquivo_url || null,
+        tipo: values.tipo,
+        empresa: values.empresa,
+        cnpj: values.cnpj || null,
+        observacoes: values.observacoes || null,
+        arquivo_url: values.arquivo_url || null,
         status: "pendente",
       });
 
@@ -134,6 +135,7 @@ export default function Contratos() {
         toast.success("Contrato adicionado!");
         setOpen(false);
         resetForm();
+        formikReset();
         fetchContratos();
       }
     }
@@ -287,61 +289,53 @@ export default function Contratos() {
               <DialogHeader>
                 <DialogTitle>{editingContrato ? "Editar Contrato" : "Adicionar Contrato"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Tipo *</Label>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => setFormData({ ...formData, tipo: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="contrato">Contrato</SelectItem>
-                      <SelectItem value="distrato">Distrato</SelectItem>
-                      <SelectItem value="adesao">Termo de Adesão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Empresa *</Label>
-                  <Input
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>CNPJ</Label>
-                  <Input
-                    value={formData.cnpj}
-                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Anexar Documento (PDF)</Label>
-                  <FileUpload
-                    currentUrl={formData.arquivo_url || undefined}
-                    onUpload={(url) => setFormData({ ...formData, arquivo_url: url })}
-                    onRemove={() => setFormData({ ...formData, arquivo_url: "" })}
-                    folder="contratos"
-                    accept=".pdf,.doc,.docx"
-                    label="Anexar Contrato"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={!formData.tipo || !formData.empresa}>
-                  {editingContrato ? "Salvar" : "Cadastrar"}
-                </Button>
-              </form>
+              <Formik
+                initialValues={formInitialValues}
+                validationSchema={contratoSchema}
+                onSubmit={handleSubmit}
+                enableReinitialize
+              >
+                {({ isSubmitting, setFieldValue, values }) => (
+                  <Form className="space-y-4">
+                    <FormSelectWrapper name="tipo" label="Tipo" required>
+                      <Select
+                        value={values.tipo}
+                        onValueChange={(value) => setFieldValue("tipo", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="contrato">Contrato</SelectItem>
+                          <SelectItem value="distrato">Distrato</SelectItem>
+                          <SelectItem value="adesao">Termo de Adesão</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
+                    <FormField name="empresa" label="Empresa" required />
+                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" />
+                    <FormField name="observacoes" label="Observações" as="textarea" />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Anexar Documento (PDF)</label>
+                      <FileUpload
+                        currentUrl={values.arquivo_url || undefined}
+                        onUpload={(url) => setFieldValue("arquivo_url", url)}
+                        onRemove={() => setFieldValue("arquivo_url", "")}
+                        folder="contratos"
+                        accept=".pdf,.doc,.docx"
+                        label="Anexar Contrato"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isSubmitting || !values.tipo || !values.empresa}
+                    >
+                      {isSubmitting ? "Salvando..." : editingContrato ? "Salvar" : "Cadastrar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

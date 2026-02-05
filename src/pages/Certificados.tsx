@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Dialog, 
   DialogContent, 
@@ -22,6 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { certificadoSchema } from "@/lib/validationSchemas";
+import { FormField } from "@/components/form/FormField";
 
 interface Certificado {
   id: string;
@@ -33,16 +33,17 @@ interface Certificado {
   observacoes: string | null;
 }
 
+const initialValues = {
+  empresa: "",
+  tipo: "",
+  vencimento: "",
+  observacoes: "",
+};
+
 export default function Certificados() {
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    empresa: "",
-    tipo: "",
-    vencimento: "",
-    observacoes: "",
-  });
 
   const fetchCertificados = async () => {
     const { data, error } = await supabase
@@ -62,14 +63,12 @@ export default function Certificados() {
     fetchCertificados();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const { error } = await supabase.from("certificados").insert({
-      empresa: formData.empresa,
-      tipo: formData.tipo,
-      vencimento: formData.vencimento,
-      observacoes: formData.observacoes || null,
+      empresa: values.empresa,
+      tipo: values.tipo,
+      vencimento: values.vencimento,
+      observacoes: values.observacoes || null,
       status: "ativo",
     });
 
@@ -78,7 +77,7 @@ export default function Certificados() {
     } else {
       toast.success("Certificado adicionado!");
       setOpen(false);
-      setFormData({ empresa: "", tipo: "", vencimento: "", observacoes: "" });
+      resetForm();
       fetchCertificados();
     }
   };
@@ -140,44 +139,28 @@ export default function Certificados() {
               <DialogHeader>
                 <DialogTitle>Adicionar Certificado</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Empresa</Label>
-                  <Input
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo de Certificado</Label>
-                  <Input
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                    placeholder="e-CNPJ, e-CPF, NF-e, etc."
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vencimento</Label>
-                  <Input
-                    type="date"
-                    value={formData.vencimento}
-                    onChange={(e) => setFormData({ ...formData, vencimento: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Salvar
-                </Button>
-              </form>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={certificadoSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting }) => (
+                  <Form className="space-y-4">
+                    <FormField name="empresa" label="Empresa" required />
+                    <FormField 
+                      name="tipo" 
+                      label="Tipo de Certificado" 
+                      placeholder="e-CNPJ, e-CPF, NF-e, etc." 
+                      required 
+                    />
+                    <FormField name="vencimento" label="Vencimento" type="date" required />
+                    <FormField name="observacoes" label="Observações" as="textarea" />
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Dialog, 
   DialogContent, 
@@ -31,6 +31,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { motoristaSchema } from "@/lib/validationSchemas";
+import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 
 interface Motorista {
   id: string;
@@ -49,26 +51,27 @@ interface Motorista {
   antt_vencimento: string | null;
 }
 
+const initialValues = {
+  nome: "",
+  cpf: "",
+  telefone: "",
+  email: "",
+  cidade: "",
+  estado: "",
+  status: "ativo",
+  cnh_numero: "",
+  cnh_vencimento: "",
+  mopp_numero: "",
+  mopp_vencimento: "",
+  antt_numero: "",
+  antt_vencimento: "",
+};
+
 export default function Motoristas() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    nome: "",
-    cpf: "",
-    telefone: "",
-    email: "",
-    cidade: "",
-    estado: "",
-    status: "ativo",
-    cnh_numero: "",
-    cnh_vencimento: "",
-    mopp_numero: "",
-    mopp_vencimento: "",
-    antt_numero: "",
-    antt_vencimento: "",
-  });
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase
@@ -88,23 +91,21 @@ export default function Motoristas() {
     fetchMotoristas();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const { error } = await supabase.from("motoristas").insert({
-      nome: formData.nome,
-      cpf: formData.cpf,
-      telefone: formData.telefone || null,
-      email: formData.email || null,
-      cidade: formData.cidade || null,
-      estado: formData.estado || null,
-      status: formData.status,
-      cnh_numero: formData.cnh_numero || null,
-      cnh_vencimento: formData.cnh_vencimento || null,
-      mopp_numero: formData.mopp_numero || null,
-      mopp_vencimento: formData.mopp_vencimento || null,
-      antt_numero: formData.antt_numero || null,
-      antt_vencimento: formData.antt_vencimento || null,
+      nome: values.nome,
+      cpf: values.cpf,
+      telefone: values.telefone || null,
+      email: values.email || null,
+      cidade: values.cidade || null,
+      estado: values.estado || null,
+      status: values.status,
+      cnh_numero: values.cnh_numero || null,
+      cnh_vencimento: values.cnh_vencimento || null,
+      mopp_numero: values.mopp_numero || null,
+      mopp_vencimento: values.mopp_vencimento || null,
+      antt_numero: values.antt_numero || null,
+      antt_vencimento: values.antt_vencimento || null,
     });
 
     if (error) {
@@ -116,11 +117,7 @@ export default function Motoristas() {
     } else {
       toast.success("Motorista cadastrado!");
       setOpen(false);
-      setFormData({
-        nome: "", cpf: "", telefone: "", email: "", cidade: "", estado: "",
-        status: "ativo", cnh_numero: "", cnh_vencimento: "", mopp_numero: "",
-        mopp_vencimento: "", antt_numero: "", antt_vencimento: "",
-      });
+      resetForm();
       fetchMotoristas();
     }
   };
@@ -165,134 +162,77 @@ export default function Motoristas() {
               <DialogHeader>
                 <DialogTitle>Cadastrar Motorista</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nome Completo *</Label>
-                    <Input
-                      value={formData.nome}
-                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CPF *</Label>
-                    <Input
-                      value={formData.cpf}
-                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                      placeholder="000.000.000-00"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Telefone</Label>
-                    <Input
-                      value={formData.telefone}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Cidade</Label>
-                    <Input
-                      value={formData.cidade}
-                      onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Estado</Label>
-                    <Input
-                      value={formData.estado}
-                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                      placeholder="SP"
-                      maxLength={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={motoristaSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting, setFieldValue, values }) => (
+                  <Form className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField name="nome" label="Nome Completo" required />
+                      <FormField 
+                        name="cpf" 
+                        label="CPF" 
+                        placeholder="000.000.000-00" 
+                        required 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField 
+                        name="telefone" 
+                        label="Telefone" 
+                        placeholder="(00) 00000-0000" 
+                      />
+                      <FormField 
+                        name="email" 
+                        label="Email" 
+                        type="email" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField name="cidade" label="Cidade" />
+                      <FormField 
+                        name="estado" 
+                        label="Estado" 
+                        placeholder="SP" 
+                        maxLength={2} 
+                      />
+                      <FormSelectWrapper name="status" label="Status">
+                        <Select
+                          value={values.status}
+                          onValueChange={(value) => setFieldValue("status", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="inativo">Inativo</SelectItem>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
 
-                <div className="border-t pt-4 mt-4">
-                  <h4 className="font-medium mb-3">Documentos</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>CNH Número</Label>
-                      <Input
-                        value={formData.cnh_numero}
-                        onChange={(e) => setFormData({ ...formData, cnh_numero: e.target.value })}
-                      />
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="font-medium mb-3">Documentos</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField name="cnh_numero" label="CNH Número" />
+                        <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
+                        <FormField name="mopp_numero" label="MOPP Número" />
+                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" />
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>CNH Vencimento</Label>
-                      <Input
-                        type="date"
-                        value={formData.cnh_vencimento}
-                        onChange={(e) => setFormData({ ...formData, cnh_vencimento: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>MOPP Número</Label>
-                      <Input
-                        value={formData.mopp_numero}
-                        onChange={(e) => setFormData({ ...formData, mopp_numero: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>MOPP Vencimento</Label>
-                      <Input
-                        type="date"
-                        value={formData.mopp_vencimento}
-                        onChange={(e) => setFormData({ ...formData, mopp_vencimento: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>ANTT Número</Label>
-                      <Input
-                        value={formData.antt_numero}
-                        onChange={(e) => setFormData({ ...formData, antt_numero: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>ANTT Vencimento</Label>
-                      <Input
-                        type="date"
-                        value={formData.antt_vencimento}
-                        onChange={(e) => setFormData({ ...formData, antt_vencimento: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <Button type="submit" className="w-full">
-                  Cadastrar
-                </Button>
-              </form>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Cadastrar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

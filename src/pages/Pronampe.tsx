@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Dialog, 
   DialogContent, 
@@ -22,6 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { pronampeSchema } from "@/lib/validationSchemas";
+import { FormField } from "@/components/form/FormField";
 
 interface PronampeItem {
   id: string;
@@ -33,16 +33,17 @@ interface PronampeItem {
   observacoes: string | null;
 }
 
+const initialValues = {
+  empresa: "",
+  cnpj: "",
+  valor: "",
+  observacoes: "",
+};
+
 export default function Pronampe() {
   const [items, setItems] = useState<PronampeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    empresa: "",
-    cnpj: "",
-    valor: "",
-    observacoes: "",
-  });
 
   const fetchItems = async () => {
     const { data, error } = await supabase
@@ -62,14 +63,12 @@ export default function Pronampe() {
     fetchItems();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const { error } = await supabase.from("pronampe").insert({
-      empresa: formData.empresa,
-      cnpj: formData.cnpj || null,
-      valor: formData.valor ? parseFloat(formData.valor) : null,
-      observacoes: formData.observacoes || null,
+      empresa: values.empresa,
+      cnpj: values.cnpj || null,
+      valor: values.valor ? parseFloat(values.valor) : null,
+      observacoes: values.observacoes || null,
       status: "pendente",
     });
 
@@ -78,7 +77,7 @@ export default function Pronampe() {
     } else {
       toast.success("Registro adicionado!");
       setOpen(false);
-      setFormData({ empresa: "", cnpj: "", valor: "", observacoes: "" });
+      resetForm();
       fetchItems();
     }
   };
@@ -134,44 +133,29 @@ export default function Pronampe() {
               <DialogHeader>
                 <DialogTitle>Adicionar Compartilhamento</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Empresa</Label>
-                  <Input
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>CNPJ</Label>
-                  <Input
-                    value={formData.cnpj}
-                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Valor</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.valor}
-                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Salvar
-                </Button>
-              </form>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={pronampeSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting }) => (
+                  <Form className="space-y-4">
+                    <FormField name="empresa" label="Empresa" required />
+                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" />
+                    <FormField 
+                      name="valor" 
+                      label="Valor" 
+                      type="number" 
+                      step="0.01" 
+                      placeholder="0,00" 
+                    />
+                    <FormField name="observacoes" label="Observações" as="textarea" />
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

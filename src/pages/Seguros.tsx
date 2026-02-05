@@ -1,11 +1,10 @@
 import { useState } from "react";
+import { Formik, Form } from "formik";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -34,6 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileUpload } from "@/components/FileUpload";
+import { seguroSchema } from "@/lib/validationSchemas";
+import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 
 interface Seguro {
   id: string;
@@ -58,25 +59,26 @@ interface Motorista {
 
 const tiposSeguros = ["RC", "APP", "RCF-DC", "RCTR-C", "Vida", "Outro"];
 
+const initialValues = {
+  motorista_id: "",
+  tipo: "",
+  seguradora: "",
+  numero_apolice: "",
+  valor_premio: "",
+  vigencia_inicio: "",
+  vigencia_fim: "",
+  status: "ativo",
+  observacoes: "",
+  arquivo_url: "",
+};
+
 export default function Seguros() {
   const [open, setOpen] = useState(false);
   const [editingSeguro, setEditingSeguro] = useState<Seguro | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [formInitialValues, setFormInitialValues] = useState(initialValues);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const [formData, setFormData] = useState({
-    motorista_id: "",
-    tipo: "",
-    seguradora: "",
-    numero_apolice: "",
-    valor_premio: "",
-    vigencia_inicio: "",
-    vigencia_fim: "",
-    status: "ativo",
-    observacoes: "",
-    arquivo_url: "",
-  });
 
   const { data: seguros, isLoading } = useQuery({
     queryKey: ["seguros"],
@@ -103,7 +105,7 @@ export default function Seguros() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: typeof initialValues) => {
       const insertData = {
         motorista_id: data.motorista_id || null,
         tipo: data.tipo,
@@ -131,7 +133,7 @@ export default function Seguros() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: typeof initialValues }) => {
       const updateData = {
         motorista_id: data.motorista_id || null,
         tipo: data.tipo,
@@ -173,24 +175,13 @@ export default function Seguros() {
   });
 
   const resetForm = () => {
-    setFormData({
-      motorista_id: "",
-      tipo: "",
-      seguradora: "",
-      numero_apolice: "",
-      valor_premio: "",
-      vigencia_inicio: "",
-      vigencia_fim: "",
-      status: "ativo",
-      observacoes: "",
-      arquivo_url: "",
-    });
+    setFormInitialValues(initialValues);
     setEditingSeguro(null);
   };
 
   const handleEdit = (seguro: Seguro) => {
     setEditingSeguro(seguro);
-    setFormData({
+    setFormInitialValues({
       motorista_id: seguro.motorista_id || "",
       tipo: seguro.tipo,
       seguradora: seguro.seguradora,
@@ -205,13 +196,13 @@ export default function Seguros() {
     setOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (values: typeof initialValues, { resetForm: formikReset }: any) => {
     if (editingSeguro) {
-      updateMutation.mutate({ id: editingSeguro.id, data: formData });
+      updateMutation.mutate({ id: editingSeguro.id, data: values });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(values);
     }
+    formikReset();
   };
 
   const getStatusBadge = (seguro: Seguro) => {
@@ -261,118 +252,80 @@ export default function Seguros() {
               <DialogHeader>
                 <DialogTitle>{editingSeguro ? "Editar Seguro" : "Novo Seguro"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Motorista (opcional)</Label>
-                    <Select value={formData.motorista_id} onValueChange={(v) => setFormData({ ...formData, motorista_id: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um motorista" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {motoristas?.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>{m.nome} - {m.cpf}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tipo de Seguro *</Label>
-                    <Select value={formData.tipo} onValueChange={(v) => setFormData({ ...formData, tipo: v })} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tiposSeguros.map((tipo) => (
-                          <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Seguradora *</Label>
-                    <Input
-                      value={formData.seguradora}
-                      onChange={(e) => setFormData({ ...formData, seguradora: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Número da Apólice</Label>
-                    <Input
-                      value={formData.numero_apolice}
-                      onChange={(e) => setFormData({ ...formData, numero_apolice: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Valor do Prêmio (R$)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.valor_premio}
-                      onChange={(e) => setFormData({ ...formData, valor_premio: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="vencido">Vencido</SelectItem>
-                        <SelectItem value="cancelado">Cancelado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Vigência Início *</Label>
-                    <Input
-                      type="date"
-                      value={formData.vigencia_inicio}
-                      onChange={(e) => setFormData({ ...formData, vigencia_inicio: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Vigência Fim *</Label>
-                    <Input
-                      type="date"
-                      value={formData.vigencia_fim}
-                      onChange={(e) => setFormData({ ...formData, vigencia_fim: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Anexar Apólice (PDF)</Label>
-                  <FileUpload
-                    currentUrl={formData.arquivo_url || undefined}
-                    onUpload={(url) => setFormData({ ...formData, arquivo_url: url })}
-                    onRemove={() => setFormData({ ...formData, arquivo_url: "" })}
-                    folder="seguros"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    label="Anexar Apólice"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                    {editingSeguro ? "Salvar" : "Cadastrar"}
-                  </Button>
-                </div>
-              </form>
+              <Formik
+                initialValues={formInitialValues}
+                validationSchema={seguroSchema}
+                onSubmit={handleSubmit}
+                enableReinitialize
+              >
+                {({ isSubmitting, setFieldValue, values }) => (
+                  <Form className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormSelectWrapper name="motorista_id" label="Motorista (opcional)">
+                        <Select value={values.motorista_id} onValueChange={(v) => setFieldValue("motorista_id", v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um motorista" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {motoristas?.map((m) => (
+                              <SelectItem key={m.id} value={m.id}>{m.nome} - {m.cpf}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormSelectWrapper name="tipo" label="Tipo de Seguro" required>
+                        <Select value={values.tipo} onValueChange={(v) => setFieldValue("tipo", v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tiposSeguros.map((tipo) => (
+                              <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormField name="seguradora" label="Seguradora" required />
+                      <FormField name="numero_apolice" label="Número da Apólice" />
+                      <FormField name="valor_premio" label="Valor do Prêmio (R$)" type="number" step="0.01" />
+                      <FormSelectWrapper name="status" label="Status">
+                        <Select value={values.status} onValueChange={(v) => setFieldValue("status", v)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="vencido">Vencido</SelectItem>
+                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormField name="vigencia_inicio" label="Vigência Início" type="date" required />
+                      <FormField name="vigencia_fim" label="Vigência Fim" type="date" required />
+                    </div>
+                    <FormField name="observacoes" label="Observações" as="textarea" />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Anexar Apólice (PDF)</label>
+                      <FileUpload
+                        currentUrl={values.arquivo_url || undefined}
+                        onUpload={(url) => setFieldValue("arquivo_url", url)}
+                        onRemove={() => setFieldValue("arquivo_url", "")}
+                        folder="seguros"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        label="Anexar Apólice"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
+                        {editingSeguro ? "Salvar" : "Cadastrar"}
+                      </Button>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>
@@ -462,31 +415,43 @@ export default function Seguros() {
                 </TableRow>
               ) : filteredSeguros?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Nenhum seguro encontrado
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nenhum seguro encontrado</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredSeguros?.map((seguro) => (
                   <TableRow key={seguro.id}>
-                    <TableCell className="font-medium">
-                      {seguro.motoristas?.nome || "—"}
-                    </TableCell>
-                    <TableCell>{seguro.tipo}</TableCell>
-                    <TableCell>{seguro.seguradora}</TableCell>
-                    <TableCell>{seguro.numero_apolice || "—"}</TableCell>
                     <TableCell>
-                      {format(parseISO(seguro.vigencia_inicio), "dd/MM/yy", { locale: ptBR })} -{" "}
-                      {format(parseISO(seguro.vigencia_fim), "dd/MM/yy", { locale: ptBR })}
+                      {seguro.motoristas ? (
+                        <div>
+                          <p className="font-medium">{seguro.motoristas.nome}</p>
+                          <p className="text-sm text-muted-foreground">{seguro.motoristas.cpf}</p>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{seguro.tipo}</Badge>
+                    </TableCell>
+                    <TableCell>{seguro.seguradora}</TableCell>
+                    <TableCell>{seguro.numero_apolice || "-"}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <p>{format(parseISO(seguro.vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })}</p>
+                        <p className="text-muted-foreground">até {format(parseISO(seguro.vigencia_fim), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {seguro.valor_premio
-                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(seguro.valor_premio)
-                        : "—"}
+                        ? `R$ ${seguro.valor_premio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                        : "-"}
                     </TableCell>
                     <TableCell>{getStatusBadge(seguro)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1">
                         {seguro.arquivo_url && (
                           <Button
                             variant="ghost"
@@ -504,7 +469,6 @@ export default function Seguros() {
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteMutation.mutate(seguro.id)}
-                          disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

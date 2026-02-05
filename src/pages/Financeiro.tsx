@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Dialog, 
@@ -25,6 +24,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { boletoSchema } from "@/lib/validationSchemas";
+import { FormField } from "@/components/form/FormField";
 
 interface Boleto {
   id: string;
@@ -37,17 +38,18 @@ interface Boleto {
   data_pagamento: string | null;
 }
 
+const initialValues = {
+  empresa: "",
+  cnpj: "",
+  valor: "",
+  vencimento: "",
+  referencia: "",
+};
+
 export default function Financeiro() {
   const [boletos, setBoletos] = useState<Boleto[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    empresa: "",
-    cnpj: "",
-    valor: "",
-    vencimento: "",
-    referencia: "",
-  });
 
   const fetchBoletos = async () => {
     const { data, error } = await supabase
@@ -67,15 +69,13 @@ export default function Financeiro() {
     fetchBoletos();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const { error } = await supabase.from("boletos").insert({
-      empresa: formData.empresa,
-      cnpj: formData.cnpj || null,
-      valor: parseFloat(formData.valor),
-      vencimento: formData.vencimento,
-      referencia: formData.referencia || null,
+      empresa: values.empresa,
+      cnpj: values.cnpj || null,
+      valor: parseFloat(values.valor),
+      vencimento: values.vencimento,
+      referencia: values.referencia || null,
       status: "pendente",
     });
 
@@ -84,7 +84,7 @@ export default function Financeiro() {
     } else {
       toast.success("Boleto adicionado!");
       setOpen(false);
-      setFormData({ empresa: "", cnpj: "", valor: "", vencimento: "", referencia: "" });
+      resetForm();
       fetchBoletos();
     }
   };
@@ -236,57 +236,33 @@ export default function Financeiro() {
               <DialogHeader>
                 <DialogTitle>Adicionar Boleto</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Empresa *</Label>
-                  <Input
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>CNPJ</Label>
-                  <Input
-                    value={formData.cnpj}
-                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Valor *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.valor}
-                      onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                      placeholder="0,00"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Vencimento *</Label>
-                    <Input
-                      type="date"
-                      value={formData.vencimento}
-                      onChange={(e) => setFormData({ ...formData, vencimento: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Referência</Label>
-                  <Input
-                    value={formData.referencia}
-                    onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-                    placeholder="Jan/2024"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Salvar
-                </Button>
-              </form>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={boletoSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting }) => (
+                  <Form className="space-y-4">
+                    <FormField name="empresa" label="Empresa" required />
+                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField 
+                        name="valor" 
+                        label="Valor" 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="0,00" 
+                        required 
+                      />
+                      <FormField name="vencimento" label="Vencimento" type="date" required />
+                    </div>
+                    <FormField name="referencia" label="Referência" placeholder="Jan/2024" />
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

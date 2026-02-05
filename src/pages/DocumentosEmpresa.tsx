@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
+import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Dialog, 
   DialogContent, 
@@ -20,7 +19,6 @@ import {
 import { 
   Building2, 
   Plus, 
-  FileText, 
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -29,6 +27,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { documentoEmpresaSchema } from "@/lib/validationSchemas";
+import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 
 interface DocumentoEmpresa {
   id: string;
@@ -48,16 +48,17 @@ const tiposDocumento = [
   { value: "outros", label: "Outros" },
 ];
 
+const initialValues = {
+  empresa: "",
+  tipo: "",
+  descricao: "",
+  vencimento: "",
+};
+
 export default function DocumentosEmpresa() {
   const [documentos, setDocumentos] = useState<DocumentoEmpresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    empresa: "",
-    tipo: "",
-    descricao: "",
-    vencimento: "",
-  });
 
   const fetchDocumentos = async () => {
     const { data, error } = await supabase
@@ -77,14 +78,12 @@ export default function DocumentosEmpresa() {
     fetchDocumentos();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const { error } = await supabase.from("documentos_empresa").insert({
-      empresa: formData.empresa,
-      tipo: formData.tipo,
-      descricao: formData.descricao || null,
-      vencimento: formData.vencimento || null,
+      empresa: values.empresa,
+      tipo: values.tipo,
+      descricao: values.descricao || null,
+      vencimento: values.vencimento || null,
       status: "valido",
     });
 
@@ -93,7 +92,7 @@ export default function DocumentosEmpresa() {
     } else {
       toast.success("Documento adicionado!");
       setOpen(false);
-      setFormData({ empresa: "", tipo: "", descricao: "", vencimento: "" });
+      resetForm();
       fetchDocumentos();
     }
   };
@@ -138,52 +137,39 @@ export default function DocumentosEmpresa() {
               <DialogHeader>
                 <DialogTitle>Adicionar Documento</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Empresa</Label>
-                  <Input
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => setFormData({ ...formData, tipo: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposDocumento.map((tipo) => (
-                        <SelectItem key={tipo.value} value={tipo.value}>
-                          {tipo.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Descrição</Label>
-                  <Input
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vencimento</Label>
-                  <Input
-                    type="date"
-                    value={formData.vencimento}
-                    onChange={(e) => setFormData({ ...formData, vencimento: e.target.value })}
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Salvar
-                </Button>
-              </form>
+              <Formik
+                initialValues={initialValues}
+                validationSchema={documentoEmpresaSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ isSubmitting, setFieldValue, values }) => (
+                  <Form className="space-y-4">
+                    <FormField name="empresa" label="Empresa" required />
+                    <FormSelectWrapper name="tipo" label="Tipo" required>
+                      <Select
+                        value={values.tipo}
+                        onValueChange={(value) => setFieldValue("tipo", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tiposDocumento.map((tipo) => (
+                            <SelectItem key={tipo.value} value={tipo.value}>
+                              {tipo.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
+                    <FormField name="descricao" label="Descrição" />
+                    <FormField name="vencimento" label="Vencimento" type="date" />
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
             </DialogContent>
           </Dialog>
         </div>

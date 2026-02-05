@@ -3,8 +3,7 @@ import {
   FileText, 
   Send, 
   CreditCard, 
-  Calendar,
-  Calculator 
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +13,6 @@ const actions = [
   { name: "Enviar Boleto", icon: CreditCard, color: "bg-warning hover:bg-warning/90 text-foreground" },
   { name: "Enviar Documento", icon: Send, color: "bg-sidebar-primary hover:bg-sidebar-primary/90" },
   { name: "Agendar Renovação", icon: Calendar, color: "bg-primary hover:bg-primary/90" },
-  { name: "Lançar PINS", icon: Calculator, color: "bg-muted-foreground hover:bg-muted-foreground/90" },
 ];
 
 export function QuickActions() {

@@ -30,7 +30,7 @@ const navigation = [
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Pronampe", href: "/pronampe", icon: Share2 },
   { name: "Certificados", href: "/certificados", icon: Calendar },
-  { name: "PINS CONFINS", href: "/pins-confins", icon: Calculator },
+  
 ];
 
 export function Sidebar() {

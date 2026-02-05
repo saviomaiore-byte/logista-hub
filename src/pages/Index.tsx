@@ -4,7 +4,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
-import { Users, FileText, CreditCard, AlertTriangle, Calendar, TrendingUp } from "lucide-react";
+import { Users, FileText, CreditCard, AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
@@ -15,7 +15,7 @@ export default function Index() {
     valorPendente: 0,
     docsVencidos: 0,
     certificados: 0,
-    pinsConfins: 0,
+    
   });
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,10 +89,6 @@ export default function Index() {
         .from("certificados")
         .select("*", { count: "exact", head: true });
 
-      // PINS CONFINS do mês
-      const { count: pinsCount } = await supabase
-        .from("pins_confins")
-        .select("*", { count: "exact", head: true });
 
       setStats({
         motoristas: motoristasCount || 0,
@@ -101,7 +97,7 @@ export default function Index() {
         valorPendente,
         docsVencidos,
         certificados: certCount || 0,
-        pinsConfins: pinsCount || 0,
+        
       });
 
       alertsList.sort((a, b) => a.diasRestantes - b.diasRestantes);
@@ -174,13 +170,6 @@ export default function Index() {
             value={stats.certificados}
             subtitle="Cadastrados"
             icon={Calendar}
-            variant="default"
-          />
-          <StatCard
-            title="PINS Lançados"
-            value={stats.pinsConfins}
-            subtitle="Total de lançamentos"
-            icon={TrendingUp}
             variant="default"
           />
           <StatCard

@@ -175,6 +175,7 @@ export default function Motoristas() {
                         name="cpf" 
                         label="CPF" 
                         placeholder="000.000.000-00" 
+                        mask="cpf"
                         required 
                       />
                     </div>
@@ -183,6 +184,7 @@ export default function Motoristas() {
                         name="telefone" 
                         label="Telefone" 
                         placeholder="(00) 00000-0000" 
+                        mask="telefone"
                       />
                       <FormField 
                         name="email" 

@@ -141,7 +141,7 @@ export default function Pronampe() {
                 {({ isSubmitting }) => (
                   <Form className="space-y-4">
                     <FormField name="empresa" label="Empresa" required />
-                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" />
+                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" mask="cnpj" />
                     <FormField 
                       name="valor" 
                       label="Valor" 

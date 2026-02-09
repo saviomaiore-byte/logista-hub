@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, ChangeEvent } from "react";
 import { useField } from "formik";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { applyMask, MaskType } from "@/lib/masks";
 
 interface FormFieldProps {
   name: string;
@@ -17,6 +18,7 @@ interface FormFieldProps {
   className?: string;
   as?: "input" | "textarea";
   rows?: number;
+  mask?: MaskType;
 }
 
 export function FormField({
@@ -31,9 +33,19 @@ export function FormField({
   className,
   as = "input",
   rows = 3,
+  mask,
 }: FormFieldProps) {
-  const [field, meta] = useField(name);
+  const [field, meta, helpers] = useField(name);
   const hasError = meta.touched && meta.error;
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (mask) {
+      const masked = applyMask(e.target.value, mask);
+      helpers.setValue(masked);
+    } else {
+      field.onChange(e);
+    }
+  };
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -55,6 +67,7 @@ export function FormField({
           id={name}
           type={type}
           {...field}
+          onChange={mask ? handleChange : field.onChange}
           placeholder={placeholder}
           maxLength={maxLength}
           step={step}

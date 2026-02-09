@@ -313,7 +313,7 @@ export default function Contratos() {
                       </Select>
                     </FormSelectWrapper>
                     <FormField name="empresa" label="Empresa" required />
-                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" />
+                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" mask="cnpj" />
                     <FormField name="observacoes" label="Observações" as="textarea" />
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Anexar Documento (PDF)</label>

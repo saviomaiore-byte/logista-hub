@@ -393,6 +393,103 @@ export default function Motoristas() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editMotorista} onOpenChange={(v) => !v && setEditMotorista(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Motorista</DialogTitle>
+            </DialogHeader>
+            {editMotorista && (
+              <Formik
+                initialValues={{
+                  nome: editMotorista.nome,
+                  cpf: editMotorista.cpf,
+                  telefone: editMotorista.telefone || "",
+                  email: editMotorista.email || "",
+                  cidade: editMotorista.cidade || "",
+                  estado: editMotorista.estado || "",
+                  status: editMotorista.status || "ativo",
+                  cnh_numero: editMotorista.cnh_numero || "",
+                  cnh_vencimento: editMotorista.cnh_vencimento || "",
+                  mopp_numero: editMotorista.mopp_numero || "",
+                  mopp_vencimento: editMotorista.mopp_vencimento || "",
+                  antt_numero: editMotorista.antt_numero || "",
+                  antt_vencimento: editMotorista.antt_vencimento || "",
+                }}
+                validationSchema={motoristaSchema}
+                onSubmit={async (values) => {
+                  const { error } = await supabase
+                    .from("motoristas")
+                    .update({
+                      nome: values.nome,
+                      cpf: values.cpf,
+                      telefone: values.telefone || null,
+                      email: values.email || null,
+                      cidade: values.cidade || null,
+                      estado: values.estado || null,
+                      status: values.status,
+                      cnh_numero: values.cnh_numero || null,
+                      cnh_vencimento: values.cnh_vencimento || null,
+                      mopp_numero: values.mopp_numero || null,
+                      mopp_vencimento: values.mopp_vencimento || null,
+                      antt_numero: values.antt_numero || null,
+                      antt_vencimento: values.antt_vencimento || null,
+                    })
+                    .eq("id", editMotorista.id);
+                  if (error) {
+                    toast.error("Erro ao atualizar motorista");
+                  } else {
+                    toast.success("Motorista atualizado!");
+                    setEditMotorista(null);
+                    fetchMotoristas();
+                  }
+                }}
+              >
+                {({ isSubmitting, setFieldValue, values }) => (
+                  <Form className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField name="nome" label="Nome Completo" required />
+                      <FormField name="cpf" label="CPF" placeholder="000.000.000-00" mask="cpf" required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField name="telefone" label="Telefone" placeholder="(00) 00000-0000" mask="telefone" />
+                      <FormField name="email" label="Email" type="email" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField name="cidade" label="Cidade" />
+                      <FormField name="estado" label="Estado" placeholder="SP" maxLength={2} />
+                      <FormSelectWrapper name="status" label="Status">
+                        <Select value={values.status} onValueChange={(value) => setFieldValue("status", value)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="inativo">Inativo</SelectItem>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="font-medium mb-3">Documentos</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField name="cnh_numero" label="CNH Número" />
+                        <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
+                        <FormField name="mopp_numero" label="MOPP Número" />
+                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" />
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

@@ -26,8 +26,16 @@ import {
   Phone,
   Mail,
   MapPin,
-  Users
+  Users,
+  Edit,
+  Trash2
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -72,6 +80,8 @@ export default function Motoristas() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
+  const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
+  const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase
@@ -118,6 +128,17 @@ export default function Motoristas() {
       toast.success("Motorista cadastrado!");
       setOpen(false);
       resetForm();
+      fetchMotoristas();
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este motorista?")) return;
+    const { error } = await supabase.from("motoristas").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir motorista");
+    } else {
+      toast.success("Motorista excluído!");
       fetchMotoristas();
     }
   };
@@ -314,15 +335,27 @@ export default function Motoristas() {
                       {getStatusBadge(motorista.status)}
                     </td>
                     <td className="px-6 py-4">
-                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => setDocsMotorista(motorista)}>
                         <FileText className="h-3 w-3" />
                         Ver docs
                       </Button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditMotorista(motorista)}>
+                            <Edit className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(motorista.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -334,6 +367,32 @@ export default function Motoristas() {
         <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
           <p>Mostrando {filteredMotoristas.length} de {motoristas.length} motoristas</p>
         </div>
+
+        {/* Docs Dialog */}
+        <Dialog open={!!docsMotorista} onOpenChange={(v) => !v && setDocsMotorista(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Documentos - {docsMotorista?.nome}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {[
+                { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
+                { label: "MOPP", numero: docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vencimento },
+                { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
+              ].map((doc) => (
+                <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div>
+                    <p className="font-medium text-sm">{doc.label}</p>
+                    <p className="text-xs text-muted-foreground">{doc.numero || "Não informado"}</p>
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground">
+                    {doc.vencimento ? `Vence: ${new Date(doc.vencimento).toLocaleDateString("pt-BR")}` : "Sem vencimento"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

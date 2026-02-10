@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MotoristaAnexos } from "@/components/motorista/MotoristaAnexos";
 import { Input } from "@/components/ui/input";
 import { 
   Dialog, 
@@ -370,27 +372,38 @@ export default function Motoristas() {
 
         {/* Docs Dialog */}
         <Dialog open={!!docsMotorista} onOpenChange={(v) => !v && setDocsMotorista(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Documentos - {docsMotorista?.nome}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {[
-                { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
-                { label: "MOPP", numero: docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vencimento },
-                { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
-              ].map((doc) => (
-                <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                  <div>
-                    <p className="font-medium text-sm">{doc.label}</p>
-                    <p className="text-xs text-muted-foreground">{doc.numero || "Não informado"}</p>
+            <Tabs defaultValue="docs" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="docs" className="flex-1">Dados</TabsTrigger>
+                <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
+              </TabsList>
+              <TabsContent value="docs" className="space-y-4 mt-4">
+                {[
+                  { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
+                  { label: "MOPP", numero: docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vencimento },
+                  { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
+                ].map((doc) => (
+                  <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                    <div>
+                      <p className="font-medium text-sm">{doc.label}</p>
+                      <p className="text-xs text-muted-foreground">{doc.numero || "Não informado"}</p>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      {doc.vencimento ? `Vence: ${new Date(doc.vencimento).toLocaleDateString("pt-BR")}` : "Sem vencimento"}
+                    </div>
                   </div>
-                  <div className="text-right text-xs text-muted-foreground">
-                    {doc.vencimento ? `Vence: ${new Date(doc.vencimento).toLocaleDateString("pt-BR")}` : "Sem vencimento"}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </TabsContent>
+              <TabsContent value="anexos" className="mt-4">
+                {docsMotorista && (
+                  <MotoristaAnexos motoristaId={docsMotorista.id} motoristaNome={docsMotorista.nome} />
+                )}
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
 

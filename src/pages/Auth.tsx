@@ -16,15 +16,26 @@ export default function Auth() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const ALLOWED_DOMAIN = "@maiore.com.br";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      if (!isLogin && !email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+        toast.error(`Apenas emails com domínio ${ALLOWED_DOMAIN} podem se cadastrar.`);
+        return;
+      }
+
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error(error.message);
+          if (error.message === "Email not confirmed") {
+            toast.error("Email não confirmado. Verifique sua caixa de entrada.");
+          } else {
+            toast.error(error.message);
+          }
         } else {
           toast.success("Login realizado com sucesso!");
           navigate("/");
@@ -34,7 +45,7 @@ export default function Auth() {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Cadastro realizado! Verifique seu email para confirmar.");
+          toast.success("Cadastro realizado! Verifique seu email para confirmar a conta.");
         }
       }
     } finally {
@@ -81,18 +92,21 @@ export default function Auth() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                    id="email"
+                    type="email"
+                    placeholder="seu@maiore.com.br"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                {!isLogin && (
+                  <p className="text-xs text-muted-foreground">Apenas emails @maiore.com.br são permitidos.</p>
+                )}
               </div>
-            </div>
 
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

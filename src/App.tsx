@@ -9,10 +9,8 @@ import Auth from "./pages/Auth";
 import Motoristas from "./pages/Motoristas";
 import Seguros from "./pages/Seguros";
 import Contratos from "./pages/Contratos";
-import Financeiro from "./pages/Financeiro";
 import Conferencia from "./pages/Conferencia";
 import DocumentosEmpresa from "./pages/DocumentosEmpresa";
-import Pronampe from "./pages/Pronampe";
 import Certificados from "./pages/Certificados";
 
 import NotFound from "./pages/NotFound";
@@ -61,10 +59,8 @@ function AppRoutes() {
       <Route path="/motoristas" element={<ProtectedRoute><Motoristas /></ProtectedRoute>} />
       <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
-      <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />
       <Route path="/documentos-empresa" element={<ProtectedRoute><DocumentosEmpresa /></ProtectedRoute>} />
-      <Route path="/pronampe" element={<ProtectedRoute><Pronampe /></ProtectedRoute>} />
       <Route path="/certificados" element={<ProtectedRoute><Certificados /></ProtectedRoute>} />
       
       <Route path="*" element={<NotFound />} />

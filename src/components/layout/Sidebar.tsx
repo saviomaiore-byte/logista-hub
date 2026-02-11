@@ -4,12 +4,9 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  CreditCard,
   Calendar,
   AlertTriangle,
   Building2,
-  Calculator,
-  Share2,
   ChevronLeft,
   ChevronRight,
   Truck,
@@ -25,10 +22,8 @@ const navigation = [
   { name: "Motoristas", href: "/motoristas", icon: Users },
   { name: "Seguros", href: "/seguros", icon: Shield },
   { name: "Contratos", href: "/contratos", icon: FileText },
-  { name: "Financeiro", href: "/financeiro", icon: CreditCard },
   { name: "Documentos Empresa", href: "/documentos-empresa", icon: Building2 },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
-  { name: "Pronampe", href: "/pronampe", icon: Share2 },
   { name: "Certificados", href: "/certificados", icon: Calendar },
   
 ];

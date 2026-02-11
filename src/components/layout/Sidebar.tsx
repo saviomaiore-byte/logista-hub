@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,12 +12,14 @@ import {
   Truck,
   LogOut,
   Shield,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 
-const navigation = [
+const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Motoristas", href: "/motoristas", icon: Users },
   { name: "Seguros", href: "/seguros", icon: Shield },
@@ -25,13 +27,22 @@ const navigation = [
   { name: "Documentos Empresa", href: "/documentos-empresa", icon: Building2 },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados", href: "/certificados", icon: Calendar },
-  
+];
+
+const adminNavigation = [
+  { name: "Usuários", href: "/usuarios", icon: UsersRound },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  const navigation = useMemo(
+    () => (isAdmin ? [...baseNavigation, ...adminNavigation] : baseNavigation),
+    [isAdmin]
+  );
 
   return (
     <aside

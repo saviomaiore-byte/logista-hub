@@ -13,6 +13,7 @@ import {
   LogOut,
   Shield,
   UsersRound,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +24,7 @@ const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Motoristas", href: "/motoristas", icon: Users },
   { name: "Seguros", href: "/seguros", icon: Shield },
+  { name: "Conf. Seguros", href: "/conferencia-seguros", icon: ClipboardCheck },
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Documentos Empresa", href: "/documentos-empresa", icon: Building2 },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },

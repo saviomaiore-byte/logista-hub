@@ -353,14 +353,17 @@ export default function ConferenciaSeguros() {
                     </div>
                     <div className="flex items-center gap-3">
                       {selectedConf?.arquivo_apolice_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(selectedConf.arquivo_apolice_url!, "_blank")}
+                        <a
+                          href={selectedConf.arquivo_apolice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
                         >
-                          <Download className="h-4 w-4 mr-1" />
-                          Ver Apólice
-                        </Button>
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-1" />
+                            Ver Apólice
+                          </Button>
+                        </a>
                       )}
                     </div>
                   </div>

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Truck, Mail, Lock, User } from "lucide-react";
+import { Truck, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Auth() {
@@ -16,7 +17,33 @@ export default function Auth() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const ALLOWED_DOMAIN = "@maiore.com.br";
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+      toast.error(`Apenas emails com domínio ${ALLOWED_DOMAIN} são permitidos.`);
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
+        setForgotPassword(false);
+        setResetEmail("");
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +80,64 @@ export default function Auth() {
     }
   };
 
+  if (forgotPassword) {
+    return (
+      <div className="min-h-screen bg-sidebar flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl p-8 animate-fade-in">
+            <div className="text-center mb-8">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary mb-4">
+                <Truck className="h-8 w-8 text-primary-foreground" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">Esqueci minha senha</h1>
+              <p className="text-muted-foreground mt-1">
+                Informe seu email @maiore.com.br para redefinir
+              </p>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    placeholder="seu@maiore.com.br"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Apenas emails @maiore.com.br são permitidos.</p>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={resetLoading}>
+                {resetLoading ? "Enviando..." : "Enviar link de redefinição"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => { setForgotPassword(false); setResetEmail(""); }}
+                className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Voltar ao login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-sidebar flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-xl p-8 animate-fade-in">
-          {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary mb-4">
               <Truck className="h-8 w-8 text-primary-foreground" />
@@ -92,22 +172,33 @@ export default function Auth() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@maiore.com.br"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-                {!isLogin && (
-                  <p className="text-xs text-muted-foreground">Apenas emails @maiore.com.br são permitidos.</p>
+                  id="email"
+                  type="email"
+                  placeholder="seu@maiore.com.br"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+              {!isLogin && (
+                <p className="text-xs text-muted-foreground">Apenas emails @maiore.com.br são permitidos.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Senha</Label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setForgotPassword(true)}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
                 )}
               </div>
-
-              <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -125,7 +216,7 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full"
               disabled={loading}
             >
               {loading ? "Carregando..." : isLogin ? "Entrar" : "Cadastrar"}

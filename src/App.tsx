@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
+import ResetPassword from "./pages/ResetPassword";
 import Auth from "./pages/Auth";
 import Motoristas from "./pages/Motoristas";
 import Seguros from "./pages/Seguros";
@@ -56,6 +57,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/motoristas" element={<ProtectedRoute><Motoristas /></ProtectedRoute>} />
       <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />

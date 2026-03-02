@@ -14,6 +14,7 @@ import Conferencia from "./pages/Conferencia";
 import DocumentosEmpresa from "./pages/DocumentosEmpresa";
 import Certificados from "./pages/Certificados";
 import Usuarios from "./pages/Usuarios";
+import ConferenciaSeguros from "./pages/ConferenciaSeguros";
 
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/motoristas" element={<ProtectedRoute><Motoristas /></ProtectedRoute>} />
       <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
+      <Route path="/conferencia-seguros" element={<ProtectedRoute><ConferenciaSeguros /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />
       <Route path="/documentos-empresa" element={<ProtectedRoute><DocumentosEmpresa /></ProtectedRoute>} />

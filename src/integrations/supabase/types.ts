@@ -92,6 +92,88 @@ export type Database = {
         }
         Relationships: []
       }
+      conferencia_seguros: {
+        Row: {
+          arquivo_apolice_url: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          periodo_referencia: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo_apolice_url?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          periodo_referencia: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo_apolice_url?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          periodo_referencia?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conferencia_seguros_itens: {
+        Row: {
+          coberto: boolean
+          conferencia_id: string
+          created_at: string
+          id: string
+          motorista_id: string
+          observacoes: string | null
+          seguro_id: string | null
+        }
+        Insert: {
+          coberto?: boolean
+          conferencia_id: string
+          created_at?: string
+          id?: string
+          motorista_id: string
+          observacoes?: string | null
+          seguro_id?: string | null
+        }
+        Update: {
+          coberto?: boolean
+          conferencia_id?: string
+          created_at?: string
+          id?: string
+          motorista_id?: string
+          observacoes?: string | null
+          seguro_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conferencia_seguros_itens_conferencia_id_fkey"
+            columns: ["conferencia_id"]
+            isOneToOne: false
+            referencedRelation: "conferencia_seguros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conferencia_seguros_itens_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conferencia_seguros_itens_seguro_id_fkey"
+            columns: ["seguro_id"]
+            isOneToOne: false
+            referencedRelation: "seguros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           arquivo_url: string | null

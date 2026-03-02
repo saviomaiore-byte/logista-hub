@@ -90,9 +90,6 @@ export default function Auth() {
                 <Truck className="h-8 w-8 text-primary-foreground" />
               </div>
               <h1 className="text-2xl font-bold text-foreground">Esqueci minha senha</h1>
-              <p className="text-muted-foreground mt-1">
-                Informe seu email @maiore.com.br para redefinir
-              </p>
             </div>
 
             <form onSubmit={handleResetPassword} className="space-y-4">

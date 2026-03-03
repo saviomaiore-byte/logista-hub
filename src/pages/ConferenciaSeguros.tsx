@@ -13,15 +13,15 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Plus, ClipboardCheck, Search, Trash2, Download, Eye, Save, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, ClipboardCheck, Search, Trash2, Download, FileText, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileUpload } from "@/components/FileUpload";
 import { Textarea } from "@/components/ui/textarea";
+import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComparativo";
+import { usePdfExtraction } from "@/hooks/usePdfExtraction";
 
 interface Conferencia {
   id: string;
@@ -58,8 +58,10 @@ export default function ConferenciaSeguros() {
   const [newPeriodo, setNewPeriodo] = useState("");
   const [newArquivoUrl, setNewArquivoUrl] = useState("");
   const [newObs, setNewObs] = useState("");
+  const [activeTab, setActiveTab] = useState("manual");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const pdfExtraction = usePdfExtraction();
 
   // Fetch all conferências
   const { data: conferencias, isLoading: loadingConferencias } = useQuery({
@@ -209,6 +211,12 @@ export default function ConferenciaSeguros() {
   const cobertosCount = itens?.filter((i) => i.coberto).length || 0;
   const cobertura = totalItens > 0 ? Math.round((cobertosCount / totalItens) * 100) : 0;
 
+  const handleExtract = () => {
+    if (selectedConf?.arquivo_apolice_url) {
+      pdfExtraction.extractFromPdf(selectedConf.arquivo_apolice_url);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -298,7 +306,10 @@ export default function ConferenciaSeguros() {
               conferencias?.map((conf) => (
                 <button
                   key={conf.id}
-                  onClick={() => setSelectedConferencia(conf.id)}
+                  onClick={() => {
+                    setSelectedConferencia(conf.id);
+                    pdfExtraction.setSeguradosExtraidos([]);
+                  }}
                   className={`w-full text-left bg-card rounded-xl border p-3 transition-colors hover:border-primary ${
                     selectedConferencia === conf.id ? "border-primary bg-primary/5" : "border-border"
                   }`}
@@ -342,7 +353,7 @@ export default function ConferenciaSeguros() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Stats */}
+                {/* Header with info */}
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -367,102 +378,130 @@ export default function ConferenciaSeguros() {
                       )}
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Cobertura: {cobertosCount}/{totalItens} motoristas
-                      </span>
-                      <span className={`font-bold ${cobertura === 100 ? "text-success" : cobertura >= 80 ? "text-warning" : "text-destructive"}`}>
-                        {cobertura}%
-                      </span>
+                </div>
+
+                {/* Tabs: Manual vs IA */}
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="manual" className="flex-1 gap-2">
+                      <ClipboardCheck className="h-4 w-4" />
+                      Checklist Manual
+                    </TabsTrigger>
+                    <TabsTrigger value="ia" className="flex-1 gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Comparativo IA
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="manual">
+                    <div className="space-y-4">
+                      <div className="bg-card rounded-xl border border-border p-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Cobertura: {cobertosCount}/{totalItens} motoristas
+                          </span>
+                          <span className={`font-bold ${cobertura === 100 ? "text-success" : cobertura >= 80 ? "text-warning" : "text-destructive"}`}>
+                            {cobertura}%
+                          </span>
+                        </div>
+                        <Progress value={cobertura} className="h-3 mt-2" />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar motorista por nome ou CPF..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="max-w-md"
+                        />
+                      </div>
+
+                      <div className="bg-card rounded-xl border border-border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">Coberto</TableHead>
+                              <TableHead>Motorista</TableHead>
+                              <TableHead>CPF</TableHead>
+                              <TableHead>Observação</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {loadingItens ? (
+                              <TableRow>
+                                <TableCell colSpan={4} className="text-center py-8">
+                                  Carregando...
+                                </TableCell>
+                              </TableRow>
+                            ) : filteredItens?.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={4} className="text-center py-8">
+                                  <p className="text-muted-foreground">Nenhum motorista encontrado</p>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              filteredItens?.map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={item.coberto}
+                                      onCheckedChange={(checked) =>
+                                        toggleCobertoMutation.mutate({
+                                          itemId: item.id,
+                                          coberto: !!checked,
+                                        })
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">{item.motoristas?.nome}</span>
+                                      {item.coberto ? (
+                                        <Badge className="bg-success text-success-foreground text-xs">Coberto</Badge>
+                                      ) : (
+                                        <Badge variant="destructive" className="text-xs">Descoberto</Badge>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {item.motoristas?.cpf}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      placeholder="Obs..."
+                                      defaultValue={item.observacoes || ""}
+                                      className="h-8 text-sm"
+                                      onBlur={(e) => {
+                                        if (e.target.value !== (item.observacoes || "")) {
+                                          updateItemObsMutation.mutate({
+                                            itemId: item.id,
+                                            observacoes: e.target.value,
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
-                    <Progress value={cobertura} className="h-3" />
-                  </div>
-                </div>
+                  </TabsContent>
 
-                {/* Search */}
-                <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar motorista por nome ou CPF..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-md"
-                  />
-                </div>
-
-                {/* Table */}
-                <div className="bg-card rounded-xl border border-border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">Coberto</TableHead>
-                        <TableHead>Motorista</TableHead>
-                        <TableHead>CPF</TableHead>
-                        <TableHead>Observação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loadingItens ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8">
-                            Carregando...
-                          </TableCell>
-                        </TableRow>
-                      ) : filteredItens?.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8">
-                            <p className="text-muted-foreground">Nenhum motorista encontrado</p>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredItens?.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={item.coberto}
-                                onCheckedChange={(checked) =>
-                                  toggleCobertoMutation.mutate({
-                                    itemId: item.id,
-                                    coberto: !!checked,
-                                  })
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{item.motoristas?.nome}</span>
-                                {item.coberto ? (
-                                  <Badge className="bg-success text-success-foreground text-xs">Coberto</Badge>
-                                ) : (
-                                  <Badge variant="destructive" className="text-xs">Descoberto</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {item.motoristas?.cpf}
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                placeholder="Obs..."
-                                defaultValue={item.observacoes || ""}
-                                className="h-8 text-sm"
-                                onBlur={(e) => {
-                                  if (e.target.value !== (item.observacoes || "")) {
-                                    updateItemObsMutation.mutate({
-                                      itemId: item.id,
-                                      observacoes: e.target.value,
-                                    });
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                  <TabsContent value="ia">
+                    <ConferenciaComparativo
+                      seguradosExtraidos={pdfExtraction.seguradosExtraidos}
+                      motoristas={motoristas || []}
+                      isExtracting={pdfExtraction.isExtracting}
+                      progress={pdfExtraction.progress}
+                      onExtract={handleExtract}
+                      hasApolice={!!selectedConf?.arquivo_apolice_url}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
           </div>

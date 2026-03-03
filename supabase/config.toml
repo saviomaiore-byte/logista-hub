@@ -1,1 +1,4 @@
 project_id = "nfvokydyrklwvhqbavtx"
+
+[functions.extract-apolice]
+verify_jwt = false

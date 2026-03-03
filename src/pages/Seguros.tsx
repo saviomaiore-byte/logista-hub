@@ -265,6 +265,8 @@ function SegurosTab() {
   };
 
   const getStatusBadge = (seguro: Seguro) => {
+    if (seguro.status === "cancelado") return <Badge variant="secondary">Cancelado</Badge>;
+    if (seguro.status === "vencido") return <Badge variant="destructive">Vencido</Badge>;
     const diasRestantes = differenceInDays(parseISO(seguro.vigencia_fim), new Date());
     if (diasRestantes < 0) return <Badge variant="destructive">Vencido</Badge>;
     if (diasRestantes <= 30) return <Badge className="bg-warning text-warning-foreground">Vence em {diasRestantes} dias</Badge>;
@@ -312,9 +314,9 @@ function SegurosTab() {
               {({ isSubmitting, setFieldValue, values }) => (
                 <Form className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormSelectWrapper name="motorista_id" label="Motorista (opcional)">
+                    <FormSelectWrapper name="motorista_id" label="Segurado (opcional)">
                       <Select value={values.motorista_id} onValueChange={(v) => setFieldValue("motorista_id", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um motorista" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Selecione um segurado" /></SelectTrigger>
                         <SelectContent>
                           {motoristas?.map((m) => (
                             <SelectItem key={m.id} value={m.id}>{m.nome} - {m.cpf}</SelectItem>
@@ -427,7 +429,7 @@ function SegurosTab() {
       <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por seguradora, tipo, motorista ou apólice..."
+          placeholder="Buscar por seguradora, tipo, segurado ou apólice..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
@@ -439,7 +441,7 @@ function SegurosTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Motorista</TableHead>
+              <TableHead>Segurado</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Seguradora</TableHead>
               <TableHead>Apólice</TableHead>

@@ -784,14 +784,37 @@ function ConferenciaTab() {
                     <p className="text-sm text-muted-foreground">Período: {selectedConf?.periodo_referencia}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    {selectedConf?.arquivo_apolice_url && (
+                    {selectedConf?.arquivo_apolice_url ? (
                       <a href={selectedConf.arquivo_apolice_url} target="_blank" rel="noopener noreferrer" download>
                         <Button variant="outline" size="sm">
                           <Download className="h-4 w-4 mr-1" />
                           Ver Apólice
                         </Button>
                       </a>
-                    )}
+                    ) : null}
+                    <FileUpload
+                      currentUrl={selectedConf?.arquivo_apolice_url || undefined}
+                      onUpload={async (url) => {
+                        if (!selectedConf) return;
+                        await supabase
+                          .from("conferencia_seguros")
+                          .update({ arquivo_apolice_url: url })
+                          .eq("id", selectedConf.id);
+                        queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
+                        toast({ title: "Apólice anexada com sucesso!" });
+                      }}
+                      onRemove={async () => {
+                        if (!selectedConf) return;
+                        await supabase
+                          .from("conferencia_seguros")
+                          .update({ arquivo_apolice_url: null })
+                          .eq("id", selectedConf.id);
+                        queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
+                      }}
+                      folder="conferencia-seguros"
+                      accept=".pdf"
+                      label="Anexar Apólice PDF"
+                    />
                   </div>
                 </div>
               </div>

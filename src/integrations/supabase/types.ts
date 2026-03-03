@@ -122,6 +122,47 @@ export type Database = {
         }
         Relationships: []
       }
+      conferencia_seguros_extraidos: {
+        Row: {
+          certificado: string | null
+          conferencia_id: string
+          created_at: string
+          id: string
+          nome: string
+          premio: string | null
+          vigencia_fim: string | null
+          vigencia_inicio: string | null
+        }
+        Insert: {
+          certificado?: string | null
+          conferencia_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          premio?: string | null
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
+        }
+        Update: {
+          certificado?: string | null
+          conferencia_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          premio?: string | null
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conferencia_seguros_extraidos_conferencia_id_fkey"
+            columns: ["conferencia_id"]
+            isOneToOne: false
+            referencedRelation: "conferencia_seguros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conferencia_seguros_itens: {
         Row: {
           coberto: boolean

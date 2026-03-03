@@ -18,9 +18,74 @@ export function usePdfExtraction() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [seguradosExtraidos, setSeguradosExtraidos] = useState<SeguradoExtraido[]>([]);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
   const { toast } = useToast();
 
-  const extractFromPdf = useCallback(async (pdfUrl: string) => {
+  // Load previously saved extraction from DB
+  const loadSavedExtraction = useCallback(async (conferenciaId: string) => {
+    setIsLoadingSaved(true);
+    try {
+      const { data, error } = await supabase
+        .from("conferencia_seguros_extraidos")
+        .select("*")
+        .eq("conferencia_id", conferenciaId)
+        .order("nome");
+      if (error) throw error;
+      if (data && data.length > 0) {
+        const segurados: SeguradoExtraido[] = data.map((d) => ({
+          nome: d.nome,
+          certificado: d.certificado || undefined,
+          vigencia_inicio: d.vigencia_inicio || undefined,
+          vigencia_fim: d.vigencia_fim || undefined,
+          premio_seguro: d.premio ? parseFloat(d.premio) : undefined,
+        }));
+        setSeguradosExtraidos(segurados);
+        return true; // had saved data
+      }
+      setSeguradosExtraidos([]);
+      return false; // no saved data
+    } catch (err) {
+      console.error("Error loading saved extraction:", err);
+      setSeguradosExtraidos([]);
+      return false;
+    } finally {
+      setIsLoadingSaved(false);
+    }
+  }, []);
+
+  // Save extraction results to DB
+  const saveExtraction = useCallback(async (conferenciaId: string, segurados: SeguradoExtraido[]) => {
+    try {
+      // Delete old data first
+      await supabase
+        .from("conferencia_seguros_extraidos")
+        .delete()
+        .eq("conferencia_id", conferenciaId);
+
+      if (segurados.length > 0) {
+        const rows = segurados.map((s) => ({
+          conferencia_id: conferenciaId,
+          nome: s.nome,
+          certificado: s.certificado || null,
+          vigencia_inicio: s.vigencia_inicio || null,
+          vigencia_fim: s.vigencia_fim || null,
+          premio: s.premio_seguro != null ? String(s.premio_seguro) : null,
+        }));
+        // Insert in batches of 100
+        for (let i = 0; i < rows.length; i += 100) {
+          const batch = rows.slice(i, i + 100);
+          const { error } = await supabase
+            .from("conferencia_seguros_extraidos")
+            .insert(batch);
+          if (error) throw error;
+        }
+      }
+    } catch (err) {
+      console.error("Error saving extraction:", err);
+    }
+  }, []);
+
+  const extractFromPdf = useCallback(async (pdfUrl: string, conferenciaId?: string) => {
     setIsExtracting(true);
     setProgress(0);
     setSeguradosExtraidos([]);
@@ -51,7 +116,7 @@ export function usePdfExtraction() {
         setProgress(Math.round((i / totalPages) * 40) + 5);
       }
 
-      // 3. Send to edge function in smaller batches to avoid timeout
+      // 3. Send to edge function in smaller batches
       setProgress(50);
       const allSegurados: SeguradoExtraido[] = [];
       const batchSize = 3;
@@ -79,6 +144,12 @@ export function usePdfExtraction() {
       }
       const segurados = Array.from(unique.values());
       setSeguradosExtraidos(segurados);
+
+      // Save to DB if conferenciaId provided
+      if (conferenciaId) {
+        await saveExtraction(conferenciaId, segurados);
+      }
+
       setProgress(100);
 
       toast({
@@ -98,13 +169,15 @@ export function usePdfExtraction() {
     } finally {
       setIsExtracting(false);
     }
-  }, [toast]);
+  }, [toast, saveExtraction]);
 
   return {
     isExtracting,
+    isLoadingSaved,
     progress,
     seguradosExtraidos,
     setSeguradosExtraidos,
     extractFromPdf,
+    loadSavedExtraction,
   };
 }

@@ -670,8 +670,8 @@ function ConferenciaTab() {
   const cobertura = totalItens > 0 ? Math.round((cobertosCount / totalItens) * 100) : 0;
 
   const handleExtract = () => {
-    if (selectedConf?.arquivo_apolice_url) {
-      pdfExtraction.extractFromPdf(selectedConf.arquivo_apolice_url);
+    if (selectedConf?.arquivo_apolice_url && selectedConferencia) {
+      pdfExtraction.extractFromPdf(selectedConf.arquivo_apolice_url, selectedConferencia);
     }
   };
 
@@ -740,7 +740,7 @@ function ConferenciaTab() {
             conferencias?.map((conf) => (
               <button
                 key={conf.id}
-                onClick={() => { setSelectedConferencia(conf.id); pdfExtraction.setSeguradosExtraidos([]); }}
+                onClick={() => { setSelectedConferencia(conf.id); pdfExtraction.loadSavedExtraction(conf.id); }}
                 className={`w-full text-left bg-card rounded-xl border p-3 transition-colors hover:border-primary ${
                   selectedConferencia === conf.id ? "border-primary bg-primary/5" : "border-border"
                 }`}
@@ -906,6 +906,7 @@ function ConferenciaTab() {
                     seguradosExtraidos={pdfExtraction.seguradosExtraidos}
                     motoristas={motoristas || []}
                     isExtracting={pdfExtraction.isExtracting}
+                    isLoadingSaved={pdfExtraction.isLoadingSaved}
                     progress={pdfExtraction.progress}
                     onExtract={handleExtract}
                     hasApolice={!!selectedConf?.arquivo_apolice_url}

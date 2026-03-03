@@ -123,6 +123,7 @@ interface Props {
   seguradosExtraidos: SeguradoExtraido[];
   motoristas: Motorista[];
   isExtracting: boolean;
+  isLoadingSaved?: boolean;
   progress: number;
   onExtract: () => void;
   hasApolice: boolean;
@@ -132,6 +133,7 @@ export function ConferenciaComparativo({
   seguradosExtraidos,
   motoristas,
   isExtracting,
+  isLoadingSaved,
   progress,
   onExtract,
   hasApolice,
@@ -163,6 +165,15 @@ export function ConferenciaComparativo({
         <p className="text-muted-foreground">
           Anexe um PDF de apólice à conferência para usar a extração automática.
         </p>
+      </div>
+    );
+  }
+
+  if (isLoadingSaved) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-8 text-center">
+        <Loader2 className="h-10 w-10 mx-auto text-primary animate-spin" />
+        <p className="text-sm text-muted-foreground mt-3">Carregando dados salvos...</p>
       </div>
     );
   }

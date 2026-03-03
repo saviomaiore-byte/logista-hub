@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Configure worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export interface SeguradoExtraido {
   nome: string;
@@ -36,7 +36,7 @@ export function usePdfExtraction() {
       const pageImages: string[] = [];
       for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
-        const scale = 1.5; // Good quality without being too large
+        const scale = 1.5;
         const viewport = page.getViewport({ scale });
 
         const canvas = document.createElement("canvas");
@@ -51,7 +51,7 @@ export function usePdfExtraction() {
         setProgress(Math.round((i / totalPages) * 40) + 5);
       }
 
-      // 3. Send to edge function in batches
+      // 3. Send to edge function
       setProgress(50);
       const { data, error } = await supabase.functions.invoke("extract-apolice", {
         body: { images: pageImages },

@@ -36,8 +36,8 @@ serve(async (req) => {
 
     const allSegurados: Segurado[] = [];
 
-    // Process in batches of 4 pages to avoid token limits
-    const batchSize = 4;
+    // Process in batches of 2 pages to avoid timeout
+    const batchSize = 2;
     for (let i = 0; i < images.length; i += batchSize) {
       const batch = images.slice(i, i + batchSize);
 

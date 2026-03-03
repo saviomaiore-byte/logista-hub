@@ -36,7 +36,7 @@ export function usePdfExtraction() {
       const pageImages: string[] = [];
       for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
-        const scale = 1.5;
+        const scale = 1.0;
         const viewport = page.getViewport({ scale });
 
         const canvas = document.createElement("canvas");
@@ -45,23 +45,39 @@ export function usePdfExtraction() {
         const ctx = canvas.getContext("2d")!;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
         pageImages.push(dataUrl);
 
         setProgress(Math.round((i / totalPages) * 40) + 5);
       }
 
-      // 3. Send to edge function
+      // 3. Send to edge function in smaller batches to avoid timeout
       setProgress(50);
-      const { data, error } = await supabase.functions.invoke("extract-apolice", {
-        body: { images: pageImages },
-      });
+      const allSegurados: SeguradoExtraido[] = [];
+      const batchSize = 3;
+      
+      for (let b = 0; b < pageImages.length; b += batchSize) {
+        const batch = pageImages.slice(b, b + batchSize);
+        const { data, error } = await supabase.functions.invoke("extract-apolice", {
+          body: { images: batch },
+        });
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+        if (data?.segurados) {
+          allSegurados.push(...data.segurados);
+        }
+        setProgress(50 + Math.round(((b + batchSize) / pageImages.length) * 40));
+      }
 
       setProgress(90);
-      const segurados = data?.segurados || [];
+      // Deduplicate by name
+      const unique = new Map<string, SeguradoExtraido>();
+      for (const s of allSegurados) {
+        const key = s.nome.trim().toUpperCase();
+        if (!unique.has(key)) unique.set(key, s);
+      }
+      const segurados = Array.from(unique.values());
       setSeguradosExtraidos(segurados);
       setProgress(100);
 

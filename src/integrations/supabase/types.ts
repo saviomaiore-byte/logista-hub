@@ -53,6 +53,53 @@ export type Database = {
         }
         Relationships: []
       }
+      cavalos: {
+        Row: {
+          ano: string | null
+          chassi: string | null
+          created_at: string
+          id: string
+          marca_modelo: string | null
+          placa: string
+          renavam: string | null
+          status: string
+          transportador_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano?: string | null
+          chassi?: string | null
+          created_at?: string
+          id?: string
+          marca_modelo?: string | null
+          placa: string
+          renavam?: string | null
+          status?: string
+          transportador_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: string | null
+          chassi?: string | null
+          created_at?: string
+          id?: string
+          marca_modelo?: string | null
+          placa?: string
+          renavam?: string | null
+          status?: string
+          transportador_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cavalos_transportador_id_fkey"
+            columns: ["transportador_id"]
+            isOneToOne: false
+            referencedRelation: "transportadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificados: {
         Row: {
           arquivo_url: string | null
@@ -490,6 +537,50 @@ export type Database = {
         }
         Relationships: []
       }
+      reboques: {
+        Row: {
+          ano: string | null
+          created_at: string
+          id: string
+          placa: string
+          renavam: string | null
+          status: string
+          tipo: string | null
+          transportador_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano?: string | null
+          created_at?: string
+          id?: string
+          placa: string
+          renavam?: string | null
+          status?: string
+          tipo?: string | null
+          transportador_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: string | null
+          created_at?: string
+          id?: string
+          placa?: string
+          renavam?: string | null
+          status?: string
+          tipo?: string | null
+          transportador_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reboques_transportador_id_fkey"
+            columns: ["transportador_id"]
+            isOneToOne: false
+            referencedRelation: "transportadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seguros: {
         Row: {
           arquivo_url: string | null
@@ -545,6 +636,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transportador_motoristas: {
+        Row: {
+          created_at: string
+          id: string
+          motorista_id: string
+          transportador_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motorista_id: string
+          transportador_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motorista_id?: string
+          transportador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transportador_motoristas_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transportador_motoristas_transportador_id_fkey"
+            columns: ["transportador_id"]
+            isOneToOne: false
+            referencedRelation: "transportadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transportadores: {
+        Row: {
+          contato: string | null
+          cpf_cnpj: string
+          created_at: string
+          id: string
+          inscricao_estadual: string | null
+          razao_social: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contato?: string | null
+          cpf_cnpj: string
+          created_at?: string
+          id?: string
+          inscricao_estadual?: string | null
+          razao_social: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contato?: string | null
+          cpf_cnpj?: string
+          created_at?: string
+          id?: string
+          inscricao_estadual?: string | null
+          razao_social?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Motoristas", href: "/motoristas", icon: Users },
+  { name: "Transportadores", href: "/transportadores", icon: Truck },
   { name: "Seguros", href: "/seguros", icon: Shield },
   
   { name: "Contratos", href: "/contratos", icon: FileText },

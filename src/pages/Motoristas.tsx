@@ -192,7 +192,7 @@ export default function Motoristas() {
               >
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField name="nome" label="Nome Completo" required />
                       <FormField 
                         name="cpf" 
@@ -202,7 +202,7 @@ export default function Motoristas() {
                         required 
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField 
                         name="telefone" 
                         label="Telefone" 
@@ -215,7 +215,7 @@ export default function Motoristas() {
                         type="email" 
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField name="cidade" label="Cidade" />
                       <FormField 
                         name="estado" 

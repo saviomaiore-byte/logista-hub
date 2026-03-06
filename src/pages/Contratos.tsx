@@ -195,7 +195,7 @@ export default function Contratos() {
   };
 
   const ContratoTable = ({ contratos }: { contratos: Contrato[] }) => (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-x-auto">
       {contratos.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

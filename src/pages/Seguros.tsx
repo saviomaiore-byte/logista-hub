@@ -437,8 +437,8 @@ function SegurosTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <Table>
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow>
               <TableHead>Segurado</TableHead>

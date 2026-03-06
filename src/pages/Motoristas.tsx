@@ -242,7 +242,7 @@ export default function Motoristas() {
 
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                         <FormField name="mopp_numero" label="MOPP Número" />

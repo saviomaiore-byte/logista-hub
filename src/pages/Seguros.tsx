@@ -427,12 +427,12 @@ function SegurosTab() {
 
       {/* Search */}
       <div className="flex items-center gap-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
+        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <Input
           placeholder="Buscar por seguradora, tipo, segurado ou apólice..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
+          className="sm:max-w-md"
         />
       </div>
 

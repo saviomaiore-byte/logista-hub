@@ -210,8 +210,8 @@ export default function Conferencia() {
             </p>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full">
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="table-header">
                   <th className="text-left px-6 py-4">Motorista</th>

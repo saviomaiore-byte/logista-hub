@@ -202,7 +202,7 @@ export default function Contratos() {
           <p className="text-muted-foreground">Nenhum contrato encontrado</p>
         </div>
       ) : (
-        <table className="w-full">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="table-header">
               <th className="text-left px-6 py-4">Tipo</th>

@@ -314,8 +314,8 @@ export default function Transportadores() {
 
           {/* Search */}
           <div className="flex items-center gap-2 mt-4">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="sm:max-w-md" />
           </div>
 
           {/* === TRANSPORTADORES === */}

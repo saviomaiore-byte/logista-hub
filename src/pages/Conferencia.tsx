@@ -168,8 +168,8 @@ export default function Conferencia() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+          <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por motorista..."
@@ -178,7 +178,7 @@ export default function Conferencia() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {[
               { key: "todos", label: "Todos" },
               { key: "vencido", label: "Vencidos" },
@@ -210,8 +210,8 @@ export default function Conferencia() {
             </p>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full">
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="table-header">
                   <th className="text-left px-6 py-4">Motorista</th>

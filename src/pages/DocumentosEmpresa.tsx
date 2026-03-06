@@ -119,7 +119,7 @@ export default function DocumentosEmpresa() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Documentos de Empresa</h1>
             <p className="text-muted-foreground mt-1">
@@ -182,8 +182,8 @@ export default function DocumentosEmpresa() {
             <p className="text-muted-foreground">Nenhum documento cadastrado</p>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full">
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="table-header">
                   <th className="text-left px-6 py-4">Empresa</th>

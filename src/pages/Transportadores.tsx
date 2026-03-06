@@ -298,9 +298,9 @@ export default function Transportadores() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Transportadores</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Transportadores</h1>
             <p className="text-muted-foreground">Gestão de transportadores, veículos e vínculos</p>
           </div>
         </div>
@@ -314,8 +314,8 @@ export default function Transportadores() {
 
           {/* Search */}
           <div className="flex items-center gap-2 mt-4">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="sm:max-w-md" />
           </div>
 
           {/* === TRANSPORTADORES === */}
@@ -327,8 +327,8 @@ export default function Transportadores() {
             </div>
 
             <Card>
-              <CardContent className="p-0">
-                <Table>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Razão Social</TableHead>
@@ -404,8 +404,8 @@ export default function Transportadores() {
             </div>
 
             <Card>
-              <CardContent className="p-0">
-                <Table>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Placa</TableHead>
@@ -462,8 +462,8 @@ export default function Transportadores() {
             </div>
 
             <Card>
-              <CardContent className="p-0">
-                <Table>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Placa</TableHead>

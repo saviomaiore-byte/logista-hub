@@ -167,7 +167,7 @@ export default function Motoristas() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Motoristas</h1>
             <p className="text-muted-foreground mt-1">
@@ -192,7 +192,7 @@ export default function Motoristas() {
               >
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField name="nome" label="Nome Completo" required />
                       <FormField 
                         name="cpf" 
@@ -202,7 +202,7 @@ export default function Motoristas() {
                         required 
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField 
                         name="telefone" 
                         label="Telefone" 
@@ -215,7 +215,7 @@ export default function Motoristas() {
                         type="email" 
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField name="cidade" label="Cidade" />
                       <FormField 
                         name="estado" 
@@ -242,7 +242,7 @@ export default function Motoristas() {
 
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                         <FormField name="mopp_numero" label="MOPP Número" />
@@ -262,8 +262,8 @@ export default function Motoristas() {
           </Dialog>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+          <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome ou CPF..."
@@ -288,8 +288,8 @@ export default function Motoristas() {
             </p>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full">
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="table-header">
                   <th className="text-left px-6 py-4">Motorista</th>

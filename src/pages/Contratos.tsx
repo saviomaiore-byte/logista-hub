@@ -195,14 +195,14 @@ export default function Contratos() {
   };
 
   const ContratoTable = ({ contratos }: { contratos: Contrato[] }) => (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-x-auto">
       {contratos.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Nenhum contrato encontrado</p>
         </div>
       ) : (
-        <table className="w-full">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="table-header">
               <th className="text-left px-6 py-4">Tipo</th>
@@ -271,7 +271,7 @@ export default function Contratos() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Contratos</h1>
             <p className="text-muted-foreground mt-1">

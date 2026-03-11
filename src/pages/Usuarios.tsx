@@ -51,6 +51,7 @@ export default function Usuarios() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; profile: Profile | null }>({
     open: false,
     profile: null,

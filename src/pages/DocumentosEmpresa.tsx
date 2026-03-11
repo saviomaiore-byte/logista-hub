@@ -184,6 +184,30 @@ export default function DocumentosEmpresa() {
             <p className="text-muted-foreground">Nenhum documento cadastrado</p>
           </div>
         ) : (
+          isMobile ? (
+            <div className="space-y-3">
+              {documentos.map((doc) => (
+                <div key={doc.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">{doc.empresa}</p>
+                      <span className="status-badge bg-primary/10 text-primary text-xs mt-1 inline-block">
+                        {getTipoLabel(doc.tipo)}
+                      </span>
+                    </div>
+                    {getStatusBadge(doc.status)}
+                  </div>
+                  {doc.descricao && <p className="text-sm text-muted-foreground">{doc.descricao}</p>}
+                  <div className="text-sm text-muted-foreground">
+                    Vencimento: {doc.vencimento ? new Date(doc.vencimento).toLocaleDateString("pt-BR") : "-"}
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full gap-1">
+                    <Send className="h-3 w-3" /> Enviar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
@@ -221,6 +245,7 @@ export default function DocumentosEmpresa() {
               </tbody>
             </table>
           </div>
+          )
         )}
       </div>
     </MainLayout>

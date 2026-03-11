@@ -85,6 +85,7 @@ export default function Motoristas() {
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
+  const isMobile = useIsMobile();
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase

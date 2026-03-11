@@ -455,6 +455,38 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredCavalos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</div>
+                ) : filteredCavalos.map((c) => (
+                  <div key={c.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">{c.placa}</p>
+                        <p className="text-sm text-muted-foreground">{c.marca_modelo || "Sem modelo"}</p>
+                      </div>
+                      <Badge variant={c.status === "ativo" ? "default" : "secondary"}>
+                        {c.status === "ativo" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-sm text-muted-foreground">
+                      <span>Ano: {c.ano || "-"}</span>
+                      <span>Renavam: {c.renavam || "-"}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Transp: {c.transportadores?.razao_social || "-"}</p>
+                    <div className="flex items-center gap-1 pt-1 border-t border-border">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingCavalo(c); setShowCavaloDialog(true); }}>
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteCavalo.mutate(c.id); }}>
+                        <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[700px]">
@@ -503,6 +535,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* === REBOQUES === */}

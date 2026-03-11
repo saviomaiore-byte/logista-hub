@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -136,6 +137,7 @@ function SegurosTab() {
   const [editingSeguro, setEditingSeguro] = useState<Seguro | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -436,7 +438,64 @@ function SegurosTab() {
         />
       </div>
 
-      {/* Table */}
+      {/* List */}
+      {isMobile ? (
+        <div className="space-y-3">
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+          ) : filteredSeguros?.length === 0 ? (
+            <div className="text-center py-8">
+              <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Nenhum seguro encontrado</p>
+            </div>
+          ) : (
+            filteredSeguros?.map((seguro) => (
+              <div key={seguro.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    {seguro.motoristas ? (
+                      <>
+                        <p className="font-semibold text-foreground">{seguro.motoristas.nome}</p>
+                        <p className="text-xs text-muted-foreground">{seguro.motoristas.cpf}</p>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Sem segurado</p>
+                    )}
+                  </div>
+                  {getStatusBadge(seguro)}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline">{seguro.tipo}</Badge>
+                  <span className="text-sm text-muted-foreground">{seguro.seguradora}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Vigência</p>
+                    <p className="text-foreground">{format(parseISO(seguro.vigencia_inicio), "dd/MM/yy")} - {format(parseISO(seguro.vigencia_fim), "dd/MM/yy")}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Valor</p>
+                    <p className="text-foreground">{seguro.valor_premio ? `R$ ${seguro.valor_premio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 pt-1 border-t border-border">
+                  {seguro.arquivo_url && (
+                    <a href={seguro.arquivo_url} target="_blank" rel="noopener noreferrer" download>
+                      <Button variant="ghost" size="sm"><Download className="h-4 w-4 mr-1" /> Baixar</Button>
+                    </a>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(seguro)}>
+                    <Pencil className="h-4 w-4 mr-1" /> Editar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(seguro.id)}>
+                    <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : (
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <Table className="min-w-[800px]">
           <TableHeader>
@@ -514,6 +573,7 @@ function SegurosTab() {
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }

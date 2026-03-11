@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export default function Certificados() {
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const fetchCertificados = async () => {
     const { data, error } = await supabase
@@ -173,6 +175,36 @@ export default function Certificados() {
             <p className="text-muted-foreground">Nenhum certificado cadastrado</p>
           </div>
         ) : (
+          isMobile ? (
+            <div className="space-y-3">
+              {certificados.map((cert) => (
+                <div key={cert.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">{cert.empresa}</p>
+                      <span className="status-badge bg-primary/10 text-primary text-xs mt-1 inline-block">{cert.tipo}</span>
+                    </div>
+                    {getStatusBadge(cert.status)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Vencimento</p>
+                      <p className="text-foreground">{new Date(cert.vencimento).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Renovação</p>
+                      <p className="text-foreground">{cert.data_renovacao_agendada ? new Date(cert.data_renovacao_agendada).toLocaleDateString("pt-BR") : "-"}</p>
+                    </div>
+                  </div>
+                  {cert.status !== "renovacao_agendada" && (
+                    <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                      <CalendarCheck className="h-3 w-3" /> Agendar Renovação
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
@@ -203,14 +235,8 @@ export default function Certificados() {
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">
                       {cert.status !== "renovacao_agendada" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => agendarRenovacao(cert.id)}
-                        >
-                          <CalendarCheck className="h-3 w-3" />
-                          Agendar
+                        <Button variant="ghost" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                          <CalendarCheck className="h-3 w-3" /> Agendar
                         </Button>
                       )}
                     </td>
@@ -219,6 +245,7 @@ export default function Certificados() {
               </tbody>
             </table>
           </div>
+          )
         )}
       </div>
     </MainLayout>

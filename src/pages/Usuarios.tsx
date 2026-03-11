@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -50,6 +51,7 @@ export default function Usuarios() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; profile: Profile | null }>({
     open: false,
     profile: null,
@@ -168,11 +170,48 @@ export default function Usuarios() {
           />
         </div>
 
-        {/* Table */}
+        {/* List */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : isMobile ? (
+            <div className="divide-y divide-border">
+              {filteredProfiles.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">Nenhum usuário encontrado.</div>
+              ) : (
+                filteredProfiles.map((profile) => {
+                  const role = getUserRole(profile.user_id);
+                  const isSelf = currentUser?.id === profile.user_id;
+                  return (
+                    <div key={profile.id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-foreground">{profile.nome}</p>
+                          <p className="text-sm text-muted-foreground">{profile.email || "—"}</p>
+                        </div>
+                        <Badge variant={role === "admin" ? "default" : "secondary"}>
+                          {role === "admin" ? "Admin" : "Usuário"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          Cadastro: {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => toggleAdmin(profile)} disabled={isSelf} title={role === "admin" ? "Remover admin" : "Tornar admin"}>
+                            {role === "admin" ? <ShieldOff className="h-4 w-4 text-warning" /> : <Shield className="h-4 w-4 text-primary" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteDialog({ open: true, profile })} disabled={isSelf} title="Remover usuário">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           ) : (
             <Table>
@@ -210,26 +249,10 @@ export default function Usuarios() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleAdmin(profile)}
-                              disabled={isSelf}
-                              title={role === "admin" ? "Remover admin" : "Tornar admin"}
-                            >
-                              {role === "admin" ? (
-                                <ShieldOff className="h-4 w-4 text-warning" />
-                              ) : (
-                                <Shield className="h-4 w-4 text-primary" />
-                              )}
+                            <Button variant="ghost" size="icon" onClick={() => toggleAdmin(profile)} disabled={isSelf} title={role === "admin" ? "Remover admin" : "Tornar admin"}>
+                              {role === "admin" ? <ShieldOff className="h-4 w-4 text-warning" /> : <Shield className="h-4 w-4 text-primary" />}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteDialog({ open: true, profile })}
-                              disabled={isSelf}
-                              title="Remover usuário"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteDialog({ open: true, profile })} disabled={isSelf} title="Remover usuário">
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>

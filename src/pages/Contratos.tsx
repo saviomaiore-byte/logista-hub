@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -194,6 +195,59 @@ export default function Contratos() {
     );
   };
 
+  const isMobile = useIsMobile();
+
+  const ContratoCards = ({ contratos }: { contratos: Contrato[] }) => (
+    <div className="space-y-3">
+      {contratos.length === 0 ? (
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Nenhum contrato encontrado</p>
+        </div>
+      ) : (
+        contratos.map((contrato) => (
+          <div key={contrato.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold text-foreground">{contrato.empresa}</p>
+                {contrato.cnpj && <p className="text-sm text-muted-foreground">{contrato.cnpj}</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(contrato.status)}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {getTipoBadge(contrato.tipo)}
+              {contrato.data_envio && (
+                <span className="text-xs text-muted-foreground">
+                  Enviado: {new Date(contrato.data_envio).toLocaleDateString("pt-BR")}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 pt-1 border-t border-border">
+              {contrato.arquivo_url && (
+                <Button variant="ghost" size="sm" onClick={() => window.open(contrato.arquivo_url!, "_blank")}>
+                  <Download className="h-4 w-4 mr-1" /> Baixar
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(contrato)}>
+                <Pencil className="h-4 w-4 mr-1" /> Editar
+              </Button>
+              {contrato.status === "pendente" && (
+                <Button variant="ghost" size="sm" onClick={() => enviarContrato(contrato.id)}>
+                  <Send className="h-4 w-4 mr-1" /> Enviar
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(contrato.id)}>
+                <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+
   const ContratoTable = ({ contratos }: { contratos: Contrato[] }) => (
     <div className="bg-card rounded-xl border border-border overflow-x-auto">
       {contratos.length === 0 ? (
@@ -228,12 +282,7 @@ export default function Contratos() {
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     {contrato.arquivo_url && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => window.open(contrato.arquivo_url!, "_blank")}
-                        title="Baixar Arquivo"
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => window.open(contrato.arquivo_url!, "_blank")} title="Baixar Arquivo">
                         <Download className="h-4 w-4" />
                       </Button>
                     )}
@@ -241,21 +290,11 @@ export default function Contratos() {
                       <Pencil className="h-4 w-4" />
                     </Button>
                     {contrato.status === "pendente" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => enviarContrato(contrato.id)}
-                        title="Enviar"
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => enviarContrato(contrato.id)} title="Enviar">
                         <Send className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(contrato.id)}
-                      title="Excluir"
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(contrato.id)} title="Excluir">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -267,6 +306,8 @@ export default function Contratos() {
       )}
     </div>
   );
+
+  const ContratoList = isMobile ? ContratoCards : ContratoTable;
 
   return (
     <MainLayout>
@@ -361,16 +402,16 @@ export default function Contratos() {
             </TabsList>
 
             <TabsContent value="todos">
-              <ContratoTable contratos={contratos} />
+              <ContratoList contratos={contratos} />
             </TabsContent>
             <TabsContent value="contratos">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "contrato")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "contrato")} />
             </TabsContent>
             <TabsContent value="distratos">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "distrato")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "distrato")} />
             </TabsContent>
             <TabsContent value="adesao">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "adesao")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "adesao")} />
             </TabsContent>
           </Tabs>
         )}

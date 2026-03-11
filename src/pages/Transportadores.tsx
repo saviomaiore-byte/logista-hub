@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -84,6 +85,7 @@ export default function Transportadores() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("transportadores");
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
 
   // Transportador state
   const [showTranspDialog, setShowTranspDialog] = useState(false);
@@ -326,6 +328,55 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredTransp.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum transportador encontrado</div>
+                ) : filteredTransp.map((t) => {
+                  const mots = getMotoristasByTransp(t.id);
+                  return (
+                    <div key={t.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-foreground">{t.razao_social}</p>
+                          <p className="text-sm text-muted-foreground">{t.cpf_cnpj}</p>
+                        </div>
+                        <Badge variant={t.status === "ativo" ? "default" : "secondary"}>
+                          {t.status === "ativo" ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
+                      {t.contato && <p className="text-sm text-muted-foreground">{t.contato}</p>}
+                      <div className="text-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Motoristas vinculados:</p>
+                        {mots.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">Nenhum</span>
+                        ) : (
+                          mots.map((v: any) => (
+                            <div key={v.id} className="flex items-center gap-1">
+                              <span className="text-xs">{v.motoristas?.nome}</span>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeVinculo.mutate(v.id)}>
+                                <Unlink className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                        <Button variant="outline" size="sm" className="h-6 text-xs mt-1" onClick={() => { setVinculoTranspId(t.id); setShowVinculoDialog(true); }}>
+                          <Link2 className="h-3 w-3 mr-1" /> Vincular
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-1 pt-1 border-t border-border">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
+                          <Pencil className="h-4 w-4 mr-1" /> Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteTransp.mutate(t.id); }}>
+                          <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[700px]">
@@ -393,6 +444,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* === CAVALOS === */}
@@ -403,6 +455,38 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredCavalos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</div>
+                ) : filteredCavalos.map((c) => (
+                  <div key={c.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">{c.placa}</p>
+                        <p className="text-sm text-muted-foreground">{c.marca_modelo || "Sem modelo"}</p>
+                      </div>
+                      <Badge variant={c.status === "ativo" ? "default" : "secondary"}>
+                        {c.status === "ativo" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-sm text-muted-foreground">
+                      <span>Ano: {c.ano || "-"}</span>
+                      <span>Renavam: {c.renavam || "-"}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Transp: {c.transportadores?.razao_social || "-"}</p>
+                    <div className="flex items-center gap-1 pt-1 border-t border-border">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingCavalo(c); setShowCavaloDialog(true); }}>
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteCavalo.mutate(c.id); }}>
+                        <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[700px]">
@@ -451,6 +535,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* === REBOQUES === */}
@@ -461,6 +546,36 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredReboques.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</div>
+                ) : filteredReboques.map((r) => (
+                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">{r.placa}</p>
+                        <p className="text-sm text-muted-foreground">{r.tipo || "Sem tipo"}</p>
+                      </div>
+                      <Badge variant={r.status === "ativo" ? "default" : "secondary"}>
+                        {r.status === "ativo" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span>Ano: {r.ano || "-"} • Transp: {r.transportadores?.razao_social || "-"}</span>
+                    </div>
+                    <div className="flex items-center gap-1 pt-1 border-t border-border">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingReboque(r); setShowReboqueDialog(true); }}>
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteReboque.mutate(r.id); }}>
+                        <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[600px]">
@@ -507,6 +622,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

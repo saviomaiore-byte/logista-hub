@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Formik, Form } from "formik";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,6 +85,7 @@ export default function Motoristas() {
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
+  const isMobile = useIsMobile();
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase
@@ -286,6 +288,60 @@ export default function Motoristas() {
             <p className="text-muted-foreground">
               {searchTerm ? "Nenhum motorista encontrado" : "Nenhum motorista cadastrado"}
             </p>
+          </div>
+        ) : isMobile ? (
+          <div className="space-y-3">
+            {filteredMotoristas.map((motorista) => (
+              <div key={motorista.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground">{motorista.nome}</p>
+                    <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {getStatusBadge(motorista.status)}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditMotorista(motorista)}>
+                          <Edit className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDocsMotorista(motorista)}>
+                          <FileText className="h-4 w-4 mr-2" /> Documentos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(motorista.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5 text-sm">
+                  {motorista.telefone && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                      {motorista.telefone}
+                    </div>
+                  )}
+                  {motorista.email && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{motorista.email}</span>
+                    </div>
+                  )}
+                  {motorista.cidade && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                      {motorista.cidade}{motorista.estado && `, ${motorista.estado}`}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">

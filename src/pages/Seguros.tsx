@@ -137,6 +137,7 @@ function SegurosTab() {
   const [editingSeguro, setEditingSeguro] = useState<Seguro | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

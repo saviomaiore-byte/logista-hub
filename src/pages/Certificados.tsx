@@ -45,6 +45,7 @@ export default function Certificados() {
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const fetchCertificados = async () => {
     const { data, error } = await supabase

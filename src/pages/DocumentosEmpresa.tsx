@@ -60,6 +60,7 @@ export default function DocumentosEmpresa() {
   const [documentos, setDocumentos] = useState<DocumentoEmpresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const fetchDocumentos = async () => {
     const { data, error } = await supabase

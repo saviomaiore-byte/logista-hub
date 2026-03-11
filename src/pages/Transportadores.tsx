@@ -84,6 +84,7 @@ export default function Transportadores() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("transportadores");
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
 
   // Transportador state
   const [showTranspDialog, setShowTranspDialog] = useState(false);

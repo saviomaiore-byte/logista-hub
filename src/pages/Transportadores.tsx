@@ -546,6 +546,36 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredReboques.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</div>
+                ) : filteredReboques.map((r) => (
+                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">{r.placa}</p>
+                        <p className="text-sm text-muted-foreground">{r.tipo || "Sem tipo"}</p>
+                      </div>
+                      <Badge variant={r.status === "ativo" ? "default" : "secondary"}>
+                        {r.status === "ativo" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span>Ano: {r.ano || "-"} • Transp: {r.transportadores?.razao_social || "-"}</span>
+                    </div>
+                    <div className="flex items-center gap-1 pt-1 border-t border-border">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingReboque(r); setShowReboqueDialog(true); }}>
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteReboque.mutate(r.id); }}>
+                        <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[600px]">
@@ -592,6 +622,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

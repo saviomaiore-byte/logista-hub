@@ -402,16 +402,16 @@ export default function Contratos() {
             </TabsList>
 
             <TabsContent value="todos">
-              <ContratoTable contratos={contratos} />
+              <ContratoList contratos={contratos} />
             </TabsContent>
             <TabsContent value="contratos">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "contrato")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "contrato")} />
             </TabsContent>
             <TabsContent value="distratos">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "distrato")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "distrato")} />
             </TabsContent>
             <TabsContent value="adesao">
-              <ContratoTable contratos={contratos.filter(c => c.tipo === "adesao")} />
+              <ContratoList contratos={contratos.filter(c => c.tipo === "adesao")} />
             </TabsContent>
           </Tabs>
         )}

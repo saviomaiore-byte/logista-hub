@@ -328,6 +328,55 @@ export default function Transportadores() {
               </Button>
             </div>
 
+            {isMobile ? (
+              <div className="space-y-3">
+                {filteredTransp.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum transportador encontrado</div>
+                ) : filteredTransp.map((t) => {
+                  const mots = getMotoristasByTransp(t.id);
+                  return (
+                    <div key={t.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-foreground">{t.razao_social}</p>
+                          <p className="text-sm text-muted-foreground">{t.cpf_cnpj}</p>
+                        </div>
+                        <Badge variant={t.status === "ativo" ? "default" : "secondary"}>
+                          {t.status === "ativo" ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
+                      {t.contato && <p className="text-sm text-muted-foreground">{t.contato}</p>}
+                      <div className="text-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Motoristas vinculados:</p>
+                        {mots.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">Nenhum</span>
+                        ) : (
+                          mots.map((v: any) => (
+                            <div key={v.id} className="flex items-center gap-1">
+                              <span className="text-xs">{v.motoristas?.nome}</span>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeVinculo.mutate(v.id)}>
+                                <Unlink className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                        <Button variant="outline" size="sm" className="h-6 text-xs mt-1" onClick={() => { setVinculoTranspId(t.id); setShowVinculoDialog(true); }}>
+                          <Link2 className="h-3 w-3 mr-1" /> Vincular
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-1 pt-1 border-t border-border">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
+                          <Pencil className="h-4 w-4 mr-1" /> Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteTransp.mutate(t.id); }}>
+                          <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <Table className="min-w-[700px]">
@@ -395,6 +444,7 @@ export default function Transportadores() {
                 </Table>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* === CAVALOS === */}

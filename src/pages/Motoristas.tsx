@@ -161,7 +161,6 @@ export default function Motoristas() {
     resetForm();
     fetchMotoristas();
   };
-  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este motorista?")) return;

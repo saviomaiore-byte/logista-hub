@@ -60,6 +60,7 @@ interface Motorista {
   mopp_vencimento: string | null;
   antt_numero: string | null;
   antt_vencimento: string | null;
+  is_transportador_proprio: boolean;
 }
 
 const initialValues = {

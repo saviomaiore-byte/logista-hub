@@ -110,7 +110,7 @@ export default function Motoristas() {
   }, []);
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
-    const { error } = await supabase.from("motoristas").insert({
+    const motoristaData = {
       nome: values.nome,
       cpf: values.cpf,
       telefone: values.telefone || null,
@@ -124,7 +124,10 @@ export default function Motoristas() {
       mopp_vencimento: values.mopp_vencimento || null,
       antt_numero: values.antt_numero || null,
       antt_vencimento: values.antt_vencimento || null,
-    });
+      is_transportador_proprio: values.is_transportador_proprio,
+    };
+
+    const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();
 
     if (error) {
       if (error.code === "23505") {
@@ -132,12 +135,32 @@ export default function Motoristas() {
       } else {
         toast.error("Erro ao salvar motorista");
       }
-    } else {
-      toast.success("Motorista cadastrado!");
-      setOpen(false);
-      resetForm();
-      fetchMotoristas();
+      return;
     }
+
+    // Auto-create transportadora if flagged
+    if (values.is_transportador_proprio && inserted) {
+      const { data: transp, error: transpError } = await supabase.from("transportadores").insert({
+        razao_social: values.nome,
+        cpf_cnpj: values.cpf,
+        status: "ativo",
+        motorista_id: inserted.id,
+      }).select().single();
+
+      if (!transpError && transp) {
+        // Auto-link via junction table
+        await supabase.from("transportador_motoristas").insert({
+          transportador_id: transp.id,
+          motorista_id: inserted.id,
+        });
+      }
+    }
+
+    toast.success("Motorista cadastrado!");
+    setOpen(false);
+    resetForm();
+    fetchMotoristas();
+  };
   };
 
   const handleDelete = async (id: string) => {

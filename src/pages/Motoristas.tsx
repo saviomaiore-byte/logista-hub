@@ -332,8 +332,13 @@ export default function Motoristas() {
             {filteredMotoristas.map((motorista) => (
               <div key={motorista.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground">{motorista.nome}</p>
+                   <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">{motorista.nome}</p>
+                      {motorista.is_transportador_proprio && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">Transp. Próprio</Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
                   </div>
                   <div className="flex items-center gap-1">

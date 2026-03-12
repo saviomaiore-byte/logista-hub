@@ -269,6 +269,17 @@ export default function Motoristas() {
                       </FormSelectWrapper>
                     </div>
 
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                      <Checkbox
+                        id="is_transportador_proprio"
+                        checked={values.is_transportador_proprio}
+                        onCheckedChange={(checked) => setFieldValue("is_transportador_proprio", !!checked)}
+                      />
+                      <label htmlFor="is_transportador_proprio" className="text-sm font-medium cursor-pointer">
+                        Este motorista é transportador próprio
+                      </label>
+                    </div>
+
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

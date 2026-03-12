@@ -27,6 +27,7 @@ type Transportador = {
   contato: string | null;
   status: string;
   created_at: string;
+  motorista_id: string | null;
 };
 
 type Cavalo = {

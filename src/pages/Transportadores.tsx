@@ -402,7 +402,14 @@ export default function Transportadores() {
                       const mots = getMotoristasByTransp(t.id);
                       return (
                         <TableRow key={t.id}>
-                          <TableCell className="font-medium">{t.razao_social}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {t.razao_social}
+                              {t.motorista_id && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">Motorista Próprio</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>{t.cpf_cnpj}</TableCell>
                           <TableCell>{t.inscricao_estadual || "-"}</TableCell>
                           <TableCell>{t.contato || "-"}</TableCell>

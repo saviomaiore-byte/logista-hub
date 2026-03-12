@@ -390,6 +390,7 @@ export type Database = {
           email: string | null
           estado: string | null
           id: string
+          is_transportador_proprio: boolean
           mopp_numero: string | null
           mopp_vencimento: string | null
           nome: string
@@ -408,6 +409,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
           nome: string
@@ -426,6 +428,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
           nome?: string
@@ -680,6 +683,7 @@ export type Database = {
           created_at: string
           id: string
           inscricao_estadual: string | null
+          motorista_id: string | null
           razao_social: string
           status: string
           updated_at: string
@@ -690,6 +694,7 @@ export type Database = {
           created_at?: string
           id?: string
           inscricao_estadual?: string | null
+          motorista_id?: string | null
           razao_social: string
           status?: string
           updated_at?: string
@@ -700,11 +705,20 @@ export type Database = {
           created_at?: string
           id?: string
           inscricao_estadual?: string | null
+          motorista_id?: string | null
           razao_social?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transportadores_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

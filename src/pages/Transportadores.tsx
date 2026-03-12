@@ -338,8 +338,13 @@ export default function Transportadores() {
                   return (
                     <div key={t.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-foreground">{t.razao_social}</p>
+                       <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground">{t.razao_social}</p>
+                            {t.motorista_id && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">Motorista Próprio</Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">{t.cpf_cnpj}</p>
                         </div>
                         <Badge variant={t.status === "ativo" ? "default" : "secondary"}>

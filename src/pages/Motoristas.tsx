@@ -523,6 +523,7 @@ export default function Motoristas() {
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
                   antt_numero: editMotorista.antt_numero || "",
                   antt_vencimento: editMotorista.antt_vencimento || "",
+                  is_transportador_proprio: editMotorista.is_transportador_proprio || false,
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {
@@ -542,15 +543,46 @@ export default function Motoristas() {
                       mopp_vencimento: values.mopp_vencimento || null,
                       antt_numero: values.antt_numero || null,
                       antt_vencimento: values.antt_vencimento || null,
+                      is_transportador_proprio: values.is_transportador_proprio,
                     })
                     .eq("id", editMotorista.id);
                   if (error) {
                     toast.error("Erro ao atualizar motorista");
-                  } else {
-                    toast.success("Motorista atualizado!");
-                    setEditMotorista(null);
-                    fetchMotoristas();
+                    return;
                   }
+
+                  // Handle transportador próprio toggle
+                  if (values.is_transportador_proprio && !editMotorista.is_transportador_proprio) {
+                    // Create transportadora
+                    const { data: transp } = await supabase.from("transportadores").insert({
+                      razao_social: values.nome,
+                      cpf_cnpj: values.cpf,
+                      status: "ativo",
+                      motorista_id: editMotorista.id,
+                    }).select().single();
+                    if (transp) {
+                      await supabase.from("transportador_motoristas").insert({
+                        transportador_id: transp.id,
+                        motorista_id: editMotorista.id,
+                      });
+                    }
+                  } else if (!values.is_transportador_proprio && editMotorista.is_transportador_proprio) {
+                    // Remove auto-created transportadora
+                    const { data: existing } = await supabase
+                      .from("transportadores")
+                      .select("id")
+                      .eq("motorista_id", editMotorista.id);
+                    if (existing && existing.length > 0) {
+                      for (const t of existing) {
+                        await supabase.from("transportador_motoristas").delete().eq("transportador_id", t.id).eq("motorista_id", editMotorista.id);
+                        await supabase.from("transportadores").delete().eq("id", t.id);
+                      }
+                    }
+                  }
+
+                  toast.success("Motorista atualizado!");
+                  setEditMotorista(null);
+                  fetchMotoristas();
                 }}
               >
                 {({ isSubmitting, setFieldValue, values }) => (

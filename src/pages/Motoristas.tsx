@@ -413,8 +413,6 @@ export default function Motoristas() {
                         <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
                       </div>
                     </td>
-                      </div>
-                    </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         {motorista.telefone && (

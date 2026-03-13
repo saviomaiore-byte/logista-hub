@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function Conferencia() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
+  const isMobile = useIsMobile();
 
   const fetchDocumentos = async () => {
     const { data, error } = await supabase
@@ -208,6 +210,45 @@ export default function Conferencia() {
                 ? "Nenhum documento cadastrado. Cadastre motoristas com documentos." 
                 : "Nenhum documento encontrado com os filtros aplicados."}
             </p>
+          </div>
+        ) : isMobile ? (
+          <div className="space-y-3">
+            {filteredDocs.map((doc) => (
+              <div
+                key={doc.id}
+                className={cn(
+                  "bg-card rounded-xl border border-border p-4 space-y-3",
+                  doc.status === "vencido" && "border-destructive/30 bg-destructive/5"
+                )}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    {doc.status === "vencido" && (
+                      <FileWarning className="h-4 w-4 text-destructive flex-shrink-0" />
+                    )}
+                    <p className="font-semibold text-foreground">{doc.motorista}</p>
+                  </div>
+                  {getTipoBadge(doc.tipo)}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Número</p>
+                    <p className="text-foreground font-mono text-sm">{doc.numero}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Vencimento</p>
+                    <p className="text-foreground">{new Date(doc.vencimento).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  {getStatusBadge(doc)}
+                  <Button variant="ghost" size="sm" className="h-8 gap-1">
+                    <Send className="h-3 w-3" />
+                    Notificar
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,11 +42,7 @@ function calcularSimilaridade(a: string, b: string): number {
   const na = normalizar(a);
   const nb = normalizar(b);
   if (na === nb) return 1;
-
-  // Check if one contains the other
   if (na.includes(nb) || nb.includes(na)) return 0.9;
-
-  // Word-based matching
   const wordsA = na.split(" ");
   const wordsB = nb.split(" ");
   const common = wordsA.filter((w) => wordsB.includes(w));
@@ -60,7 +57,6 @@ function criarComparacao(
   const result: ComparacaoItem[] = [];
   const motoristasUsados = new Set<string>();
 
-  // For each segurado in apólice, try to find matching motorista
   for (const seg of segurados) {
     let bestMatch: Motorista | null = null;
     let bestScore = 0;
@@ -100,7 +96,6 @@ function criarComparacao(
     }
   }
 
-  // Motoristas not found in apólice
   for (const mot of motoristas) {
     if (!motoristasUsados.has(mot.id)) {
       result.push({
@@ -139,6 +134,7 @@ export function ConferenciaComparativo({
   hasApolice,
 }: Props) {
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
 
   const comparacao = useMemo(
     () => criarComparacao(seguradosExtraidos, motoristas),
@@ -216,6 +212,131 @@ export function ConferenciaComparativo({
     );
   }
 
+  const getStatusIcon = (status: string) => {
+    if (status === "coberto") return <CheckCircle2 className="h-5 w-5 text-success" />;
+    if (status === "descoberto") return <XCircle className="h-5 w-5 text-destructive" />;
+    return <AlertTriangle className="h-5 w-5 text-warning" />;
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "coberto") return "Coberto";
+    if (status === "descoberto") return "Descoberto";
+    return "Só na Apólice";
+  };
+
+  const renderItems = (items: ComparacaoItem[]) => {
+    if (items.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">Nenhum registro encontrado</div>
+      );
+    }
+
+    if (isMobile) {
+      return (
+        <div className="space-y-3">
+          {items.map((item, idx) => (
+            <div key={idx} className="bg-card rounded-xl border border-border p-4 space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(item.status)}
+                  <Badge
+                    variant={item.status === "coberto" ? "default" : "destructive"}
+                    className={item.status === "extra_apolice" ? "bg-warning text-warning-foreground" : ""}
+                  >
+                    {getStatusLabel(item.status)}
+                  </Badge>
+                </div>
+              </div>
+              {item.nomeApolice && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Nome na Apólice</p>
+                  <p className="text-sm font-medium text-foreground">{item.nomeApolice}</p>
+                </div>
+              )}
+              {item.nomeSistema && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Nome no Sistema</p>
+                  <p className="text-sm font-medium text-foreground">{item.nomeSistema}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">CPF</p>
+                  <p className="text-foreground">{item.cpf || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Certificado</p>
+                  <p className="text-foreground">{item.certificado || "—"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Vigência</p>
+                  <p className="text-foreground text-xs">
+                    {item.vigenciaInicio && item.vigenciaFim
+                      ? `${item.vigenciaInicio} a ${item.vigenciaFim}`
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Prêmio</p>
+                  <p className="text-foreground">
+                    {item.premioSeguro != null ? `R$ ${item.premioSeguro.toFixed(2)}` : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">Status</TableHead>
+              <TableHead>Nome na Apólice</TableHead>
+              <TableHead>Nome no Sistema</TableHead>
+              <TableHead>CPF</TableHead>
+              <TableHead>Certificado</TableHead>
+              <TableHead>Vigência</TableHead>
+              <TableHead className="text-right">Prêmio</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, idx) => (
+              <TableRow key={idx}>
+                <TableCell>{getStatusIcon(item.status)}</TableCell>
+                <TableCell>
+                  <span className={item.nomeApolice ? "font-medium" : "text-muted-foreground italic"}>
+                    {item.nomeApolice || "—"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className={item.nomeSistema ? "font-medium" : "text-muted-foreground italic"}>
+                    {item.nomeSistema || "— Não encontrado"}
+                  </span>
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">{item.cpf || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{item.certificado || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">
+                  {item.vigenciaInicio && item.vigenciaFim
+                    ? `${item.vigenciaInicio} a ${item.vigenciaFim}`
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right text-sm">
+                  {item.premioSeguro != null ? `R$ ${item.premioSeguro.toFixed(2)}` : "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Stats cards */}
@@ -244,15 +365,7 @@ export function ConferenciaComparativo({
           <span className="text-muted-foreground">
             Cobertura dos motoristas ativos: {cobertos}/{totalMotoristas}
           </span>
-          <span
-            className={`font-bold ${
-              cobertura === 100
-                ? "text-success"
-                : cobertura >= 80
-                ? "text-warning"
-                : "text-destructive"
-            }`}
-          >
+          <span className={`font-bold ${cobertura === 100 ? "text-success" : cobertura >= 80 ? "text-warning" : "text-destructive"}`}>
             {cobertura}%
           </span>
         </div>
@@ -260,15 +373,17 @@ export function ConferenciaComparativo({
       </div>
 
       {/* Search + Re-extract */}
-      <div className="flex items-center gap-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome ou CPF..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
-        />
-        <Button variant="outline" size="sm" onClick={onExtract} className="gap-1 ml-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
+          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Input
+            placeholder="Buscar por nome ou CPF..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:max-w-md"
+          />
+        </div>
+        <Button variant="outline" size="sm" onClick={onExtract} className="gap-1">
           <Sparkles className="h-3 w-3" />
           Re-extrair
         </Button>
@@ -276,92 +391,23 @@ export function ConferenciaComparativo({
 
       {/* Comparison tabs */}
       <Tabs defaultValue="todos">
-        <TabsList>
-          <TabsTrigger value="todos">Todos ({comparacao.length})</TabsTrigger>
-          <TabsTrigger value="cobertos">Cobertos ({cobertos})</TabsTrigger>
-          <TabsTrigger value="descobertos">Descobertos ({descobertos})</TabsTrigger>
-          <TabsTrigger value="extra">Só na Apólice ({extraApolice})</TabsTrigger>
+        <TabsList className="flex w-full overflow-x-auto">
+          <TabsTrigger value="todos" className="flex-shrink-0">Todos ({comparacao.length})</TabsTrigger>
+          <TabsTrigger value="cobertos" className="flex-shrink-0">Cobertos ({cobertos})</TabsTrigger>
+          <TabsTrigger value="descobertos" className="flex-shrink-0">Descobertos ({descobertos})</TabsTrigger>
+          <TabsTrigger value="extra" className="flex-shrink-0">Só Apólice ({extraApolice})</TabsTrigger>
         </TabsList>
 
         {(["todos", "cobertos", "descobertos", "extra"] as const).map((tab) => (
           <TabsContent key={tab} value={tab}>
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">Status</TableHead>
-                    <TableHead>Nome na Apólice</TableHead>
-                    <TableHead>Nome no Sistema</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Certificado</TableHead>
-                    <TableHead>Vigência</TableHead>
-                    <TableHead className="text-right">Prêmio</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredComparacao
-                    .filter((item) => {
-                      if (tab === "cobertos") return item.status === "coberto";
-                      if (tab === "descobertos") return item.status === "descoberto";
-                      if (tab === "extra") return item.status === "extra_apolice";
-                      return true;
-                    })
-                    .map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          {item.status === "coberto" && (
-                            <CheckCircle2 className="h-5 w-5 text-success" />
-                          )}
-                          {item.status === "descoberto" && (
-                            <XCircle className="h-5 w-5 text-destructive" />
-                          )}
-                          {item.status === "extra_apolice" && (
-                            <AlertTriangle className="h-5 w-5 text-warning" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className={item.nomeApolice ? "font-medium" : "text-muted-foreground italic"}>
-                            {item.nomeApolice || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={item.nomeSistema ? "font-medium" : "text-muted-foreground italic"}>
-                            {item.nomeSistema || "— Não encontrado"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {item.cpf || "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {item.certificado || "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          {item.vigenciaInicio && item.vigenciaFim
-                            ? `${item.vigenciaInicio} a ${item.vigenciaFim}`
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right text-sm">
-                          {item.premioSeguro != null
-                            ? `R$ ${item.premioSeguro.toFixed(2)}`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {filteredComparacao.filter((item) => {
-                    if (tab === "cobertos") return item.status === "coberto";
-                    if (tab === "descobertos") return item.status === "descoberto";
-                    if (tab === "extra") return item.status === "extra_apolice";
-                    return true;
-                  }).length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Nenhum registro encontrado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            {renderItems(
+              filteredComparacao.filter((item) => {
+                if (tab === "cobertos") return item.status === "coberto";
+                if (tab === "descobertos") return item.status === "descoberto";
+                if (tab === "extra") return item.status === "extra_apolice";
+                return true;
+              })
+            )}
           </TabsContent>
         ))}
       </Tabs>

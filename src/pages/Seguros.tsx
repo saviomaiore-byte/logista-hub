@@ -588,6 +588,7 @@ function ConferenciaTab() {
   const [newArquivoUrl, setNewArquivoUrl] = useState("");
   const [newObs, setNewObs] = useState("");
   const [confTab, setConfTab] = useState("manual");
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();

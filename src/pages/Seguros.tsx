@@ -588,6 +588,7 @@ function ConferenciaTab() {
   const [newArquivoUrl, setNewArquivoUrl] = useState("");
   const [newObs, setNewObs] = useState("");
   const [confTab, setConfTab] = useState("manual");
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();
@@ -910,23 +911,54 @@ function ConferenciaTab() {
                       <Input placeholder="Buscar motorista por nome ou CPF..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="max-w-md" />
                     </div>
 
-                    <div className="bg-card rounded-xl border border-border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">Coberto</TableHead>
-                            <TableHead>Motorista</TableHead>
-                            <TableHead>CPF</TableHead>
-                            <TableHead>Observação</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {loadingItens ? (
-                            <TableRow><TableCell colSpan={4} className="text-center py-8">Carregando...</TableCell></TableRow>
-                          ) : filteredItens?.length === 0 ? (
-                            <TableRow><TableCell colSpan={4} className="text-center py-8"><p className="text-muted-foreground">Nenhum motorista encontrado</p></TableCell></TableRow>
-                          ) : (
-                            filteredItens?.map((item) => (
+                    {loadingItens ? (
+                      <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+                    ) : filteredItens?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">Nenhum motorista encontrado</div>
+                    ) : isMobile ? (
+                      <div className="space-y-3">
+                        {filteredItens?.map((item) => (
+                          <div key={item.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Checkbox checked={item.coberto} onCheckedChange={(checked) => toggleCobertoMutation.mutate({ itemId: item.id, coberto: !!checked })} />
+                                <div>
+                                  <p className="font-medium text-foreground">{item.motoristas?.nome}</p>
+                                  <p className="text-xs text-muted-foreground">{item.motoristas?.cpf}</p>
+                                </div>
+                              </div>
+                              {item.coberto ? (
+                                <Badge className="bg-success text-success-foreground text-xs">Coberto</Badge>
+                              ) : (
+                                <Badge variant="destructive" className="text-xs">Descoberto</Badge>
+                              )}
+                            </div>
+                            <Input
+                              placeholder="Observação..."
+                              defaultValue={item.observacoes || ""}
+                              className="h-8 text-sm"
+                              onBlur={(e) => {
+                                if (e.target.value !== (item.observacoes || "")) {
+                                  updateItemObsMutation.mutate({ itemId: item.id, observacoes: e.target.value });
+                                }
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-card rounded-xl border border-border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">Coberto</TableHead>
+                              <TableHead>Motorista</TableHead>
+                              <TableHead>CPF</TableHead>
+                              <TableHead>Observação</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredItens?.map((item) => (
                               <TableRow key={item.id}>
                                 <TableCell>
                                   <Checkbox checked={item.coberto} onCheckedChange={(checked) => toggleCobertoMutation.mutate({ itemId: item.id, coberto: !!checked })} />
@@ -955,11 +987,11 @@ function ConferenciaTab() {
                                   />
                                 </TableCell>
                               </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 

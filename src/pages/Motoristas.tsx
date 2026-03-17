@@ -209,10 +209,17 @@ export default function Motoristas() {
       }
     }
 
+    // Sync selected transportadoras
+    if (inserted && selectedTransportadoras.length > 0) {
+      await syncTransportadoraLinks(inserted.id, selectedTransportadoras);
+    }
+
     toast.success("Motorista cadastrado!");
     setOpen(false);
+    setSelectedTransportadoras([]);
     resetForm();
     fetchMotoristas();
+    fetchMotoristaTransportadoraLinks();
   };
 
   const handleDelete = async (id: string) => {

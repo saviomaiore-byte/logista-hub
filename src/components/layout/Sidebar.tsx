@@ -6,7 +6,6 @@ import {
   FileText,
   Calendar,
   AlertTriangle,
-  Building2,
   ChevronLeft,
   ChevronRight,
   Truck,
@@ -14,7 +13,6 @@ import {
   Shield,
   UsersRound,
   Menu,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,7 +27,6 @@ const baseNavigation = [
   { name: "Transportadores", href: "/transportadores", icon: Truck },
   { name: "Seguros", href: "/seguros", icon: Shield },
   { name: "Contratos", href: "/contratos", icon: FileText },
-  { name: "Documentos Empresa", href: "/documentos-empresa", icon: Building2 },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados", href: "/certificados", icon: Calendar },
 ];

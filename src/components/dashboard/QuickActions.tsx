@@ -1,7 +1,6 @@
-import { 
-  UserPlus, 
-  FileText, 
-  Send, 
+import {
+  UserPlus,
+  FileText,
   Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 const actions = [
   { name: "Novo Motorista", icon: UserPlus, color: "bg-primary hover:bg-primary/90", path: "/motoristas", action: "new" },
   { name: "Enviar Contrato", icon: FileText, color: "bg-success hover:bg-success/90", path: "/contratos", action: "new" },
-  { name: "Enviar Documento", icon: Send, color: "bg-sidebar-primary hover:bg-sidebar-primary/90", path: "/documentos-empresa", action: "new" },
   { name: "Agendar Renovação", icon: Calendar, color: "bg-primary hover:bg-primary/90", path: "/certificados", action: "new" },
 ];
 

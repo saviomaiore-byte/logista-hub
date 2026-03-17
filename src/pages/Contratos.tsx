@@ -277,6 +277,7 @@ export default function Contratos() {
             <tr className="table-header">
               <th className="text-left px-6 py-4">Tipo</th>
               <th className="text-left px-6 py-4">Empresa</th>
+              <th className="text-left px-6 py-4">Vinculado a</th>
               <th className="text-left px-6 py-4">CNPJ</th>
               <th className="text-left px-6 py-4">Data Envio</th>
               <th className="text-left px-6 py-4">Status</th>

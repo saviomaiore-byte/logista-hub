@@ -89,10 +89,8 @@ const initialValues = {
   status: "ativo",
   cnh_numero: "",
   cnh_vencimento: "",
-  mopp_numero: "",
   mopp_vencimento: "",
-  antt_numero: "",
-  antt_vencimento: "",
+  mopp_vitalicio: false,
 };
 
 export default function Motoristas() {

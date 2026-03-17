@@ -177,7 +177,6 @@ export default function Motoristas() {
       mopp_vencimento: values.mopp_vencimento || null,
       antt_numero: values.antt_numero || null,
       antt_vencimento: values.antt_vencimento || null,
-      is_transportador_proprio: values.is_transportador_proprio,
     };
 
     const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();

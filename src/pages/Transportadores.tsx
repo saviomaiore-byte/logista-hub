@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Link2, Unlink, Truck, Container } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Link2, Unlink, Truck, Container, FileText } from "lucide-react";
+import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { masks } from "@/lib/masks";
@@ -116,6 +117,7 @@ export default function Transportadores() {
 
   // Expanded transportador
   const [expandedTransp, setExpandedTransp] = useState<string | null>(null);
+  const [contratosTransp, setContratosTransp] = useState<Transportador | null>(null);
 
   // Queries
   const { data: transportadores = [] } = useQuery({
@@ -384,6 +386,9 @@ export default function Transportadores() {
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                           <Pencil className="h-4 w-4 mr-1" /> Editar
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
+                          <FileText className="h-4 w-4 mr-1" /> Contratos
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteTransp.mutate(t.id); }}>
                           <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                         </Button>
@@ -449,6 +454,9 @@ export default function Transportadores() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
+                                <FileText className="h-4 w-4" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -942,6 +950,18 @@ export default function Transportadores() {
               </Form>
             )}
           </Formik>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Contratos do Transportador */}
+      <Dialog open={!!contratosTransp} onOpenChange={(v) => !v && setContratosTransp(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Contratos - {contratosTransp?.razao_social}</DialogTitle>
+          </DialogHeader>
+          {contratosTransp && (
+            <ContratoAnexos transportador_id={contratosTransp.id} nome={contratosTransp.razao_social} />
+          )}
         </DialogContent>
       </Dialog>
     </MainLayout>

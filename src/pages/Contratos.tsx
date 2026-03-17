@@ -27,7 +27,9 @@ import {
   XCircle,
   Plus,
   Pencil,
-  Trash2
+  Trash2,
+  Users,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +48,10 @@ interface Contrato {
   status: string;
   observacoes: string | null;
   arquivo_url: string | null;
+  motorista_id: string | null;
+  transportador_id: string | null;
+  motoristas?: { nome: string } | null;
+  transportadores?: { razao_social: string } | null;
 }
 
 const initialValues = {
@@ -66,7 +72,7 @@ export default function Contratos() {
   const fetchContratos = async () => {
     const { data, error } = await supabase
       .from("contratos")
-      .select("*")
+      .select("*, motoristas(nome), transportadores(razao_social)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -218,6 +224,16 @@ export default function Contratos() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {getTipoBadge(contrato.tipo)}
+              {contrato.motoristas?.nome && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" /> {contrato.motoristas.nome}
+                </span>
+              )}
+              {contrato.transportadores?.razao_social && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Building2 className="h-3 w-3" /> {contrato.transportadores.razao_social}
+                </span>
+              )}
               {contrato.data_envio && (
                 <span className="text-xs text-muted-foreground">
                   Enviado: {new Date(contrato.data_envio).toLocaleDateString("pt-BR")}
@@ -261,6 +277,7 @@ export default function Contratos() {
             <tr className="table-header">
               <th className="text-left px-6 py-4">Tipo</th>
               <th className="text-left px-6 py-4">Empresa</th>
+              <th className="text-left px-6 py-4">Vinculado a</th>
               <th className="text-left px-6 py-4">CNPJ</th>
               <th className="text-left px-6 py-4">Data Envio</th>
               <th className="text-left px-6 py-4">Status</th>
@@ -273,6 +290,15 @@ export default function Contratos() {
                 <td className="px-6 py-4">{getTipoBadge(contrato.tipo)}</td>
                 <td className="px-6 py-4">
                   <p className="font-medium text-foreground">{contrato.empresa}</p>
+                </td>
+                <td className="px-6 py-4 text-muted-foreground text-sm">
+                  {contrato.motoristas?.nome && (
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{contrato.motoristas.nome}</span>
+                  )}
+                  {contrato.transportadores?.razao_social && (
+                    <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{contrato.transportadores.razao_social}</span>
+                  )}
+                  {!contrato.motoristas?.nome && !contrato.transportadores?.razao_social && "-"}
                 </td>
                 <td className="px-6 py-4 text-muted-foreground">{contrato.cnpj || "-"}</td>
                 <td className="px-6 py-4 text-muted-foreground">

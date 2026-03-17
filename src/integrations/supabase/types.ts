@@ -271,9 +271,11 @@ export type Database = {
           data_envio: string | null
           empresa: string
           id: string
+          motorista_id: string | null
           observacoes: string | null
           status: string | null
           tipo: string
+          transportador_id: string | null
           updated_at: string
         }
         Insert: {
@@ -284,9 +286,11 @@ export type Database = {
           data_envio?: string | null
           empresa: string
           id?: string
+          motorista_id?: string | null
           observacoes?: string | null
           status?: string | null
           tipo: string
+          transportador_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -297,12 +301,29 @@ export type Database = {
           data_envio?: string | null
           empresa?: string
           id?: string
+          motorista_id?: string | null
           observacoes?: string | null
           status?: string | null
           tipo?: string
+          transportador_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contratos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_transportador_id_fkey"
+            columns: ["transportador_id"]
+            isOneToOne: false
+            referencedRelation: "transportadores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documentos_empresa: {
         Row: {

@@ -737,6 +737,52 @@ export default function Motoristas() {
                         Este motorista é transportador próprio
                       </label>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Transportadoras vinculadas</Label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (!selectedTransportadoras.includes(value)) {
+                            setSelectedTransportadoras([...selectedTransportadoras, value]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma transportadora..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transportadoras
+                            .filter((t) => !selectedTransportadoras.includes(t.id))
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.razao_social} ({t.cpf_cnpj})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedTransportadoras.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedTransportadoras.map((id) => {
+                            const t = transportadoras.find((tr) => tr.id === id);
+                            return (
+                              <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                                <Building2 className="h-3 w-3" />
+                                {t?.razao_social || id}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTransportadoras(selectedTransportadoras.filter((x) => x !== id))}
+                                  className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
                       <div className="grid grid-cols-2 gap-4">

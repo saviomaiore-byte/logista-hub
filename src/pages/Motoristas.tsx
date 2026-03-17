@@ -93,12 +93,30 @@ const initialValues = {
 
 export default function Motoristas() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
+  const [transportadoras, setTransportadoras] = useState<Transportadora[]>([]);
+  const [motoristaTransportadoras, setMotoristaTransportadoras] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
+  const [selectedTransportadoras, setSelectedTransportadoras] = useState<string[]>([]);
   const isMobile = useIsMobile();
+
+  const fetchTransportadoras = async () => {
+    const { data } = await supabase.from("transportadores").select("id, razao_social, cpf_cnpj").order("razao_social");
+    setTransportadoras(data || []);
+  };
+
+  const fetchMotoristaTransportadoraLinks = async () => {
+    const { data } = await supabase.from("transportador_motoristas").select("motorista_id, transportador_id");
+    const map: Record<string, string[]> = {};
+    (data || []).forEach((link) => {
+      if (!map[link.motorista_id]) map[link.motorista_id] = [];
+      map[link.motorista_id].push(link.transportador_id);
+    });
+    setMotoristaTransportadoras(map);
+  };
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase
@@ -116,7 +134,33 @@ export default function Motoristas() {
 
   useEffect(() => {
     fetchMotoristas();
+    fetchTransportadoras();
+    fetchMotoristaTransportadoraLinks();
   }, []);
+
+  const syncTransportadoraLinks = async (motoristaId: string, newTransportadoraIds: string[]) => {
+    // Get current links
+    const { data: current } = await supabase
+      .from("transportador_motoristas")
+      .select("id, transportador_id")
+      .eq("motorista_id", motoristaId);
+    
+    const currentIds = (current || []).map((c) => c.transportador_id);
+    
+    // Delete removed
+    const toRemove = (current || []).filter((c) => !newTransportadoraIds.includes(c.transportador_id));
+    for (const r of toRemove) {
+      await supabase.from("transportador_motoristas").delete().eq("id", r.id);
+    }
+    
+    // Insert new
+    const toAdd = newTransportadoraIds.filter((id) => !currentIds.includes(id));
+    if (toAdd.length > 0) {
+      await supabase.from("transportador_motoristas").insert(
+        toAdd.map((transportador_id) => ({ transportador_id, motorista_id: motoristaId }))
+      );
+    }
+  };
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const motoristaData = {

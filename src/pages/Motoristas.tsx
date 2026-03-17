@@ -443,6 +443,18 @@ export default function Motoristas() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
+                    {motoristaTransportadoras[motorista.id]?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {motoristaTransportadoras[motorista.id].map((tid) => {
+                          const t = transportadoras.find((tr) => tr.id === tid);
+                          return t ? (
+                            <Badge key={tid} variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                              <Building2 className="h-2.5 w-2.5" />{t.razao_social}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     {getStatusBadge(motorista.status)}

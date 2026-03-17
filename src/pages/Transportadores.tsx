@@ -25,6 +25,11 @@ type Transportador = {
   cpf_cnpj: string;
   inscricao_estadual: string | null;
   contato: string | null;
+  endereco: string | null;
+  data_nascimento: string | null;
+  email: string | null;
+  estado_civil: string | null;
+  rg: string | null;
   status: string;
   created_at: string;
   motorista_id: string | null;

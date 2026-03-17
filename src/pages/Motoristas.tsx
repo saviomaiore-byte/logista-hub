@@ -88,7 +88,7 @@ const initialValues = {
   mopp_vencimento: "",
   antt_numero: "",
   antt_vencimento: "",
-  is_transportador_proprio: false,
+  
 };
 
 export default function Motoristas() {

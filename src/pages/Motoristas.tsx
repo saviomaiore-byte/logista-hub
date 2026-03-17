@@ -190,24 +190,6 @@ export default function Motoristas() {
       return;
     }
 
-    // Auto-create transportadora if flagged
-    if (values.is_transportador_proprio && inserted) {
-      const { data: transp, error: transpError } = await supabase.from("transportadores").insert({
-        razao_social: values.nome,
-        cpf_cnpj: values.cpf,
-        status: "ativo",
-        motorista_id: inserted.id,
-      }).select().single();
-
-      if (!transpError && transp) {
-        // Auto-link via junction table
-        await supabase.from("transportador_motoristas").insert({
-          transportador_id: transp.id,
-          motorista_id: inserted.id,
-        });
-      }
-    }
-
     // Sync selected transportadoras
     if (inserted && selectedTransportadoras.length > 0) {
       await syncTransportadoraLinks(inserted.id, selectedTransportadoras);

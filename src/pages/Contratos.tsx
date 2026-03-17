@@ -224,6 +224,16 @@ export default function Contratos() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {getTipoBadge(contrato.tipo)}
+              {contrato.motoristas?.nome && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" /> {contrato.motoristas.nome}
+                </span>
+              )}
+              {contrato.transportadores?.razao_social && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Building2 className="h-3 w-3" /> {contrato.transportadores.razao_social}
+                </span>
+              )}
               {contrato.data_envio && (
                 <span className="text-xs text-muted-foreground">
                   Enviado: {new Date(contrato.data_envio).toLocaleDateString("pt-BR")}

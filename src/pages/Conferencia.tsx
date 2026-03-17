@@ -18,12 +18,28 @@ import { toast } from "sonner";
 interface Documento {
   id: string;
   motorista: string;
+  telefone: string | null;
   tipo: "CNH" | "MOPP" | "ANTT";
   numero: string;
   vencimento: string;
   diasRestantes: number;
   status: "valido" | "proximo" | "vencido";
 }
+
+const formatPhoneToWhatsApp = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+
+  if (digits.length === 11) {
+    return `55${digits}`;
+  }
+
+  if (digits.length === 13 && digits.startsWith("55")) {
+    return digits;
+  }
+
+  return digits;
+};
 
 export default function Conferencia() {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
@@ -35,7 +51,7 @@ export default function Conferencia() {
   const fetchDocumentos = async () => {
     const { data, error } = await supabase
       .from("motoristas")
-      .select("id, nome, cnh_numero, cnh_vencimento, mopp_numero, mopp_vencimento, antt_numero, antt_vencimento")
+      .select("id, nome, telefone, cnh_numero, cnh_vencimento, mopp_numero, mopp_vencimento, antt_numero, antt_vencimento")
       .order("nome");
 
     if (error) {
@@ -62,6 +78,7 @@ export default function Conferencia() {
         docs.push({
           id: `${motorista.id}-${tipo}`,
           motorista: motorista.nome,
+          telefone: motorista.telefone,
           tipo,
           numero,
           vencimento,
@@ -83,6 +100,37 @@ export default function Conferencia() {
   useEffect(() => {
     fetchDocumentos();
   }, []);
+
+  const getMensagemWhatsApp = (doc: Documento) => {
+    const vencimentoFormatado = new Date(doc.vencimento).toLocaleDateString("pt-BR");
+
+    if (doc.status === "vencido") {
+      return `Olá, ${doc.motorista}! Sua CNH venceu em ${vencimentoFormatado}. Por favor, envie a CNH atualizada assim que possível.`;
+    }
+
+    return `Olá, ${doc.motorista}! Sua CNH vence em ${vencimentoFormatado}. Por favor, verifique a renovação e envie a CNH atualizada antes do vencimento.`;
+  };
+
+  const handleWhatsAppNotification = (doc: Documento) => {
+    if (doc.tipo !== "CNH") {
+      toast.info("A notificação por WhatsApp está disponível apenas para CNH.");
+      return;
+    }
+
+    if (!doc.telefone) {
+      toast.error("Este motorista não possui telefone cadastrado.");
+      return;
+    }
+
+    const phone = formatPhoneToWhatsApp(doc.telefone);
+    if (!phone) {
+      toast.error("Telefone inválido para envio pelo WhatsApp.");
+      return;
+    }
+
+    const mensagem = encodeURIComponent(getMensagemWhatsApp(doc));
+    window.open(`https://wa.me/${phone}?text=${mensagem}`, "_blank", "noopener,noreferrer");
+  };
 
   const getStatusBadge = (doc: Documento) => {
     if (doc.status === "vencido") {
@@ -124,9 +172,9 @@ export default function Conferencia() {
     return matchesSearch && matchesFilter;
   });
 
-  const vencidos = documentos.filter(d => d.status === "vencido").length;
-  const proximos = documentos.filter(d => d.status === "proximo").length;
-  const validos = documentos.filter(d => d.status === "valido").length;
+  const vencidos = documentos.filter((d) => d.status === "vencido").length;
+  const proximos = documentos.filter((d) => d.status === "proximo").length;
+  const validos = documentos.filter((d) => d.status === "valido").length;
 
   return (
     <MainLayout>
@@ -138,7 +186,6 @@ export default function Conferencia() {
           </p>
         </div>
 
-        {/* Alert Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-8">
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/20">
@@ -169,7 +216,6 @@ export default function Conferencia() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
           <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -206,8 +252,8 @@ export default function Conferencia() {
           <div className="text-center py-12">
             <FileWarning className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              {documentos.length === 0 
-                ? "Nenhum documento cadastrado. Cadastre motoristas com documentos." 
+              {documentos.length === 0
+                ? "Nenhum documento cadastrado. Cadastre motoristas com documentos."
                 : "Nenhum documento encontrado com os filtros aplicados."}
             </p>
           </div>
@@ -242,10 +288,17 @@ export default function Conferencia() {
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-border">
                   {getStatusBadge(doc)}
-                  <Button variant="ghost" size="sm" className="h-8 gap-1">
-                    <Send className="h-3 w-3" />
-                    Notificar
-                  </Button>
+                  {doc.tipo === "CNH" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1"
+                      onClick={() => handleWhatsAppNotification(doc)}
+                    >
+                      <Send className="h-3 w-3" />
+                      WhatsApp
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -265,10 +318,13 @@ export default function Conferencia() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredDocs.map((doc) => (
-                  <tr key={doc.id} className={cn(
-                    "hover:bg-muted/30 transition-colors",
-                    doc.status === "vencido" && "bg-destructive/5"
-                  )}>
+                  <tr
+                    key={doc.id}
+                    className={cn(
+                      "hover:bg-muted/30 transition-colors",
+                      doc.status === "vencido" && "bg-destructive/5"
+                    )}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {doc.status === "vencido" && (
@@ -284,10 +340,17 @@ export default function Conferencia() {
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(doc)}</td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" className="h-8 gap-1">
-                        <Send className="h-3 w-3" />
-                        Notificar
-                      </Button>
+                      {doc.tipo === "CNH" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1"
+                          onClick={() => handleWhatsAppNotification(doc)}
+                        >
+                          <Send className="h-3 w-3" />
+                          WhatsApp
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

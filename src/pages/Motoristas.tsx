@@ -693,9 +693,14 @@ export default function Motoristas() {
                     }
                   }
 
+                  // Sync transportadora links
+                  await syncTransportadoraLinks(editMotorista.id, selectedTransportadoras);
+
                   toast.success("Motorista atualizado!");
                   setEditMotorista(null);
+                  setSelectedTransportadoras([]);
                   fetchMotoristas();
+                  fetchMotoristaTransportadoraLinks();
                 }}
               >
                 {({ isSubmitting, setFieldValue, values }) => (

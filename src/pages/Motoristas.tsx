@@ -41,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ interface Motorista {
   mopp_vencimento: string | null;
   antt_numero: string | null;
   antt_vencimento: string | null;
-  is_transportador_proprio: boolean;
+  
 }
 
 const initialValues = {
@@ -88,7 +88,7 @@ const initialValues = {
   mopp_vencimento: "",
   antt_numero: "",
   antt_vencimento: "",
-  is_transportador_proprio: false,
+  
 };
 
 export default function Motoristas() {
@@ -177,7 +177,6 @@ export default function Motoristas() {
       mopp_vencimento: values.mopp_vencimento || null,
       antt_numero: values.antt_numero || null,
       antt_vencimento: values.antt_vencimento || null,
-      is_transportador_proprio: values.is_transportador_proprio,
     };
 
     const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();
@@ -189,24 +188,6 @@ export default function Motoristas() {
         toast.error("Erro ao salvar motorista");
       }
       return;
-    }
-
-    // Auto-create transportadora if flagged
-    if (values.is_transportador_proprio && inserted) {
-      const { data: transp, error: transpError } = await supabase.from("transportadores").insert({
-        razao_social: values.nome,
-        cpf_cnpj: values.cpf,
-        status: "ativo",
-        motorista_id: inserted.id,
-      }).select().single();
-
-      if (!transpError && transp) {
-        // Auto-link via junction table
-        await supabase.from("transportador_motoristas").insert({
-          transportador_id: transp.id,
-          motorista_id: inserted.id,
-        });
-      }
     }
 
     // Sync selected transportadoras
@@ -328,16 +309,6 @@ export default function Motoristas() {
                       </FormSelectWrapper>
                     </div>
 
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
-                      <Checkbox
-                        id="is_transportador_proprio"
-                        checked={values.is_transportador_proprio}
-                        onCheckedChange={(checked) => setFieldValue("is_transportador_proprio", !!checked)}
-                      />
-                      <label htmlFor="is_transportador_proprio" className="text-sm font-medium cursor-pointer">
-                        Este motorista é transportador próprio
-                      </label>
-                    </div>
 
                     <div className="space-y-2">
                       <Label>Transportadoras vinculadas</Label>
@@ -435,13 +406,8 @@ export default function Motoristas() {
             {filteredMotoristas.map((motorista) => (
               <div key={motorista.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
                 <div className="flex items-start justify-between">
-                   <div>
-                    <div className="flex items-center gap-2">
+                    <div>
                       <p className="font-semibold text-foreground">{motorista.nome}</p>
-                      {motorista.is_transportador_proprio && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">Transp. Próprio</Badge>
-                      )}
-                    </div>
                     <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
                     {motoristaTransportadoras[motorista.id]?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -519,12 +485,7 @@ export default function Motoristas() {
                   <tr key={motorista.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="flex items-center gap-2">
                           <p className="font-medium text-foreground">{motorista.nome}</p>
-                          {motorista.is_transportador_proprio && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Transp. Próprio</Badge>
-                          )}
-                        </div>
                         <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
                         {motoristaTransportadoras[motorista.id]?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -660,7 +621,7 @@ export default function Motoristas() {
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
                   antt_numero: editMotorista.antt_numero || "",
                   antt_vencimento: editMotorista.antt_vencimento || "",
-                  is_transportador_proprio: editMotorista.is_transportador_proprio || false,
+                  
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {
@@ -680,7 +641,7 @@ export default function Motoristas() {
                       mopp_vencimento: values.mopp_vencimento || null,
                       antt_numero: values.antt_numero || null,
                       antt_vencimento: values.antt_vencimento || null,
-                      is_transportador_proprio: values.is_transportador_proprio,
+                      
                     })
                     .eq("id", editMotorista.id);
                   if (error) {
@@ -688,34 +649,6 @@ export default function Motoristas() {
                     return;
                   }
 
-                  // Handle transportador próprio toggle
-                  if (values.is_transportador_proprio && !editMotorista.is_transportador_proprio) {
-                    // Create transportadora
-                    const { data: transp } = await supabase.from("transportadores").insert({
-                      razao_social: values.nome,
-                      cpf_cnpj: values.cpf,
-                      status: "ativo",
-                      motorista_id: editMotorista.id,
-                    }).select().single();
-                    if (transp) {
-                      await supabase.from("transportador_motoristas").insert({
-                        transportador_id: transp.id,
-                        motorista_id: editMotorista.id,
-                      });
-                    }
-                  } else if (!values.is_transportador_proprio && editMotorista.is_transportador_proprio) {
-                    // Remove auto-created transportadora
-                    const { data: existing } = await supabase
-                      .from("transportadores")
-                      .select("id")
-                      .eq("motorista_id", editMotorista.id);
-                    if (existing && existing.length > 0) {
-                      for (const t of existing) {
-                        await supabase.from("transportador_motoristas").delete().eq("transportador_id", t.id).eq("motorista_id", editMotorista.id);
-                        await supabase.from("transportadores").delete().eq("id", t.id);
-                      }
-                    }
-                  }
 
                   // Sync transportadora links
                   await syncTransportadoraLinks(editMotorista.id, selectedTransportadoras);
@@ -750,16 +683,6 @@ export default function Motoristas() {
                           </SelectContent>
                         </Select>
                       </FormSelectWrapper>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
-                      <Checkbox
-                        id="edit_is_transportador_proprio"
-                        checked={values.is_transportador_proprio}
-                        onCheckedChange={(checked) => setFieldValue("is_transportador_proprio", !!checked)}
-                      />
-                      <label htmlFor="edit_is_transportador_proprio" className="text-sm font-medium cursor-pointer">
-                        Este motorista é transportador próprio
-                      </label>
                     </div>
 
                     <div className="space-y-2">

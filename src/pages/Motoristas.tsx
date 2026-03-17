@@ -6,6 +6,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MotoristaAnexos } from "@/components/motorista/MotoristaAnexos";
+import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { Input } from "@/components/ui/input";
 import { 
   Dialog, 

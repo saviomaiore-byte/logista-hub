@@ -605,8 +605,7 @@ export default function Motoristas() {
               <TabsContent value="docs" className="space-y-4 mt-4">
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
-                  { label: "MOPP", numero: docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vencimento },
-                  { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
+                  { label: "MOPP", numero: (docsMotorista as any)?.mopp_vitalicio ? "Vitalício" : null, vencimento: docsMotorista?.mopp_vencimento },
                 ].map((doc) => (
                   <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
                     <div>

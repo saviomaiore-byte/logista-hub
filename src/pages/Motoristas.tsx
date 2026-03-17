@@ -71,10 +71,8 @@ interface Motorista {
   status: string;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
-  mopp_numero: string | null;
   mopp_vencimento: string | null;
-  antt_numero: string | null;
-  antt_vencimento: string | null;
+  mopp_vitalicio: boolean;
 }
 
 const initialValues = {

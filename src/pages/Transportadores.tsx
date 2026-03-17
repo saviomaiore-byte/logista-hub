@@ -64,6 +64,11 @@ const transportadorSchema = Yup.object().shape({
   cpf_cnpj: Yup.string().trim().required("CPF/CNPJ é obrigatório"),
   inscricao_estadual: Yup.string().trim().nullable(),
   contato: Yup.string().trim().nullable(),
+  endereco: Yup.string().trim().nullable(),
+  data_nascimento: Yup.string().nullable(),
+  email: Yup.string().trim().email("Email inválido").nullable(),
+  estado_civil: Yup.string().trim().nullable(),
+  rg: Yup.string().trim().nullable(),
   status: Yup.string().oneOf(["ativo", "inativo"]).required(),
 });
 

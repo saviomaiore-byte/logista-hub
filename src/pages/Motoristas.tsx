@@ -64,6 +64,10 @@ interface Motorista {
   email: string | null;
   cidade: string | null;
   estado: string | null;
+  endereco: string | null;
+  data_nascimento: string | null;
+  estado_civil: string | null;
+  rg: string | null;
   status: string;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
@@ -71,7 +75,6 @@ interface Motorista {
   mopp_vencimento: string | null;
   antt_numero: string | null;
   antt_vencimento: string | null;
-  
 }
 
 const initialValues = {
@@ -81,6 +84,10 @@ const initialValues = {
   email: "",
   cidade: "",
   estado: "",
+  endereco: "",
+  data_nascimento: "",
+  estado_civil: "",
+  rg: "",
   status: "ativo",
   cnh_numero: "",
   cnh_vencimento: "",
@@ -88,7 +95,6 @@ const initialValues = {
   mopp_vencimento: "",
   antt_numero: "",
   antt_vencimento: "",
-  
 };
 
 export default function Motoristas() {
@@ -170,6 +176,10 @@ export default function Motoristas() {
       email: values.email || null,
       cidade: values.cidade || null,
       estado: values.estado || null,
+      endereco: values.endereco || null,
+      data_nascimento: values.data_nascimento || null,
+      estado_civil: values.estado_civil || null,
+      rg: values.rg || null,
       status: values.status,
       cnh_numero: values.cnh_numero || null,
       cnh_vencimento: values.cnh_vencimento || null,
@@ -283,6 +293,30 @@ export default function Motoristas() {
                         label="Email" 
                         type="email" 
                       />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField name="rg" label="RG" />
+                      <FormField name="data_nascimento" label="Data de Nascimento" type="date" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormSelectWrapper name="estado_civil" label="Estado Civil">
+                        <Select
+                          value={values.estado_civil || ""}
+                          onValueChange={(value) => setFieldValue("estado_civil", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                            <SelectItem value="casado">Casado(a)</SelectItem>
+                            <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                            <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                            <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormField name="endereco" label="Endereço" />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField name="cidade" label="Cidade" />
@@ -614,6 +648,10 @@ export default function Motoristas() {
                   email: editMotorista.email || "",
                   cidade: editMotorista.cidade || "",
                   estado: editMotorista.estado || "",
+                  endereco: (editMotorista as any).endereco || "",
+                  data_nascimento: (editMotorista as any).data_nascimento || "",
+                  estado_civil: (editMotorista as any).estado_civil || "",
+                  rg: (editMotorista as any).rg || "",
                   status: editMotorista.status || "ativo",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
@@ -621,7 +659,6 @@ export default function Motoristas() {
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
                   antt_numero: editMotorista.antt_numero || "",
                   antt_vencimento: editMotorista.antt_vencimento || "",
-                  
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {
@@ -634,6 +671,10 @@ export default function Motoristas() {
                       email: values.email || null,
                       cidade: values.cidade || null,
                       estado: values.estado || null,
+                      endereco: values.endereco || null,
+                      data_nascimento: values.data_nascimento || null,
+                      estado_civil: values.estado_civil || null,
+                      rg: values.rg || null,
                       status: values.status,
                       cnh_numero: values.cnh_numero || null,
                       cnh_vencimento: values.cnh_vencimento || null,
@@ -641,7 +682,6 @@ export default function Motoristas() {
                       mopp_vencimento: values.mopp_vencimento || null,
                       antt_numero: values.antt_numero || null,
                       antt_vencimento: values.antt_vencimento || null,
-                      
                     })
                     .eq("id", editMotorista.id);
                   if (error) {
@@ -669,6 +709,30 @@ export default function Motoristas() {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField name="telefone" label="Telefone" placeholder="(00) 00000-0000" mask="telefone" />
                       <FormField name="email" label="Email" type="email" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField name="rg" label="RG" />
+                      <FormField name="data_nascimento" label="Data de Nascimento" type="date" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormSelectWrapper name="estado_civil" label="Estado Civil">
+                        <Select
+                          value={values.estado_civil || ""}
+                          onValueChange={(value) => setFieldValue("estado_civil", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                            <SelectItem value="casado">Casado(a)</SelectItem>
+                            <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                            <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                            <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormField name="endereco" label="Endereço" />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <FormField name="cidade" label="Cidade" />

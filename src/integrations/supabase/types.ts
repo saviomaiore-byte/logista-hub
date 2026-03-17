@@ -387,13 +387,17 @@ export type Database = {
           cnh_vencimento: string | null
           cpf: string
           created_at: string
+          data_nascimento: string | null
           email: string | null
+          endereco: string | null
           estado: string | null
+          estado_civil: string | null
           id: string
           is_transportador_proprio: boolean
           mopp_numero: string | null
           mopp_vencimento: string | null
           nome: string
+          rg: string | null
           status: string | null
           telefone: string | null
           updated_at: string
@@ -406,13 +410,17 @@ export type Database = {
           cnh_vencimento?: string | null
           cpf: string
           created_at?: string
+          data_nascimento?: string | null
           email?: string | null
+          endereco?: string | null
           estado?: string | null
+          estado_civil?: string | null
           id?: string
           is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
           nome: string
+          rg?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
@@ -425,13 +433,17 @@ export type Database = {
           cnh_vencimento?: string | null
           cpf?: string
           created_at?: string
+          data_nascimento?: string | null
           email?: string | null
+          endereco?: string | null
           estado?: string | null
+          estado_civil?: string | null
           id?: string
           is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
           nome?: string
+          rg?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
@@ -681,10 +693,15 @@ export type Database = {
           contato: string | null
           cpf_cnpj: string
           created_at: string
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          estado_civil: string | null
           id: string
           inscricao_estadual: string | null
           motorista_id: string | null
           razao_social: string
+          rg: string | null
           status: string
           updated_at: string
         }
@@ -692,10 +709,15 @@ export type Database = {
           contato?: string | null
           cpf_cnpj: string
           created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado_civil?: string | null
           id?: string
           inscricao_estadual?: string | null
           motorista_id?: string | null
           razao_social: string
+          rg?: string | null
           status?: string
           updated_at?: string
         }
@@ -703,10 +725,15 @@ export type Database = {
           contato?: string | null
           cpf_cnpj?: string
           created_at?: string
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado_civil?: string | null
           id?: string
           inscricao_estadual?: string | null
           motorista_id?: string | null
           razao_social?: string
+          rg?: string | null
           status?: string
           updated_at?: string
         }

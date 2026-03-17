@@ -25,6 +25,11 @@ type Transportador = {
   cpf_cnpj: string;
   inscricao_estadual: string | null;
   contato: string | null;
+  endereco: string | null;
+  data_nascimento: string | null;
+  email: string | null;
+  estado_civil: string | null;
+  rg: string | null;
   status: string;
   created_at: string;
   motorista_id: string | null;
@@ -59,6 +64,11 @@ const transportadorSchema = Yup.object().shape({
   cpf_cnpj: Yup.string().trim().required("CPF/CNPJ é obrigatório"),
   inscricao_estadual: Yup.string().trim().nullable(),
   contato: Yup.string().trim().nullable(),
+  endereco: Yup.string().trim().nullable(),
+  data_nascimento: Yup.string().nullable(),
+  email: Yup.string().trim().email("Email inválido").nullable(),
+  estado_civil: Yup.string().trim().nullable(),
+  rg: Yup.string().trim().nullable(),
   status: Yup.string().oneOf(["ativo", "inativo"]).required(),
 });
 
@@ -652,6 +662,11 @@ export default function Transportadores() {
               cpf_cnpj: editingTransp?.cpf_cnpj || "",
               inscricao_estadual: editingTransp?.inscricao_estadual || "",
               contato: editingTransp?.contato || "",
+              endereco: editingTransp?.endereco || "",
+              data_nascimento: editingTransp?.data_nascimento || "",
+              email: editingTransp?.email || "",
+              estado_civil: editingTransp?.estado_civil || "",
+              rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
             }}
             validationSchema={transportadorSchema}
@@ -681,8 +696,42 @@ export default function Transportadores() {
                   <Field as={Input} name="inscricao_estadual" />
                 </div>
                 <div>
-                  <Label>Contato</Label>
+                  <Label>Contato / Telefone</Label>
                   <Field as={Input} name="contato" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Email</Label>
+                    <Field as={Input} name="email" type="email" />
+                    {errors.email && touched.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <Label>RG</Label>
+                    <Field as={Input} name="rg" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Data de Nascimento</Label>
+                    <Field as={Input} name="data_nascimento" type="date" />
+                  </div>
+                  <div>
+                    <Label>Estado Civil</Label>
+                    <Select value={values.estado_civil || ""} onValueChange={(v) => setFieldValue("estado_civil", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                        <SelectItem value="casado">Casado(a)</SelectItem>
+                        <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                        <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                        <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Endereço</Label>
+                  <Field as={Input} name="endereco" />
                 </div>
                 <div>
                   <Label>Status</Label>

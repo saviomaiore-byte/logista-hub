@@ -649,10 +649,8 @@ export default function Motoristas() {
                   status: editMotorista.status || "ativo",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
-                  mopp_numero: editMotorista.mopp_numero || "",
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
-                  antt_numero: editMotorista.antt_numero || "",
-                  antt_vencimento: editMotorista.antt_vencimento || "",
+                  mopp_vitalicio: (editMotorista as any).mopp_vitalicio || false,
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {

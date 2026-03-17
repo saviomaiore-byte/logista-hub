@@ -117,6 +117,7 @@ export default function Transportadores() {
 
   // Expanded transportador
   const [expandedTransp, setExpandedTransp] = useState<string | null>(null);
+  const [contratosTransp, setContratosTransp] = useState<Transportador | null>(null);
 
   // Queries
   const { data: transportadores = [] } = useQuery({

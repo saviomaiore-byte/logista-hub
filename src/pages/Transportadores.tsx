@@ -952,6 +952,18 @@ export default function Transportadores() {
           </Formik>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Contratos do Transportador */}
+      <Dialog open={!!contratosTransp} onOpenChange={(v) => !v && setContratosTransp(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Contratos - {contratosTransp?.razao_social}</DialogTitle>
+          </DialogHeader>
+          {contratosTransp && (
+            <ContratoAnexos transportador_id={contratosTransp.id} nome={contratosTransp.razao_social} />
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

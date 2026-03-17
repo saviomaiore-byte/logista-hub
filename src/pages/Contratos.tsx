@@ -291,6 +291,15 @@ export default function Contratos() {
                 <td className="px-6 py-4">
                   <p className="font-medium text-foreground">{contrato.empresa}</p>
                 </td>
+                <td className="px-6 py-4 text-muted-foreground text-sm">
+                  {contrato.motoristas?.nome && (
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{contrato.motoristas.nome}</span>
+                  )}
+                  {contrato.transportadores?.razao_social && (
+                    <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{contrato.transportadores.razao_social}</span>
+                  )}
+                  {!contrato.motoristas?.nome && !contrato.transportadores?.razao_social && "-"}
+                </td>
                 <td className="px-6 py-4 text-muted-foreground">{contrato.cnpj || "-"}</td>
                 <td className="px-6 py-4 text-muted-foreground">
                   {contrato.data_envio ? new Date(contrato.data_envio).toLocaleDateString("pt-BR") : "-"}

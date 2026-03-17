@@ -662,6 +662,11 @@ export default function Transportadores() {
               cpf_cnpj: editingTransp?.cpf_cnpj || "",
               inscricao_estadual: editingTransp?.inscricao_estadual || "",
               contato: editingTransp?.contato || "",
+              endereco: editingTransp?.endereco || "",
+              data_nascimento: editingTransp?.data_nascimento || "",
+              email: editingTransp?.email || "",
+              estado_civil: editingTransp?.estado_civil || "",
+              rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
             }}
             validationSchema={transportadorSchema}

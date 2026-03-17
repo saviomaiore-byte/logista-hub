@@ -388,10 +388,19 @@ export default function Motoristas() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
-                        <FormField name="mopp_numero" label="MOPP Número" />
-                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" />
-                        <FormField name="antt_numero" label="ANTT Número" />
-                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
+                        <div className="flex items-end pb-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="mopp_vitalicio"
+                              checked={values.mopp_vitalicio}
+                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                            />
+                            <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

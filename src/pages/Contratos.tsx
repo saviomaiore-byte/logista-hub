@@ -70,7 +70,7 @@ export default function Contratos() {
   const fetchContratos = async () => {
     const { data, error } = await supabase
       .from("contratos")
-      .select("*")
+      .select("*, motoristas(nome), transportadores(razao_social)")
       .order("created_at", { ascending: false });
 
     if (error) {

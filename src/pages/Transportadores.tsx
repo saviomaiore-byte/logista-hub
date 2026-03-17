@@ -386,6 +386,9 @@ export default function Transportadores() {
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                           <Pencil className="h-4 w-4 mr-1" /> Editar
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
+                          <FileText className="h-4 w-4 mr-1" /> Contratos
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteTransp.mutate(t.id); }}>
                           <Trash2 className="h-4 w-4 mr-1 text-destructive" />
                         </Button>

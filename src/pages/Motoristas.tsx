@@ -621,7 +621,7 @@ export default function Motoristas() {
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
                   antt_numero: editMotorista.antt_numero || "",
                   antt_vencimento: editMotorista.antt_vencimento || "",
-                  is_transportador_proprio: editMotorista.is_transportador_proprio || false,
+                  
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {

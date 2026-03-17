@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
   currentUrl?: string | null;
@@ -22,14 +23,11 @@ export function FileUpload({
   label = "Anexar Arquivo",
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file size (max 10MB)
+  const processFile = async (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "Arquivo muito grande",
@@ -71,6 +69,35 @@ export function FileUpload({
       }
     }
   };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  }, [folder]);
 
   const getFileName = (url: string) => {
     const parts = url.split("/");
@@ -118,25 +145,34 @@ export function FileUpload({
           </div>
         </div>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={cn(
+            "w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+            uploading && "pointer-events-none opacity-60"
+          )}
         >
           {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Enviando...
-            </>
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Enviando...</span>
+            </div>
           ) : (
-            <>
-              <Upload className="h-4 w-4" />
-              {label}
-            </>
+            <div className="flex flex-col items-center gap-2">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">{label}</span>
+              <span className="text-xs text-muted-foreground">
+                Arraste um arquivo ou clique para selecionar
+              </span>
+            </div>
           )}
-        </Button>
+        </div>
       )}
     </div>
   );

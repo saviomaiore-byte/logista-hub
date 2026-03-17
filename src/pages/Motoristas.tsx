@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Formik, Form } from "formik";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -71,10 +72,8 @@ interface Motorista {
   status: string;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
-  mopp_numero: string | null;
   mopp_vencimento: string | null;
-  antt_numero: string | null;
-  antt_vencimento: string | null;
+  mopp_vitalicio: boolean;
 }
 
 const initialValues = {
@@ -91,10 +90,8 @@ const initialValues = {
   status: "ativo",
   cnh_numero: "",
   cnh_vencimento: "",
-  mopp_numero: "",
   mopp_vencimento: "",
-  antt_numero: "",
-  antt_vencimento: "",
+  mopp_vitalicio: false,
 };
 
 export default function Motoristas() {
@@ -183,10 +180,8 @@ export default function Motoristas() {
       status: values.status,
       cnh_numero: values.cnh_numero || null,
       cnh_vencimento: values.cnh_vencimento || null,
-      mopp_numero: values.mopp_numero || null,
-      mopp_vencimento: values.mopp_vencimento || null,
-      antt_numero: values.antt_numero || null,
-      antt_vencimento: values.antt_vencimento || null,
+      mopp_vencimento: values.mopp_vitalicio ? null : (values.mopp_vencimento || null),
+      mopp_vitalicio: values.mopp_vitalicio,
     };
 
     const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();
@@ -393,10 +388,19 @@ export default function Motoristas() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
-                        <FormField name="mopp_numero" label="MOPP Número" />
-                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" />
-                        <FormField name="antt_numero" label="ANTT Número" />
-                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
+                        <div className="flex items-end pb-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="mopp_vitalicio"
+                              checked={values.mopp_vitalicio}
+                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                            />
+                            <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -610,8 +614,7 @@ export default function Motoristas() {
               <TabsContent value="docs" className="space-y-4 mt-4">
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
-                  { label: "MOPP", numero: docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vencimento },
-                  { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
+                  { label: "MOPP", numero: (docsMotorista as any)?.mopp_vitalicio ? "Vitalício" : null, vencimento: docsMotorista?.mopp_vencimento },
                 ].map((doc) => (
                   <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
                     <div>
@@ -655,10 +658,8 @@ export default function Motoristas() {
                   status: editMotorista.status || "ativo",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
-                  mopp_numero: editMotorista.mopp_numero || "",
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
-                  antt_numero: editMotorista.antt_numero || "",
-                  antt_vencimento: editMotorista.antt_vencimento || "",
+                  mopp_vitalicio: (editMotorista as any).mopp_vitalicio || false,
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {
@@ -678,10 +679,8 @@ export default function Motoristas() {
                       status: values.status,
                       cnh_numero: values.cnh_numero || null,
                       cnh_vencimento: values.cnh_vencimento || null,
-                      mopp_numero: values.mopp_numero || null,
-                      mopp_vencimento: values.mopp_vencimento || null,
-                      antt_numero: values.antt_numero || null,
-                      antt_vencimento: values.antt_vencimento || null,
+                      mopp_vencimento: values.mopp_vitalicio ? null : (values.mopp_vencimento || null),
+                      mopp_vitalicio: values.mopp_vitalicio,
                     })
                     .eq("id", editMotorista.id);
                   if (error) {
@@ -799,10 +798,19 @@ export default function Motoristas() {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
-                        <FormField name="mopp_numero" label="MOPP Número" />
-                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" />
-                        <FormField name="antt_numero" label="ANTT Número" />
-                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
+                        <div className="flex items-end pb-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="mopp_vitalicio_edit"
+                              checked={values.mopp_vitalicio}
+                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                            />
+                            <Label htmlFor="mopp_vitalicio_edit" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>

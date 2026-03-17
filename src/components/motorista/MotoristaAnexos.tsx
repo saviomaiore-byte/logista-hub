@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Eye, Loader2, File, Image } from "lucide-react";
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Arquivo {
   id: string;
@@ -28,6 +29,7 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
   const [arquivos, setArquivos] = useState<Arquivo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,10 +53,7 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
     fetchArquivos();
   }, [motoristaId]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
+  const processFiles = async (files: FileList | File[]) => {
     setUploading(true);
 
     for (const file of Array.from(files)) {
@@ -100,10 +99,38 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processFiles(files);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      await processFiles(files);
+    }
+  }, [motoristaId]);
+
   const handleDelete = async (arquivo: Arquivo) => {
     if (!confirm(`Excluir "${arquivo.nome_arquivo}"?`)) return;
 
-    // Extract storage path from URL
     const urlParts = arquivo.arquivo_url.split("/documentos/");
     const storagePath = urlParts[urlParts.length - 1];
 
@@ -143,7 +170,7 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
 
   return (
     <div className="space-y-4">
-      {/* Upload */}
+      {/* Upload with drag-and-drop */}
       <input
         ref={fileInputRef}
         type="file"
@@ -152,18 +179,34 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
         onChange={handleUpload}
         className="hidden"
       />
-      <Button
-        variant="outline"
-        className="w-full gap-2"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        className={cn(
+          "w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          isDragging
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+          uploading && "pointer-events-none opacity-60"
+        )}
       >
         {uploading ? (
-          <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Enviando...</span>
+          </div>
         ) : (
-          <><Upload className="h-4 w-4" /> Anexar Arquivo</>
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Anexar Arquivo</span>
+            <span className="text-xs text-muted-foreground">
+              Arraste arquivos ou clique para selecionar
+            </span>
+          </div>
         )}
-      </Button>
+      </div>
 
       {/* List */}
       {loading ? (

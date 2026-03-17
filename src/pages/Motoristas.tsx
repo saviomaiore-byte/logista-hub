@@ -649,34 +649,6 @@ export default function Motoristas() {
                     return;
                   }
 
-                  // Handle transportador próprio toggle
-                  if (values.is_transportador_proprio && !editMotorista.is_transportador_proprio) {
-                    // Create transportadora
-                    const { data: transp } = await supabase.from("transportadores").insert({
-                      razao_social: values.nome,
-                      cpf_cnpj: values.cpf,
-                      status: "ativo",
-                      motorista_id: editMotorista.id,
-                    }).select().single();
-                    if (transp) {
-                      await supabase.from("transportador_motoristas").insert({
-                        transportador_id: transp.id,
-                        motorista_id: editMotorista.id,
-                      });
-                    }
-                  } else if (!values.is_transportador_proprio && editMotorista.is_transportador_proprio) {
-                    // Remove auto-created transportadora
-                    const { data: existing } = await supabase
-                      .from("transportadores")
-                      .select("id")
-                      .eq("motorista_id", editMotorista.id);
-                    if (existing && existing.length > 0) {
-                      for (const t of existing) {
-                        await supabase.from("transportador_motoristas").delete().eq("transportador_id", t.id).eq("motorista_id", editMotorista.id);
-                        await supabase.from("transportadores").delete().eq("id", t.id);
-                      }
-                    }
-                  }
 
                   // Sync transportadora links
                   await syncTransportadoraLinks(editMotorista.id, selectedTransportadoras);

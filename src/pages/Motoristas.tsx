@@ -671,6 +671,10 @@ export default function Motoristas() {
                       email: values.email || null,
                       cidade: values.cidade || null,
                       estado: values.estado || null,
+                      endereco: values.endereco || null,
+                      data_nascimento: values.data_nascimento || null,
+                      estado_civil: values.estado_civil || null,
+                      rg: values.rg || null,
                       status: values.status,
                       cnh_numero: values.cnh_numero || null,
                       cnh_vencimento: values.cnh_vencimento || null,
@@ -678,7 +682,6 @@ export default function Motoristas() {
                       mopp_vencimento: values.mopp_vencimento || null,
                       antt_numero: values.antt_numero || null,
                       antt_vencimento: values.antt_vencimento || null,
-                      
                     })
                     .eq("id", editMotorista.id);
                   if (error) {

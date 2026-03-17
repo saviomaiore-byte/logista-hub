@@ -64,6 +64,10 @@ interface Motorista {
   email: string | null;
   cidade: string | null;
   estado: string | null;
+  endereco: string | null;
+  data_nascimento: string | null;
+  estado_civil: string | null;
+  rg: string | null;
   status: string;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
@@ -71,7 +75,6 @@ interface Motorista {
   mopp_vencimento: string | null;
   antt_numero: string | null;
   antt_vencimento: string | null;
-  
 }
 
 const initialValues = {

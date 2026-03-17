@@ -453,7 +453,7 @@ export default function Motoristas() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditMotorista(motorista)}>
+                        <DropdownMenuItem onClick={() => { setEditMotorista(motorista); setSelectedTransportadoras(motoristaTransportadoras[motorista.id] || []); }}>
                           <Edit className="h-4 w-4 mr-2" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setDocsMotorista(motorista)}>

@@ -179,10 +179,8 @@ export default function Motoristas() {
       status: values.status,
       cnh_numero: values.cnh_numero || null,
       cnh_vencimento: values.cnh_vencimento || null,
-      mopp_numero: values.mopp_numero || null,
-      mopp_vencimento: values.mopp_vencimento || null,
-      antt_numero: values.antt_numero || null,
-      antt_vencimento: values.antt_vencimento || null,
+      mopp_vencimento: values.mopp_vitalicio ? null : (values.mopp_vencimento || null),
+      mopp_vitalicio: values.mopp_vitalicio,
     };
 
     const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();

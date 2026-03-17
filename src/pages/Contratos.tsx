@@ -46,6 +46,10 @@ interface Contrato {
   status: string;
   observacoes: string | null;
   arquivo_url: string | null;
+  motorista_id: string | null;
+  transportador_id: string | null;
+  motoristas?: { nome: string } | null;
+  transportadores?: { razao_social: string } | null;
 }
 
 const initialValues = {

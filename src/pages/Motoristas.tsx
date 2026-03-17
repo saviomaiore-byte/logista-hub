@@ -611,6 +611,7 @@ export default function Motoristas() {
               <TabsList className="w-full">
                 <TabsTrigger value="docs" className="flex-1">Dados</TabsTrigger>
                 <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
+                <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
               </TabsList>
               <TabsContent value="docs" className="space-y-4 mt-4">
                 {[
@@ -631,6 +632,11 @@ export default function Motoristas() {
               <TabsContent value="anexos" className="mt-4">
                 {docsMotorista && (
                   <MotoristaAnexos motoristaId={docsMotorista.id} motoristaNome={docsMotorista.nome} />
+                )}
+              </TabsContent>
+              <TabsContent value="contratos" className="mt-4">
+                {docsMotorista && (
+                  <ContratoAnexos motorista_id={docsMotorista.id} nome={docsMotorista.nome} />
                 )}
               </TabsContent>
             </Tabs>

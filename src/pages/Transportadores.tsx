@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Link2, Unlink, Truck, Container } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Link2, Unlink, Truck, Container, FileText } from "lucide-react";
+import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { masks } from "@/lib/masks";

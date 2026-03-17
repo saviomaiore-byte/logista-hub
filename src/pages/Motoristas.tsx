@@ -84,6 +84,10 @@ const initialValues = {
   email: "",
   cidade: "",
   estado: "",
+  endereco: "",
+  data_nascimento: "",
+  estado_civil: "",
+  rg: "",
   status: "ativo",
   cnh_numero: "",
   cnh_vencimento: "",
@@ -91,7 +95,6 @@ const initialValues = {
   mopp_vencimento: "",
   antt_numero: "",
   antt_vencimento: "",
-  
 };
 
 export default function Motoristas() {

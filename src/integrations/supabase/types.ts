@@ -396,6 +396,7 @@ export type Database = {
           is_transportador_proprio: boolean
           mopp_numero: string | null
           mopp_vencimento: string | null
+          mopp_vitalicio: boolean
           nome: string
           rg: string | null
           status: string | null
@@ -419,6 +420,7 @@ export type Database = {
           is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
+          mopp_vitalicio?: boolean
           nome: string
           rg?: string | null
           status?: string | null
@@ -442,6 +444,7 @@ export type Database = {
           is_transportador_proprio?: boolean
           mopp_numero?: string | null
           mopp_vencimento?: string | null
+          mopp_vitalicio?: boolean
           nome?: string
           rg?: string | null
           status?: string | null

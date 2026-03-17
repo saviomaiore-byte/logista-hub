@@ -648,6 +648,10 @@ export default function Motoristas() {
                   email: editMotorista.email || "",
                   cidade: editMotorista.cidade || "",
                   estado: editMotorista.estado || "",
+                  endereco: (editMotorista as any).endereco || "",
+                  data_nascimento: (editMotorista as any).data_nascimento || "",
+                  estado_civil: (editMotorista as any).estado_civil || "",
+                  rg: (editMotorista as any).rg || "",
                   status: editMotorista.status || "ativo",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
@@ -655,7 +659,6 @@ export default function Motoristas() {
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
                   antt_numero: editMotorista.antt_numero || "",
                   antt_vencimento: editMotorista.antt_vencimento || "",
-                  
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {

@@ -31,7 +31,9 @@ import {
   MapPin,
   Users,
   Edit,
-  Trash2
+  Trash2,
+  Building2,
+  X
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,11 +43,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motoristaSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
+
+interface Transportadora {
+  id: string;
+  razao_social: string;
+  cpf_cnpj: string;
+}
 
 interface Motorista {
   id: string;
@@ -84,12 +93,30 @@ const initialValues = {
 
 export default function Motoristas() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
+  const [transportadoras, setTransportadoras] = useState<Transportadora[]>([]);
+  const [motoristaTransportadoras, setMotoristaTransportadoras] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
+  const [selectedTransportadoras, setSelectedTransportadoras] = useState<string[]>([]);
   const isMobile = useIsMobile();
+
+  const fetchTransportadoras = async () => {
+    const { data } = await supabase.from("transportadores").select("id, razao_social, cpf_cnpj").order("razao_social");
+    setTransportadoras(data || []);
+  };
+
+  const fetchMotoristaTransportadoraLinks = async () => {
+    const { data } = await supabase.from("transportador_motoristas").select("motorista_id, transportador_id");
+    const map: Record<string, string[]> = {};
+    (data || []).forEach((link) => {
+      if (!map[link.motorista_id]) map[link.motorista_id] = [];
+      map[link.motorista_id].push(link.transportador_id);
+    });
+    setMotoristaTransportadoras(map);
+  };
 
   const fetchMotoristas = async () => {
     const { data, error } = await supabase
@@ -107,7 +134,33 @@ export default function Motoristas() {
 
   useEffect(() => {
     fetchMotoristas();
+    fetchTransportadoras();
+    fetchMotoristaTransportadoraLinks();
   }, []);
+
+  const syncTransportadoraLinks = async (motoristaId: string, newTransportadoraIds: string[]) => {
+    // Get current links
+    const { data: current } = await supabase
+      .from("transportador_motoristas")
+      .select("id, transportador_id")
+      .eq("motorista_id", motoristaId);
+    
+    const currentIds = (current || []).map((c) => c.transportador_id);
+    
+    // Delete removed
+    const toRemove = (current || []).filter((c) => !newTransportadoraIds.includes(c.transportador_id));
+    for (const r of toRemove) {
+      await supabase.from("transportador_motoristas").delete().eq("id", r.id);
+    }
+    
+    // Insert new
+    const toAdd = newTransportadoraIds.filter((id) => !currentIds.includes(id));
+    if (toAdd.length > 0) {
+      await supabase.from("transportador_motoristas").insert(
+        toAdd.map((transportador_id) => ({ transportador_id, motorista_id: motoristaId }))
+      );
+    }
+  };
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     const motoristaData = {
@@ -156,10 +209,17 @@ export default function Motoristas() {
       }
     }
 
+    // Sync selected transportadoras
+    if (inserted && selectedTransportadoras.length > 0) {
+      await syncTransportadoraLinks(inserted.id, selectedTransportadoras);
+    }
+
     toast.success("Motorista cadastrado!");
     setOpen(false);
+    setSelectedTransportadoras([]);
     resetForm();
     fetchMotoristas();
+    fetchMotoristaTransportadoraLinks();
   };
 
   const handleDelete = async (id: string) => {
@@ -279,6 +339,50 @@ export default function Motoristas() {
                       </label>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label>Transportadoras vinculadas</Label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (!selectedTransportadoras.includes(value)) {
+                            setSelectedTransportadoras([...selectedTransportadoras, value]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma transportadora..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transportadoras
+                            .filter((t) => !selectedTransportadoras.includes(t.id))
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.razao_social} ({t.cpf_cnpj})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedTransportadoras.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedTransportadoras.map((id) => {
+                            const t = transportadoras.find((tr) => tr.id === id);
+                            return (
+                              <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                                <Building2 className="h-3 w-3" />
+                                {t?.razao_social || id}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTransportadoras(selectedTransportadoras.filter((x) => x !== id))}
+                                  className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -339,6 +443,18 @@ export default function Motoristas() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
+                    {motoristaTransportadoras[motorista.id]?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {motoristaTransportadoras[motorista.id].map((tid) => {
+                          const t = transportadoras.find((tr) => tr.id === tid);
+                          return t ? (
+                            <Badge key={tid} variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                              <Building2 className="h-2.5 w-2.5" />{t.razao_social}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     {getStatusBadge(motorista.status)}
@@ -349,7 +465,7 @@ export default function Motoristas() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditMotorista(motorista)}>
+                        <DropdownMenuItem onClick={() => { setEditMotorista(motorista); setSelectedTransportadoras(motoristaTransportadoras[motorista.id] || []); }}>
                           <Edit className="h-4 w-4 mr-2" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setDocsMotorista(motorista)}>
@@ -410,6 +526,18 @@ export default function Motoristas() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">{motorista.cpf}</p>
+                        {motoristaTransportadoras[motorista.id]?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {motoristaTransportadoras[motorista.id].map((tid) => {
+                              const t = transportadoras.find((tr) => tr.id === tid);
+                              return t ? (
+                                <Badge key={tid} variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                                  <Building2 className="h-2.5 w-2.5" />{t.razao_social}
+                                </Badge>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -453,7 +581,7 @@ export default function Motoristas() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditMotorista(motorista)}>
+                          <DropdownMenuItem onClick={() => { setEditMotorista(motorista); setSelectedTransportadoras(motoristaTransportadoras[motorista.id] || []); }}>
                             <Edit className="h-4 w-4 mr-2" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(motorista.id)}>
@@ -589,9 +717,14 @@ export default function Motoristas() {
                     }
                   }
 
+                  // Sync transportadora links
+                  await syncTransportadoraLinks(editMotorista.id, selectedTransportadoras);
+
                   toast.success("Motorista atualizado!");
                   setEditMotorista(null);
+                  setSelectedTransportadoras([]);
                   fetchMotoristas();
+                  fetchMotoristaTransportadoraLinks();
                 }}
               >
                 {({ isSubmitting, setFieldValue, values }) => (
@@ -628,6 +761,52 @@ export default function Motoristas() {
                         Este motorista é transportador próprio
                       </label>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Transportadoras vinculadas</Label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (!selectedTransportadoras.includes(value)) {
+                            setSelectedTransportadoras([...selectedTransportadoras, value]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma transportadora..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transportadoras
+                            .filter((t) => !selectedTransportadoras.includes(t.id))
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.razao_social} ({t.cpf_cnpj})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedTransportadoras.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedTransportadoras.map((id) => {
+                            const t = transportadoras.find((tr) => tr.id === id);
+                            return (
+                              <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                                <Building2 className="h-3 w-3" />
+                                {t?.razao_social || id}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTransportadoras(selectedTransportadoras.filter((x) => x !== id))}
+                                  className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-3">Documentos</h4>
                       <div className="grid grid-cols-2 gap-4">

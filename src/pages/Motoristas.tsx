@@ -31,7 +31,9 @@ import {
   MapPin,
   Users,
   Edit,
-  Trash2
+  Trash2,
+  Building2,
+  X
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,11 +43,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motoristaSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
+
+interface Transportadora {
+  id: string;
+  razao_social: string;
+  cpf_cnpj: string;
+}
 
 interface Motorista {
   id: string;

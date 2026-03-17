@@ -454,6 +454,9 @@ export default function Transportadores() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
+                                <FileText className="h-4 w-4" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                                 <Pencil className="h-4 w-4" />
                               </Button>

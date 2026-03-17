@@ -294,6 +294,30 @@ export default function Motoristas() {
                         type="email" 
                       />
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField name="rg" label="RG" />
+                      <FormField name="data_nascimento" label="Data de Nascimento" type="date" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormSelectWrapper name="estado_civil" label="Estado Civil">
+                        <Select
+                          value={values.estado_civil || ""}
+                          onValueChange={(value) => setFieldValue("estado_civil", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                            <SelectItem value="casado">Casado(a)</SelectItem>
+                            <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                            <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                            <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <FormField name="endereco" label="Endereço" />
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField name="cidade" label="Cidade" />
                       <FormField 

@@ -108,8 +108,8 @@ export default function Transportadores() {
   const [editingCavalo, setEditingCavalo] = useState<Cavalo | null>(null);
   const [showReboqueDialog, setShowReboqueDialog] = useState(false);
   const [editingReboque, setEditingReboque] = useState<Reboque | null>(null);
-  const [contratosTransp, setContratosTransp] = useState<Transportador | null>(null);
   const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
+  const [docsTab, setDocsTab] = useState("anexos");
 
   const { data: transportadores = [] } = useQuery({
     queryKey: ["transportadores"],

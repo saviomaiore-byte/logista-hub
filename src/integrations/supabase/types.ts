@@ -274,6 +274,7 @@ export type Database = {
           data_envio: string | null
           empresa: string
           id: string
+          modelo: string | null
           motorista_id: string | null
           observacoes: string | null
           status: string | null
@@ -289,6 +290,7 @@ export type Database = {
           data_envio?: string | null
           empresa: string
           id?: string
+          modelo?: string | null
           motorista_id?: string | null
           observacoes?: string | null
           status?: string | null
@@ -304,6 +306,7 @@ export type Database = {
           data_envio?: string | null
           empresa?: string
           id?: string
+          modelo?: string | null
           motorista_id?: string | null
           observacoes?: string | null
           status?: string | null

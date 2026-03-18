@@ -41,8 +41,8 @@ interface Seguro {
   seguradora: string;
   numero_apolice: string | null;
   valor_premio: number | null;
-  vigencia_inicio: string;
-  vigencia_fim: string;
+  vigencia_inicio: string | null;
+  vigencia_fim: string | null;
   status: string | null;
   observacoes: string | null;
   arquivo_url: string | null;

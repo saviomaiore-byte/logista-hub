@@ -56,11 +56,12 @@ export type Database = {
       cavalos: {
         Row: {
           ano: string | null
+          arquivo_url: string | null
           chassi: string | null
           created_at: string
           id: string
           marca_modelo: string | null
-          placa: string
+          placa: string | null
           renavam: string | null
           status: string
           transportador_id: string
@@ -68,11 +69,12 @@ export type Database = {
         }
         Insert: {
           ano?: string | null
+          arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
           id?: string
           marca_modelo?: string | null
-          placa: string
+          placa?: string | null
           renavam?: string | null
           status?: string
           transportador_id: string
@@ -80,11 +82,12 @@ export type Database = {
         }
         Update: {
           ano?: string | null
+          arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
           id?: string
           marca_modelo?: string | null
-          placa?: string
+          placa?: string | null
           renavam?: string | null
           status?: string
           transportador_id?: string
@@ -579,9 +582,10 @@ export type Database = {
       reboques: {
         Row: {
           ano: string | null
+          arquivo_url: string | null
           created_at: string
           id: string
-          placa: string
+          placa: string | null
           renavam: string | null
           status: string
           tipo: string | null
@@ -590,9 +594,10 @@ export type Database = {
         }
         Insert: {
           ano?: string | null
+          arquivo_url?: string | null
           created_at?: string
           id?: string
-          placa: string
+          placa?: string | null
           renavam?: string | null
           status?: string
           tipo?: string | null
@@ -601,9 +606,10 @@ export type Database = {
         }
         Update: {
           ano?: string | null
+          arquivo_url?: string | null
           created_at?: string
           id?: string
-          placa?: string
+          placa?: string | null
           renavam?: string | null
           status?: string
           tipo?: string | null

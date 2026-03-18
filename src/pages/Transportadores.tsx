@@ -423,7 +423,7 @@ export default function Transportadores() {
                     <TableRow>
                       <TableHead>Razão Social</TableHead>
                       <TableHead>CPF/CNPJ</TableHead>
-                      <TableHead>Inscrição Estadual</TableHead>
+                      <TableHead>Regime Tributário</TableHead>
                       <TableHead>Contato</TableHead>
                       <TableHead>Motoristas</TableHead>
                       <TableHead>Status</TableHead>

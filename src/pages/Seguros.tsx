@@ -548,8 +548,8 @@ function SegurosTab() {
                   <TableCell>{seguro.numero_apolice || "-"}</TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <p>{format(parseISO(seguro.vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })}</p>
-                      <p className="text-muted-foreground">até {format(parseISO(seguro.vigencia_fim), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      <p>{formatVigencia(seguro.vigencia_inicio)}</p>
+                      <p className="text-muted-foreground">até {formatVigencia(seguro.vigencia_fim)}</p>
                     </div>
                   </TableCell>
                   <TableCell>

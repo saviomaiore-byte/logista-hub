@@ -385,15 +385,15 @@ export default function Transportadores() {
                           <Link2 className="h-3 w-3 mr-1" /> Vincular
                         </Button>
                       </div>
-                      <div className="flex items-center gap-1 pt-1 border-t border-border">
+                      <div className="flex items-center gap-1 pt-1 border-t border-border flex-wrap">
                         <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)}>
-                          <FileText className="h-4 w-4 mr-1" /> Documentos
+                          <FileText className="h-4 w-4 mr-1" /> Ver docs
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
+                          <FileText className="h-4 w-4 mr-1" /> Ver contratos
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                           <Pencil className="h-4 w-4 mr-1" /> Editar
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
-                          <FileText className="h-4 w-4 mr-1" /> Contratos
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) deleteTransp.mutate(t.id); }}>
                           <Trash2 className="h-4 w-4 mr-1 text-destructive" />
@@ -459,15 +459,15 @@ export default function Transportadores() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => setDocsTransp(t)} title="Documentos">
-                                  <FileText className="h-4 w-4" />
+                              <div className="flex justify-end gap-1 flex-wrap">
+                                <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)} title="Ver docs">
+                                  <FileText className="h-4 w-4 mr-1" /> Ver docs
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
-                                  <FileText className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)} title="Ver contratos">
+                                  <FileText className="h-4 w-4 mr-1" /> Ver contratos
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
-                                  <Pencil className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
+                                  <Pencil className="h-4 w-4 mr-1" /> Editar
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este transportador?")) deleteTransp.mutate(t.id); }}>
                                   <Trash2 className="h-4 w-4" />

@@ -406,7 +406,7 @@ function SegurosTab() {
             <div>
               <p className="text-sm text-muted-foreground">Ativos</p>
               <p className="text-2xl font-bold text-foreground">
-                {seguros?.filter(s => differenceInDays(parseISO(s.vigencia_fim), new Date()) > 30).length || 0}
+                {seguros?.filter(s => s.vigencia_fim ? differenceInDays(parseISO(s.vigencia_fim), new Date()) > 30 : s.status === "ativo").length || 0}
               </p>
             </div>
           </div>

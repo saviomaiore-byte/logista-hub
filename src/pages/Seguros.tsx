@@ -479,7 +479,7 @@ function SegurosTab() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-muted-foreground text-xs">Vigência</p>
-                    <p className="text-foreground">{format(parseISO(seguro.vigencia_inicio), "dd/MM/yy")} - {format(parseISO(seguro.vigencia_fim), "dd/MM/yy")}</p>
+                    <p className="text-foreground">{formatVigencia(seguro.vigencia_inicio)} - {formatVigencia(seguro.vigencia_fim)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Valor</p>

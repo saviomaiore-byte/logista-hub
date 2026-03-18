@@ -170,11 +170,22 @@ export default function Transportadores() {
   // Mutations
   const saveTransp = useMutation({
     mutationFn: async (values: any) => {
+      const payload = {
+        ...values,
+        inscricao_estadual: values.inscricao_estadual?.trim() || null,
+        contato: values.contato?.trim() || null,
+        endereco: values.endereco?.trim() || null,
+        data_nascimento: values.data_nascimento || null,
+        email: values.email?.trim() || null,
+        estado_civil: values.estado_civil?.trim() || null,
+        rg: values.rg?.trim() || null,
+      };
+
       if (editingTransp) {
-        const { error } = await supabase.from("transportadores").update(values).eq("id", editingTransp.id);
+        const { error } = await supabase.from("transportadores").update(payload).eq("id", editingTransp.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("transportadores").insert(values);
+        const { error } = await supabase.from("transportadores").insert(payload);
         if (error) throw error;
       }
     },

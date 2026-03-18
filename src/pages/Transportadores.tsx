@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
+import { TransportadorAnexos } from "@/components/transportador/TransportadorAnexos";
 import { FileUpload } from "@/components/FileUpload";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
@@ -69,7 +70,6 @@ const REGIME_TRIBUTARIO_OPTIONS = [
   "MEI caminhoneiro",
 ] as const;
 
-// Schemas
 const transportadorSchema = Yup.object().shape({
   razao_social: Yup.string().trim().required("Razão Social é obrigatória"),
   cpf_cnpj: Yup.string().trim().required("CPF/CNPJ é obrigatório"),
@@ -100,27 +100,17 @@ export default function Transportadores() {
   const [search, setSearch] = useState("");
   const isMobile = useIsMobile();
 
-  // Transportador state
   const [showTranspDialog, setShowTranspDialog] = useState(false);
   const [editingTransp, setEditingTransp] = useState<Transportador | null>(null);
-
-  // Motorista vínculo state
   const [showVinculoDialog, setShowVinculoDialog] = useState(false);
   const [vinculoTranspId, setVinculoTranspId] = useState<string | null>(null);
-
-  // Cavalo state
   const [showCavaloDialog, setShowCavaloDialog] = useState(false);
   const [editingCavalo, setEditingCavalo] = useState<Cavalo | null>(null);
-
-  // Reboque state
   const [showReboqueDialog, setShowReboqueDialog] = useState(false);
   const [editingReboque, setEditingReboque] = useState<Reboque | null>(null);
-
-  // Expanded transportador
-  const [expandedTransp, setExpandedTransp] = useState<string | null>(null);
   const [contratosTransp, setContratosTransp] = useState<Transportador | null>(null);
+  const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
 
-  // Queries
   const { data: transportadores = [] } = useQuery({
     queryKey: ["transportadores"],
     queryFn: async () => {
@@ -168,7 +158,6 @@ export default function Transportadores() {
     },
   });
 
-  // Mutations
   const saveTransp = useMutation({
     mutationFn: async (values: any) => {
       const payload = {
@@ -397,6 +386,9 @@ export default function Transportadores() {
                         </Button>
                       </div>
                       <div className="flex items-center gap-1 pt-1 border-t border-border">
+                        <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)}>
+                          <FileText className="h-4 w-4 mr-1" /> Documentos
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
                           <Pencil className="h-4 w-4 mr-1" /> Editar
                         </Button>
@@ -468,6 +460,9 @@ export default function Transportadores() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => setDocsTransp(t)} title="Documentos">
+                                  <FileText className="h-4 w-4" />
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
                                   <FileText className="h-4 w-4" />
                                 </Button>
@@ -894,6 +889,30 @@ export default function Transportadores() {
               </Form>
             )}
           </Formik>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!docsTransp} onOpenChange={(v) => !v && setDocsTransp(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Documentos - {docsTransp?.razao_social}</DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="anexos" className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
+              <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
+            </TabsList>
+            <TabsContent value="anexos" className="mt-4">
+              {docsTransp && (
+                <TransportadorAnexos transportadorId={docsTransp.id} transportadorNome={docsTransp.razao_social} />
+              )}
+            </TabsContent>
+            <TabsContent value="contratos" className="mt-4">
+              {docsTransp && (
+                <ContratoAnexos transportador_id={docsTransp.id} nome={docsTransp.razao_social} />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

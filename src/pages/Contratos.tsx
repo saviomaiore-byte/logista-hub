@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   FileText,
   Send,
@@ -36,7 +37,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
-import { FormField, FormSelectWrapper } from "@/components/form/FormField";
+import { FormSelectWrapper } from "@/components/form/FormField";
 
 interface Contrato {
   id: string;
@@ -55,11 +56,16 @@ interface Contrato {
   transportadores?: { razao_social: string } | null;
 }
 
+interface TransportadorOption {
+  id: string;
+  razao_social: string;
+  cpf_cnpj: string;
+}
+
 const initialValues = {
   tipo: "",
   modelo: "",
-  empresa: "",
-  cnpj: "",
+  transportador_id: "",
   observacoes: "",
   arquivo_url: "",
 };
@@ -80,6 +86,7 @@ const modeloOptions = [
 
 export default function Contratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
+  const [transportadores, setTransportadores] = useState<TransportadorOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
@@ -95,14 +102,39 @@ export default function Contratos() {
 
     if (error) {
       toast.error("Erro ao carregar contratos");
-    } else {
-      setContratos(((data as unknown as Contrato[]) || []).map((contrato) => ({ ...contrato, modelo: contrato.modelo ?? null })));
+      return;
     }
-    setLoading(false);
+
+    setContratos(
+      ((data as unknown as Contrato[]) || []).map((contrato) => ({
+        ...contrato,
+        modelo: contrato.modelo ?? null,
+      })),
+    );
+  };
+
+  const fetchTransportadores = async () => {
+    const { data, error } = await supabase
+      .from("transportadores")
+      .select("id, razao_social, cpf_cnpj")
+      .order("razao_social", { ascending: true });
+
+    if (error) {
+      toast.error("Erro ao carregar transportadores");
+      return;
+    }
+
+    setTransportadores((data as TransportadorOption[]) || []);
   };
 
   useEffect(() => {
-    fetchContratos();
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchContratos(), fetchTransportadores()]);
+      setLoading(false);
+    };
+
+    loadData();
   }, []);
 
   const resetForm = () => {
@@ -115,8 +147,7 @@ export default function Contratos() {
     setFormInitialValues({
       tipo: contrato.tipo,
       modelo: contrato.modelo || "",
-      empresa: contrato.empresa,
-      cnpj: contrato.cnpj || "",
+      transportador_id: contrato.transportador_id || "",
       observacoes: contrato.observacoes || "",
       arquivo_url: contrato.arquivo_url || "",
     });
@@ -124,14 +155,25 @@ export default function Contratos() {
   };
 
   const handleSubmit = async (values: typeof initialValues, { resetForm: formikReset }: any) => {
+    const transportadorSelecionado = transportadores.find(
+      (transportador) => transportador.id === values.transportador_id,
+    );
+
+    if (!transportadorSelecionado) {
+      toast.error("Selecione um transportador");
+      return;
+    }
+
     const payload = {
       tipo: values.tipo,
       modelo: values.modelo,
-      empresa: values.empresa,
-      cnpj: values.cnpj || null,
+      empresa: transportadorSelecionado.razao_social,
+      cnpj: transportadorSelecionado.cpf_cnpj || null,
+      transportador_id: values.transportador_id,
+      motorista_id: null,
       observacoes: values.observacoes || null,
       arquivo_url: values.arquivo_url || null,
-    } as any;
+    };
 
     if (editingContrato) {
       const { error } = await supabase.from("contratos").update(payload).eq("id", editingContrato.id);
@@ -143,30 +185,36 @@ export default function Contratos() {
         setOpen(false);
         resetForm();
         formikReset();
-        fetchContratos();
+        await fetchContratos();
       }
-    } else {
-      const { error } = await supabase.from("contratos").insert({ ...payload, status: "pendente" });
 
-      if (error) {
-        toast.error("Erro ao salvar contrato");
-      } else {
-        toast.success("Contrato adicionado!");
-        setOpen(false);
-        resetForm();
-        formikReset();
-        fetchContratos();
-      }
+      return;
+    }
+
+    const { error } = await supabase.from("contratos").insert({
+      ...payload,
+      status: "pendente",
+    });
+
+    if (error) {
+      toast.error("Erro ao salvar contrato");
+    } else {
+      toast.success("Contrato adicionado!");
+      setOpen(false);
+      resetForm();
+      formikReset();
+      await fetchContratos();
     }
   };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("contratos").delete().eq("id", id);
+
     if (error) {
       toast.error("Erro ao excluir contrato");
     } else {
       toast.success("Contrato excluído!");
-      fetchContratos();
+      await fetchContratos();
     }
   };
 
@@ -180,7 +228,7 @@ export default function Contratos() {
       toast.error("Erro ao enviar contrato");
     } else {
       toast.success("Contrato enviado!");
-      fetchContratos();
+      await fetchContratos();
     }
   };
 
@@ -191,7 +239,9 @@ export default function Contratos() {
       pendente: { class: "bg-muted text-muted-foreground", label: "Pendente", icon: Clock },
       recusado: { class: "status-danger", label: "Recusado", icon: XCircle },
     };
+
     const { class: className, label, icon: Icon } = config[status] || config.pendente;
+
     return (
       <span className={cn("status-badge inline-flex items-center gap-1", className)}>
         <Icon className="h-3 w-3" />
@@ -206,6 +256,7 @@ export default function Contratos() {
       distrato: "Distrato",
       adesao: "Termo de Adesão",
     };
+
     return <span className="status-badge bg-primary/10 text-primary">{labels[tipo] || tipo}</span>;
   };
 
@@ -240,6 +291,7 @@ export default function Contratos() {
               </div>
               <div className="flex items-center gap-2">{getStatusBadge(contrato.status)}</div>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               {getTipoBadge(contrato.tipo)}
               {getModeloBadge(contrato.modelo)}
@@ -259,6 +311,7 @@ export default function Contratos() {
                 </span>
               )}
             </div>
+
             <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1">
               {contrato.arquivo_url && (
                 <Button variant="ghost" size="sm" onClick={() => window.open(contrato.arquivo_url!, "_blank")}>
@@ -375,6 +428,7 @@ export default function Contratos() {
             <h1 className="text-2xl font-bold text-foreground">Contratos</h1>
             <p className="mt-1 text-muted-foreground">Gerencie contratos, distratos e termos de adesão</p>
           </div>
+
           <Dialog
             open={open}
             onOpenChange={(isOpen) => {
@@ -392,7 +446,13 @@ export default function Contratos() {
               <DialogHeader>
                 <DialogTitle>{editingContrato ? "Editar Contrato" : "Adicionar Contrato"}</DialogTitle>
               </DialogHeader>
-              <Formik initialValues={formInitialValues} validationSchema={contratoSchema} onSubmit={handleSubmit} enableReinitialize>
+
+              <Formik
+                initialValues={formInitialValues}
+                validationSchema={contratoSchema}
+                onSubmit={handleSubmit}
+                enableReinitialize
+              >
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
                     <FormSelectWrapper name="tipo" label="Tipo" required>
@@ -421,9 +481,30 @@ export default function Contratos() {
                       </Select>
                     </FormSelectWrapper>
 
-                    <FormField name="empresa" label="Empresa" required />
-                    <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" mask="cnpj" />
-                    <FormField name="observacoes" label="Observações" as="textarea" />
+                    <FormSelectWrapper name="transportador_id" label="Transportador" required>
+                      <Select value={values.transportador_id} onValueChange={(value) => setFieldValue("transportador_id", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o transportador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transportadores.map((transportador) => (
+                            <SelectItem key={transportador.id} value={transportador.id}>
+                              {transportador.razao_social}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Observações</label>
+                      <Textarea
+                        value={values.observacoes}
+                        onChange={(event) => setFieldValue("observacoes", event.target.value)}
+                        placeholder="Observações"
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Anexar Documento (PDF)</label>
                       <FileUpload
@@ -435,7 +516,12 @@ export default function Contratos() {
                         label="Anexar Contrato"
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isSubmitting || !values.tipo || !values.modelo || !values.empresa}>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting || !values.tipo || !values.modelo || !values.transportador_id}
+                    >
                       {isSubmitting ? "Salvando..." : editingContrato ? "Salvar" : "Cadastrar"}
                     </Button>
                   </Form>

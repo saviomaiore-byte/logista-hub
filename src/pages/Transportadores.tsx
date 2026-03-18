@@ -460,10 +460,10 @@ export default function Transportadores() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1 flex-wrap">
-                                <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)} title="Ver docs">
+                                <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("anexos"); }} title="Ver docs">
                                   <FileText className="h-4 w-4 mr-1" /> Ver docs
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)} title="Ver contratos">
+                                <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("contratos"); }} title="Ver contratos">
                                   <FileText className="h-4 w-4 mr-1" /> Ver contratos
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>

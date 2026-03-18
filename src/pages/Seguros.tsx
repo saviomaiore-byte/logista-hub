@@ -266,9 +266,16 @@ function SegurosTab() {
     formikReset();
   };
 
+  const formatVigencia = (data?: string | null) => {
+    if (!data) return "-";
+    return format(parseISO(data), "dd/MM/yyyy", { locale: ptBR });
+  };
+
   const getStatusBadge = (seguro: Seguro) => {
     if (seguro.status === "cancelado") return <Badge variant="secondary">Cancelado</Badge>;
     if (seguro.status === "vencido") return <Badge variant="destructive">Vencido</Badge>;
+    if (!seguro.vigencia_fim) return <Badge variant="outline">Sem vigência</Badge>;
+
     const diasRestantes = differenceInDays(parseISO(seguro.vigencia_fim), new Date());
     if (diasRestantes < 0) return <Badge variant="destructive">Vencido</Badge>;
     if (diasRestantes <= 30) return <Badge className="bg-warning text-warning-foreground">Vence em {diasRestantes} dias</Badge>;
@@ -284,12 +291,13 @@ function SegurosTab() {
   );
 
   const segurosVencendo = seguros?.filter((s) => {
+    if (!s.vigencia_fim) return false;
     const dias = differenceInDays(parseISO(s.vigencia_fim), new Date());
     return dias >= 0 && dias <= 30;
   }).length || 0;
 
   const segurosVencidos = seguros?.filter((s) =>
-    differenceInDays(parseISO(s.vigencia_fim), new Date()) < 0
+    s.vigencia_fim ? differenceInDays(parseISO(s.vigencia_fim), new Date()) < 0 : false
   ).length || 0;
 
   return (

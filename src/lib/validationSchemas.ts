@@ -103,9 +103,10 @@ export const boletoSchema = Yup.object().shape({
 
 // Schema para Certificados
 export const certificadoSchema = Yup.object().shape({
-  empresa: requiredString('Empresa'),
+  empresa: requiredString('Transportadora'),
   tipo: requiredString('Tipo de certificado'),
   vencimento: dateValidation,
+  data_renovacao_agendada: optionalDateValidation,
   observacoes: optionalString(1000),
 });
 

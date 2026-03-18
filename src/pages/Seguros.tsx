@@ -357,8 +357,8 @@ function SegurosTab() {
                         </SelectContent>
                       </Select>
                     </FormSelectWrapper>
-                    <FormField name="vigencia_inicio" label="Vigência Início" type="date" required />
-                    <FormField name="vigencia_fim" label="Vigência Fim" type="date" required />
+                    <FormField name="vigencia_inicio" label="Vigência Início" type="date" />
+                    <FormField name="vigencia_fim" label="Vigência Fim" type="date" />
                   </div>
                   <FormField name="observacoes" label="Observações" as="textarea" />
                   <div className="space-y-2">

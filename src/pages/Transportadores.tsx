@@ -386,10 +386,10 @@ export default function Transportadores() {
                         </Button>
                       </div>
                       <div className="flex items-center gap-1 pt-1 border-t border-border flex-wrap">
-                        <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)}>
+                        <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("anexos"); }}>
                           <FileText className="h-4 w-4 mr-1" /> Ver docs
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
+                        <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("contratos"); }}>
                           <FileText className="h-4 w-4 mr-1" /> Ver contratos
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>

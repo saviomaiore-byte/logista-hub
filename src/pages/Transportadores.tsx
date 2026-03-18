@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Link2, Unlink, Truck, Container, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
+import { FileUpload } from "@/components/FileUpload";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { masks } from "@/lib/masks";
@@ -39,23 +40,25 @@ type Transportador = {
 type Cavalo = {
   id: string;
   transportador_id: string;
-  placa: string;
+  placa: string | null;
   renavam: string | null;
   chassi: string | null;
   marca_modelo: string | null;
   ano: string | null;
   status: string;
+  arquivo_url: string | null;
   transportadores?: { razao_social: string } | null;
 };
 
 type Reboque = {
   id: string;
   transportador_id: string;
-  placa: string;
+  placa: string | null;
   renavam: string | null;
   tipo: string | null;
   ano: string | null;
   status: string;
+  arquivo_url: string | null;
   transportadores?: { razao_social: string } | null;
 };
 
@@ -82,21 +85,12 @@ const transportadorSchema = Yup.object().shape({
 
 const cavaloSchema = Yup.object().shape({
   transportador_id: Yup.string().required("Transportador é obrigatório"),
-  placa: Yup.string().trim().required("Placa é obrigatória"),
-  renavam: Yup.string().trim().nullable(),
-  chassi: Yup.string().trim().nullable(),
-  marca_modelo: Yup.string().trim().nullable(),
-  ano: Yup.string().trim().nullable(),
-  status: Yup.string().oneOf(["ativo", "inativo"]).required(),
+  arquivo_url: Yup.string().trim().nullable(),
 });
 
 const reboqueSchema = Yup.object().shape({
   transportador_id: Yup.string().required("Transportador é obrigatório"),
-  placa: Yup.string().trim().required("Placa é obrigatória"),
-  renavam: Yup.string().trim().nullable(),
-  tipo: Yup.string().trim().nullable(),
-  ano: Yup.string().trim().nullable(),
-  status: Yup.string().oneOf(["ativo", "inativo"]).required(),
+  arquivo_url: Yup.string().trim().nullable(),
 });
 
 export default function Transportadores() {
@@ -159,7 +153,7 @@ export default function Transportadores() {
   const { data: cavalos = [] } = useQuery({
     queryKey: ["cavalos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("cavalos").select("*, transportadores(razao_social)").order("placa");
+      const { data, error } = await supabase.from("cavalos").select("*, transportadores(razao_social)").order("created_at", { ascending: false });
       if (error) throw error;
       return data as Cavalo[];
     },
@@ -168,7 +162,7 @@ export default function Transportadores() {
   const { data: reboques = [] } = useQuery({
     queryKey: ["reboques"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("reboques").select("*, transportadores(razao_social)").order("placa");
+      const { data, error } = await supabase.from("reboques").select("*, transportadores(razao_social)").order("created_at", { ascending: false });
       if (error) throw error;
       return data as Reboque[];
     },
@@ -241,12 +235,17 @@ export default function Transportadores() {
   });
 
   const saveCavalo = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: { transportador_id: string; arquivo_url?: string | null }) => {
+      const payload = {
+        transportador_id: values.transportador_id,
+        arquivo_url: values.arquivo_url?.trim() || null,
+      };
+
       if (editingCavalo) {
-        const { error } = await supabase.from("cavalos").update(values).eq("id", editingCavalo.id);
+        const { error } = await supabase.from("cavalos").update(payload).eq("id", editingCavalo.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("cavalos").insert(values);
+        const { error } = await supabase.from("cavalos").insert(payload);
         if (error) throw error;
       }
     },
@@ -271,12 +270,17 @@ export default function Transportadores() {
   });
 
   const saveReboque = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: { transportador_id: string; arquivo_url?: string | null }) => {
+      const payload = {
+        transportador_id: values.transportador_id,
+        arquivo_url: values.arquivo_url?.trim() || null,
+      };
+
       if (editingReboque) {
-        const { error } = await supabase.from("reboques").update(values).eq("id", editingReboque.id);
+        const { error } = await supabase.from("reboques").update(payload).eq("id", editingReboque.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("reboques").insert(values);
+        const { error } = await supabase.from("reboques").insert(payload);
         if (error) throw error;
       }
     },
@@ -306,18 +310,12 @@ export default function Transportadores() {
       t.cpf_cnpj.includes(search)
   );
 
-  const filteredCavalos = cavalos.filter(
-    (c) =>
-      c.placa.toLowerCase().includes(search.toLowerCase()) ||
-      c.marca_modelo?.toLowerCase().includes(search.toLowerCase()) ||
-      c.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
+  const filteredCavalos = cavalos.filter((c) =>
+    c.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredReboques = reboques.filter(
-    (r) =>
-      r.placa.toLowerCase().includes(search.toLowerCase()) ||
-      r.tipo?.toLowerCase().includes(search.toLowerCase()) ||
-      r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
+  const filteredReboques = reboques.filter((r) =>
+    r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getMotoristasByTransp = (transpId: string) =>
@@ -345,13 +343,11 @@ export default function Transportadores() {
             <TabsTrigger value="reboques">Reboques</TabsTrigger>
           </TabsList>
 
-          {/* Search */}
           <div className="flex items-center gap-2 mt-4">
             <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="sm:max-w-md" />
           </div>
 
-          {/* === TRANSPORTADORES === */}
           <TabsContent value="transportadores" className="space-y-4">
             <div className="flex justify-end">
               <Button onClick={() => { setEditingTransp(null); setShowTranspDialog(true); }}>
@@ -368,7 +364,7 @@ export default function Transportadores() {
                   return (
                     <div key={t.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
                       <div className="flex items-start justify-between">
-                       <div>
+                        <div>
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-foreground">{t.razao_social}</p>
                             {t.motorista_id && (
@@ -416,87 +412,86 @@ export default function Transportadores() {
                 })}
               </div>
             ) : (
-            <Card>
-              <CardContent className="p-0 overflow-x-auto">
-                <Table className="min-w-[700px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Razão Social</TableHead>
-                      <TableHead>CPF/CNPJ</TableHead>
-                      <TableHead>Regime Tributário</TableHead>
-                      <TableHead>Contato</TableHead>
-                      <TableHead>Motoristas</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTransp.map((t) => {
-                      const mots = getMotoristasByTransp(t.id);
-                      return (
-                        <TableRow key={t.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              {t.razao_social}
-                              {t.motorista_id && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">Motorista Próprio</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{t.cpf_cnpj}</TableCell>
-                          <TableCell>{t.inscricao_estadual || "-"}</TableCell>
-                          <TableCell>{t.contato || "-"}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              {mots.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">Nenhum</span>
-                              ) : (
-                                mots.map((v: any) => (
-                                  <div key={v.id} className="flex items-center gap-1">
-                                    <span className="text-xs">{v.motoristas?.nome}</span>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeVinculo.mutate(v.id)}>
-                                      <Unlink className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                ))
-                              )}
-                              <Button variant="outline" size="sm" className="h-6 text-xs mt-1" onClick={() => { setVinculoTranspId(t.id); setShowVinculoDialog(true); }}>
-                                <Link2 className="h-3 w-3 mr-1" /> Vincular
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={t.status === "ativo" ? "default" : "secondary"}>
-                              {t.status === "ativo" ? "Ativo" : "Inativo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este transportador?")) deleteTransp.mutate(t.id); }}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {filteredTransp.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum transportador encontrado</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardContent className="p-0 overflow-x-auto">
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Razão Social</TableHead>
+                        <TableHead>CPF/CNPJ</TableHead>
+                        <TableHead>Regime Tributário</TableHead>
+                        <TableHead>Contato</TableHead>
+                        <TableHead>Motoristas</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTransp.map((t) => {
+                        const mots = getMotoristasByTransp(t.id);
+                        return (
+                          <TableRow key={t.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {t.razao_social}
+                                {t.motorista_id && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">Motorista Próprio</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>{t.cpf_cnpj}</TableCell>
+                            <TableCell>{t.inscricao_estadual || "-"}</TableCell>
+                            <TableCell>{t.contato || "-"}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                {mots.length === 0 ? (
+                                  <span className="text-xs text-muted-foreground">Nenhum</span>
+                                ) : (
+                                  mots.map((v: any) => (
+                                    <div key={v.id} className="flex items-center gap-1">
+                                      <span className="text-xs">{v.motoristas?.nome}</span>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeVinculo.mutate(v.id)}>
+                                        <Unlink className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))
+                                )}
+                                <Button variant="outline" size="sm" className="h-6 text-xs mt-1" onClick={() => { setVinculoTranspId(t.id); setShowVinculoDialog(true); }}>
+                                  <Link2 className="h-3 w-3 mr-1" /> Vincular
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={t.status === "ativo" ? "default" : "secondary"}>
+                                {t.status === "ativo" ? "Ativo" : "Inativo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => setContratosTransp(t)} title="Contratos">
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este transportador?")) deleteTransp.mutate(t.id); }}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {filteredTransp.length === 0 && (
+                        <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum transportador encontrado</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
-          {/* === CAVALOS === */}
           <TabsContent value="cavalos" className="space-y-4">
             <div className="flex justify-end">
               <Button onClick={() => { setEditingCavalo(null); setShowCavaloDialog(true); }}>
@@ -509,21 +504,21 @@ export default function Transportadores() {
                 {filteredCavalos.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</div>
                 ) : filteredCavalos.map((c) => (
-                  <div key={c.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">{c.placa}</p>
-                        <p className="text-sm text-muted-foreground">{c.marca_modelo || "Sem modelo"}</p>
-                      </div>
-                      <Badge variant={c.status === "ativo" ? "default" : "secondary"}>
-                        {c.status === "ativo" ? "Ativo" : "Inativo"}
-                      </Badge>
+                  <div key={c.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                    <div>
+                      <p className="font-semibold text-foreground">{c.transportadores?.razao_social || "-"}</p>
+                      <p className="text-sm text-muted-foreground">Transportador vinculado</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                      <span>Ano: {c.ano || "-"}</span>
-                      <span>Renavam: {c.renavam || "-"}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground">Documento</span>
+                      {c.arquivo_url ? (
+                        <Button variant="outline" size="sm" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                          <FileText className="h-4 w-4 mr-1" /> Abrir anexo
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sem anexo</span>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">Transp: {c.transportadores?.razao_social || "-"}</p>
                     <div className="flex items-center gap-1 pt-1 border-t border-border">
                       <Button variant="ghost" size="sm" onClick={() => { setEditingCavalo(c); setShowCavaloDialog(true); }}>
                         <Pencil className="h-4 w-4 mr-1" /> Editar
@@ -536,58 +531,51 @@ export default function Transportadores() {
                 ))}
               </div>
             ) : (
-            <Card>
-              <CardContent className="p-0 overflow-x-auto">
-                <Table className="min-w-[700px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Placa</TableHead>
-                      <TableHead>Renavam</TableHead>
-                      <TableHead>Chassi</TableHead>
-                      <TableHead>Marca/Modelo</TableHead>
-                      <TableHead>Ano</TableHead>
-                      <TableHead>Transportador</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCavalos.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.placa}</TableCell>
-                        <TableCell>{c.renavam || "-"}</TableCell>
-                        <TableCell>{c.chassi || "-"}</TableCell>
-                        <TableCell>{c.marca_modelo || "-"}</TableCell>
-                        <TableCell>{c.ano || "-"}</TableCell>
-                        <TableCell>{c.transportadores?.razao_social || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={c.status === "ativo" ? "default" : "secondary"}>
-                            {c.status === "ativo" ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingCavalo(c); setShowCavaloDialog(true); }}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) deleteCavalo.mutate(c.id); }}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              <Card>
+                <CardContent className="p-0 overflow-x-auto">
+                  <Table className="min-w-[600px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Transportador</TableHead>
+                        <TableHead>Documento</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
-                    ))}
-                    {filteredCavalos.length === 0 && (
-                      <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCavalos.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.transportadores?.razao_social || "-"}</TableCell>
+                          <TableCell>
+                            {c.arquivo_url ? (
+                              <Button variant="outline" size="sm" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                                <FileText className="h-4 w-4 mr-1" /> Abrir anexo
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground">Sem anexo</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => { setEditingCavalo(c); setShowCavaloDialog(true); }}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) deleteCavalo.mutate(c.id); }}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredCavalos.length === 0 && (
+                        <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
-          {/* === REBOQUES === */}
           <TabsContent value="reboques" className="space-y-4">
             <div className="flex justify-end">
               <Button onClick={() => { setEditingReboque(null); setShowReboqueDialog(true); }}>
@@ -600,18 +588,20 @@ export default function Transportadores() {
                 {filteredReboques.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</div>
                 ) : filteredReboques.map((r) => (
-                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">{r.placa}</p>
-                        <p className="text-sm text-muted-foreground">{r.tipo || "Sem tipo"}</p>
-                      </div>
-                      <Badge variant={r.status === "ativo" ? "default" : "secondary"}>
-                        {r.status === "ativo" ? "Ativo" : "Inativo"}
-                      </Badge>
+                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+                    <div>
+                      <p className="font-semibold text-foreground">{r.transportadores?.razao_social || "-"}</p>
+                      <p className="text-sm text-muted-foreground">Transportador vinculado</p>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span>Ano: {r.ano || "-"} • Transp: {r.transportadores?.razao_social || "-"}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground">Documento</span>
+                      {r.arquivo_url ? (
+                        <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                          <FileText className="h-4 w-4 mr-1" /> Abrir anexo
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sem anexo</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 pt-1 border-t border-border">
                       <Button variant="ghost" size="sm" onClick={() => { setEditingReboque(r); setShowReboqueDialog(true); }}>
@@ -625,58 +615,53 @@ export default function Transportadores() {
                 ))}
               </div>
             ) : (
-            <Card>
-              <CardContent className="p-0 overflow-x-auto">
-                <Table className="min-w-[600px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Placa</TableHead>
-                      <TableHead>Renavam</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Ano</TableHead>
-                      <TableHead>Transportador</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredReboques.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.placa}</TableCell>
-                        <TableCell>{r.renavam || "-"}</TableCell>
-                        <TableCell>{r.tipo || "-"}</TableCell>
-                        <TableCell>{r.ano || "-"}</TableCell>
-                        <TableCell>{r.transportadores?.razao_social || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={r.status === "ativo" ? "default" : "secondary"}>
-                            {r.status === "ativo" ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingReboque(r); setShowReboqueDialog(true); }}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) deleteReboque.mutate(r.id); }}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              <Card>
+                <CardContent className="p-0 overflow-x-auto">
+                  <Table className="min-w-[600px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Transportador</TableHead>
+                        <TableHead>Documento</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
-                    ))}
-                    {filteredReboques.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredReboques.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium">{r.transportadores?.razao_social || "-"}</TableCell>
+                          <TableCell>
+                            {r.arquivo_url ? (
+                              <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                                <FileText className="h-4 w-4 mr-1" /> Abrir anexo
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground">Sem anexo</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => { setEditingReboque(r); setShowReboqueDialog(true); }}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) deleteReboque.mutate(r.id); }}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredReboques.length === 0 && (
+                        <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Dialog Transportador */}
       <Dialog open={showTranspDialog} onOpenChange={setShowTranspDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -789,7 +774,6 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Vincular Motorista */}
       <Dialog open={showVinculoDialog} onOpenChange={setShowVinculoDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -817,7 +801,6 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Cavalo */}
       <Dialog open={showCavaloDialog} onOpenChange={setShowCavaloDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -826,12 +809,7 @@ export default function Transportadores() {
           <Formik
             initialValues={{
               transportador_id: editingCavalo?.transportador_id || "",
-              placa: editingCavalo?.placa || "",
-              renavam: editingCavalo?.renavam || "",
-              chassi: editingCavalo?.chassi || "",
-              marca_modelo: editingCavalo?.marca_modelo || "",
-              ano: editingCavalo?.ano || "",
-              status: editingCavalo?.status || "ativo",
+              arquivo_url: editingCavalo?.arquivo_url || "",
             }}
             validationSchema={cavaloSchema}
             onSubmit={(values) => saveCavalo.mutate(values)}
@@ -851,42 +829,16 @@ export default function Transportadores() {
                   </Select>
                   {errors.transportador_id && touched.transportador_id && <p className="text-sm text-destructive mt-1">{errors.transportador_id}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Placa *</Label>
-                    <Field as={Input} name="placa" placeholder="ABC-1234" />
-                    {errors.placa && touched.placa && <p className="text-sm text-destructive mt-1">{errors.placa}</p>}
-                  </div>
-                  <div>
-                    <Label>Renavam</Label>
-                    <Field as={Input} name="renavam" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Chassi</Label>
-                    <Field as={Input} name="chassi" />
-                  </div>
-                  <div>
-                    <Label>Marca/Modelo</Label>
-                    <Field as={Input} name="marca_modelo" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Ano</Label>
-                    <Field as={Input} name="ano" />
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select value={values.status} onValueChange={(v) => setFieldValue("status", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Anexo do documento</Label>
+                  <FileUpload
+                    currentUrl={values.arquivo_url || undefined}
+                    onUpload={(url) => setFieldValue("arquivo_url", url)}
+                    onRemove={() => setFieldValue("arquivo_url", "")}
+                    folder="cavalos"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    label="Anexar documento do cavalo"
+                  />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={isSubmitting}>Salvar</Button>
@@ -897,7 +849,6 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Reboque */}
       <Dialog open={showReboqueDialog} onOpenChange={setShowReboqueDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -906,11 +857,7 @@ export default function Transportadores() {
           <Formik
             initialValues={{
               transportador_id: editingReboque?.transportador_id || "",
-              placa: editingReboque?.placa || "",
-              renavam: editingReboque?.renavam || "",
-              tipo: editingReboque?.tipo || "",
-              ano: editingReboque?.ano || "",
-              status: editingReboque?.status || "ativo",
+              arquivo_url: editingReboque?.arquivo_url || "",
             }}
             validationSchema={reboqueSchema}
             onSubmit={(values) => saveReboque.mutate(values)}
@@ -930,48 +877,16 @@ export default function Transportadores() {
                   </Select>
                   {errors.transportador_id && touched.transportador_id && <p className="text-sm text-destructive mt-1">{errors.transportador_id}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Placa *</Label>
-                    <Field as={Input} name="placa" placeholder="ABC-1234" />
-                    {errors.placa && touched.placa && <p className="text-sm text-destructive mt-1">{errors.placa}</p>}
-                  </div>
-                  <div>
-                    <Label>Renavam</Label>
-                    <Field as={Input} name="renavam" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Tipo</Label>
-                    <Select value={values.tipo || ""} onValueChange={(v) => setFieldValue("tipo", v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="carreta">Carreta</SelectItem>
-                        <SelectItem value="bitrem">Bitrem</SelectItem>
-                        <SelectItem value="rodotrem">Rodotrem</SelectItem>
-                        <SelectItem value="sider">Sider</SelectItem>
-                        <SelectItem value="bau">Baú</SelectItem>
-                        <SelectItem value="tanque">Tanque</SelectItem>
-                        <SelectItem value="graneleiro">Graneleiro</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Ano</Label>
-                    <Field as={Input} name="ano" />
-                  </div>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select value={values.status} onValueChange={(v) => setFieldValue("status", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ativo">Ativo</SelectItem>
-                      <SelectItem value="inativo">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label>Anexo do documento</Label>
+                  <FileUpload
+                    currentUrl={values.arquivo_url || undefined}
+                    onUpload={(url) => setFieldValue("arquivo_url", url)}
+                    onRemove={() => setFieldValue("arquivo_url", "")}
+                    folder="reboques"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    label="Anexar documento do reboque"
+                  />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={isSubmitting}>Salvar</Button>
@@ -982,7 +897,6 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Contratos do Transportador */}
       <Dialog open={!!contratosTransp} onOpenChange={(v) => !v && setContratosTransp(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

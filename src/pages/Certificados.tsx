@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FileUpload } from "@/components/FileUpload";
 
 interface Certificado {
   id: string;
@@ -39,6 +40,7 @@ interface Certificado {
   data_renovacao_agendada: string | null;
   status: string;
   observacoes: string | null;
+  arquivo_url: string | null;
 }
 
 interface Transportadora {
@@ -52,6 +54,7 @@ const initialValues = {
   vencimento: "",
   data_renovacao_agendada: "",
   observacoes: "",
+  arquivo_url: "",
 };
 
 export default function Certificados() {
@@ -93,6 +96,7 @@ export default function Certificados() {
       vencimento: values.vencimento,
       data_renovacao_agendada: values.data_renovacao_agendada || null,
       observacoes: values.observacoes || null,
+      arquivo_url: values.arquivo_url || null,
       status: values.data_renovacao_agendada ? "renovacao_agendada" : "ativo",
     });
 
@@ -196,6 +200,17 @@ export default function Certificados() {
                       <FormField name="vencimento" label="Data de Vencimento" type="date" required />
                     </div>
                     <FormField name="observacoes" label="Observações" as="textarea" />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Anexar Certificado</label>
+                      <FileUpload
+                        currentUrl={values.arquivo_url || undefined}
+                        onUpload={(url) => setFieldValue("arquivo_url", url)}
+                        onRemove={() => setFieldValue("arquivo_url", "")}
+                        folder="certificados"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        label="Anexar Certificado"
+                      />
+                    </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting || transportadoras.length === 0}>
                       {isSubmitting ? "Salvando..." : "Salvar"}
                     </Button>

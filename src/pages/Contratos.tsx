@@ -3,33 +3,33 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  FileText, 
-  Send, 
-  Download, 
-  Clock, 
+import {
+  FileText,
+  Send,
+  Download,
+  Clock,
   CheckCircle,
   XCircle,
   Plus,
   Pencil,
   Trash2,
   Users,
-  Building2
+  Building2,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,7 @@ import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 interface Contrato {
   id: string;
   tipo: string;
+  modelo: string | null;
   empresa: string;
   cnpj: string | null;
   data_envio: string | null;
@@ -56,11 +57,26 @@ interface Contrato {
 
 const initialValues = {
   tipo: "",
+  modelo: "",
   empresa: "",
   cnpj: "",
   observacoes: "",
   arquivo_url: "",
 };
+
+const tipoOptions = [
+  { value: "todos", label: "Todos os tipos" },
+  { value: "contrato", label: "Contrato" },
+  { value: "distrato", label: "Distrato" },
+  { value: "adesao", label: "Termo de Adesão" },
+];
+
+const modeloOptions = [
+  { value: "todos", label: "Todos os modelos" },
+  { value: "Maiore", label: "Maiore" },
+  { value: "Start", label: "Start" },
+  { value: "Comodato", label: "Comodato" },
+];
 
 export default function Contratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
@@ -68,6 +84,8 @@ export default function Contratos() {
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
+  const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [filtroModelo, setFiltroModelo] = useState("todos");
 
   const fetchContratos = async () => {
     const { data, error } = await supabase
@@ -78,7 +96,7 @@ export default function Contratos() {
     if (error) {
       toast.error("Erro ao carregar contratos");
     } else {
-      setContratos(data || []);
+      setContratos(((data as unknown as Contrato[]) || []).map((contrato) => ({ ...contrato, modelo: contrato.modelo ?? null })));
     }
     setLoading(false);
   };
@@ -96,6 +114,7 @@ export default function Contratos() {
     setEditingContrato(contrato);
     setFormInitialValues({
       tipo: contrato.tipo,
+      modelo: contrato.modelo || "",
       empresa: contrato.empresa,
       cnpj: contrato.cnpj || "",
       observacoes: contrato.observacoes || "",
@@ -105,17 +124,17 @@ export default function Contratos() {
   };
 
   const handleSubmit = async (values: typeof initialValues, { resetForm: formikReset }: any) => {
+    const payload = {
+      tipo: values.tipo,
+      modelo: values.modelo,
+      empresa: values.empresa,
+      cnpj: values.cnpj || null,
+      observacoes: values.observacoes || null,
+      arquivo_url: values.arquivo_url || null,
+    } as any;
+
     if (editingContrato) {
-      const { error } = await supabase
-        .from("contratos")
-        .update({
-          tipo: values.tipo,
-          empresa: values.empresa,
-          cnpj: values.cnpj || null,
-          observacoes: values.observacoes || null,
-          arquivo_url: values.arquivo_url || null,
-        })
-        .eq("id", editingContrato.id);
+      const { error } = await supabase.from("contratos").update(payload).eq("id", editingContrato.id);
 
       if (error) {
         toast.error("Erro ao atualizar contrato");
@@ -127,14 +146,7 @@ export default function Contratos() {
         fetchContratos();
       }
     } else {
-      const { error } = await supabase.from("contratos").insert({
-        tipo: values.tipo,
-        empresa: values.empresa,
-        cnpj: values.cnpj || null,
-        observacoes: values.observacoes || null,
-        arquivo_url: values.arquivo_url || null,
-        status: "pendente",
-      });
+      const { error } = await supabase.from("contratos").insert({ ...payload, status: "pendente" });
 
       if (error) {
         toast.error("Erro ao salvar contrato");
@@ -194,36 +206,43 @@ export default function Contratos() {
       distrato: "Distrato",
       adesao: "Termo de Adesão",
     };
-    return (
-      <span className="status-badge bg-primary/10 text-primary">
-        {labels[tipo] || tipo}
-      </span>
-    );
+    return <span className="status-badge bg-primary/10 text-primary">{labels[tipo] || tipo}</span>;
   };
+
+  const getModeloBadge = (modelo: string | null) => {
+    if (!modelo) return <span className="text-sm text-muted-foreground">-</span>;
+
+    return <span className="status-badge bg-secondary text-secondary-foreground">{modelo}</span>;
+  };
+
+  const contratosFiltrados = contratos.filter((contrato) => {
+    const tipoOk = filtroTipo === "todos" || contrato.tipo === filtroTipo;
+    const modeloOk = filtroModelo === "todos" || contrato.modelo === filtroModelo;
+    return tipoOk && modeloOk;
+  });
 
   const isMobile = useIsMobile();
 
   const ContratoCards = ({ contratos }: { contratos: Contrato[] }) => (
     <div className="space-y-3">
       {contratos.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <div className="py-12 text-center">
+          <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Nenhum contrato encontrado</p>
         </div>
       ) : (
         contratos.map((contrato) => (
-          <div key={contrato.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
-            <div className="flex items-start justify-between">
+          <div key={contrato.id} className="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">{contrato.empresa}</p>
                 {contrato.cnpj && <p className="text-sm text-muted-foreground">{contrato.cnpj}</p>}
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(contrato.status)}
-              </div>
+              <div className="flex items-center gap-2">{getStatusBadge(contrato.status)}</div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {getTipoBadge(contrato.tipo)}
+              {getModeloBadge(contrato.modelo)}
               {contrato.motoristas?.nome && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Users className="h-3 w-3" /> {contrato.motoristas.nome}
@@ -240,22 +259,22 @@ export default function Contratos() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 pt-1 border-t border-border">
+            <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1">
               {contrato.arquivo_url && (
                 <Button variant="ghost" size="sm" onClick={() => window.open(contrato.arquivo_url!, "_blank")}>
-                  <Download className="h-4 w-4 mr-1" /> Baixar
+                  <Download className="mr-1 h-4 w-4" /> Baixar
                 </Button>
               )}
               <Button variant="ghost" size="sm" onClick={() => handleEdit(contrato)}>
-                <Pencil className="h-4 w-4 mr-1" /> Editar
+                <Pencil className="mr-1 h-4 w-4" /> Editar
               </Button>
               {contrato.status === "pendente" && (
                 <Button variant="ghost" size="sm" onClick={() => enviarContrato(contrato.id)}>
-                  <Send className="h-4 w-4 mr-1" /> Enviar
+                  <Send className="mr-1 h-4 w-4" /> Enviar
                 </Button>
               )}
               <Button variant="ghost" size="sm" onClick={() => handleDelete(contrato.id)}>
-                <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                <Trash2 className="mr-1 h-4 w-4 text-destructive" />
               </Button>
             </div>
           </div>
@@ -265,38 +284,46 @@ export default function Contratos() {
   );
 
   const ContratoTable = ({ contratos }: { contratos: Contrato[] }) => (
-    <div className="bg-card rounded-xl border border-border overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card">
       {contratos.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <div className="py-12 text-center">
+          <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Nenhum contrato encontrado</p>
         </div>
       ) : (
-        <table className="w-full min-w-[600px]">
+        <table className="w-full min-w-[760px]">
           <thead>
             <tr className="table-header">
-              <th className="text-left px-6 py-4">Tipo</th>
-              <th className="text-left px-6 py-4">Empresa</th>
-              <th className="text-left px-6 py-4">Vinculado a</th>
-              <th className="text-left px-6 py-4">CNPJ</th>
-              <th className="text-left px-6 py-4">Data Envio</th>
-              <th className="text-left px-6 py-4">Status</th>
-              <th className="text-right px-6 py-4">Ações</th>
+              <th className="px-6 py-4 text-left">Tipo</th>
+              <th className="px-6 py-4 text-left">Modelo</th>
+              <th className="px-6 py-4 text-left">Empresa</th>
+              <th className="px-6 py-4 text-left">Vinculado a</th>
+              <th className="px-6 py-4 text-left">CNPJ</th>
+              <th className="px-6 py-4 text-left">Data Envio</th>
+              <th className="px-6 py-4 text-left">Status</th>
+              <th className="px-6 py-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {contratos.map((contrato) => (
-              <tr key={contrato.id} className="hover:bg-muted/30 transition-colors">
+              <tr key={contrato.id} className="transition-colors hover:bg-muted/30">
                 <td className="px-6 py-4">{getTipoBadge(contrato.tipo)}</td>
+                <td className="px-6 py-4">{getModeloBadge(contrato.modelo)}</td>
                 <td className="px-6 py-4">
                   <p className="font-medium text-foreground">{contrato.empresa}</p>
                 </td>
-                <td className="px-6 py-4 text-muted-foreground text-sm">
+                <td className="px-6 py-4 text-sm text-muted-foreground">
                   {contrato.motoristas?.nome && (
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{contrato.motoristas.nome}</span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {contrato.motoristas.nome}
+                    </span>
                   )}
                   {contrato.transportadores?.razao_social && (
-                    <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{contrato.transportadores.razao_social}</span>
+                    <span className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {contrato.transportadores.razao_social}
+                    </span>
                   )}
                   {!contrato.motoristas?.nome && !contrato.transportadores?.razao_social && "-"}
                 </td>
@@ -308,7 +335,12 @@ export default function Contratos() {
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     {contrato.arquivo_url && (
-                      <Button variant="ghost" size="icon" onClick={() => window.open(contrato.arquivo_url!, "_blank")} title="Baixar Arquivo">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(contrato.arquivo_url!, "_blank")}
+                        title="Baixar Arquivo"
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                     )}
@@ -338,17 +370,21 @@ export default function Contratos() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Contratos</h1>
-            <p className="text-muted-foreground mt-1">
-              Gerencie contratos, distratos e termos de adesão
-            </p>
+            <p className="mt-1 text-muted-foreground">Gerencie contratos, distratos e termos de adesão</p>
           </div>
-          <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(isOpen) => {
+              setOpen(isOpen);
+              if (!isOpen) resetForm();
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Novo Documento
               </Button>
             </DialogTrigger>
@@ -356,19 +392,11 @@ export default function Contratos() {
               <DialogHeader>
                 <DialogTitle>{editingContrato ? "Editar Contrato" : "Adicionar Contrato"}</DialogTitle>
               </DialogHeader>
-              <Formik
-                initialValues={formInitialValues}
-                validationSchema={contratoSchema}
-                onSubmit={handleSubmit}
-                enableReinitialize
-              >
+              <Formik initialValues={formInitialValues} validationSchema={contratoSchema} onSubmit={handleSubmit} enableReinitialize>
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
                     <FormSelectWrapper name="tipo" label="Tipo" required>
-                      <Select
-                        value={values.tipo}
-                        onValueChange={(value) => setFieldValue("tipo", value)}
-                      >
+                      <Select value={values.tipo} onValueChange={(value) => setFieldValue("tipo", value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
@@ -379,6 +407,20 @@ export default function Contratos() {
                         </SelectContent>
                       </Select>
                     </FormSelectWrapper>
+
+                    <FormSelectWrapper name="modelo" label="Modelo" required>
+                      <Select value={values.modelo} onValueChange={(value) => setFieldValue("modelo", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o modelo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Maiore">Maiore</SelectItem>
+                          <SelectItem value="Start">Start</SelectItem>
+                          <SelectItem value="Comodato">Comodato</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
+
                     <FormField name="empresa" label="Empresa" required />
                     <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" mask="cnpj" />
                     <FormField name="observacoes" label="Observações" as="textarea" />
@@ -393,11 +435,7 @@ export default function Contratos() {
                         label="Anexar Contrato"
                       />
                     </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={isSubmitting || !values.tipo || !values.empresa}
-                    >
+                    <Button type="submit" className="w-full" disabled={isSubmitting || !values.tipo || !values.modelo || !values.empresa}>
                       {isSubmitting ? "Salvando..." : editingContrato ? "Salvar" : "Cadastrar"}
                     </Button>
                   </Form>
@@ -407,39 +445,59 @@ export default function Contratos() {
           </Dialog>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Carregando...</div>
-        ) : (
-          <Tabs defaultValue="todos" className="space-y-6">
-            <TabsList className="bg-muted/50">
-              <TabsTrigger value="todos" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Todos ({contratos.length})
-              </TabsTrigger>
-              <TabsTrigger value="contratos">
-                Contratos ({contratos.filter(c => c.tipo === "contrato").length})
-              </TabsTrigger>
-              <TabsTrigger value="distratos">
-                Distratos ({contratos.filter(c => c.tipo === "distrato").length})
-              </TabsTrigger>
-              <TabsTrigger value="adesao">
-                Adesão ({contratos.filter(c => c.tipo === "adesao").length})
-              </TabsTrigger>
-            </TabsList>
+        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Filter className="h-4 w-4" />
+              Filtrar por tipo
+            </div>
+            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tipoOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <TabsContent value="todos">
-              <ContratoList contratos={contratos} />
-            </TabsContent>
-            <TabsContent value="contratos">
-              <ContratoList contratos={contratos.filter(c => c.tipo === "contrato")} />
-            </TabsContent>
-            <TabsContent value="distratos">
-              <ContratoList contratos={contratos.filter(c => c.tipo === "distrato")} />
-            </TabsContent>
-            <TabsContent value="adesao">
-              <ContratoList contratos={contratos.filter(c => c.tipo === "adesao")} />
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-foreground">Filtrar por modelo</div>
+            <Select value={filtroModelo} onValueChange={setFiltroModelo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o modelo" />
+              </SelectTrigger>
+              <SelectContent>
+                {modeloOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setFiltroTipo("todos");
+              setFiltroModelo("todos");
+            }}
+            disabled={filtroTipo === "todos" && filtroModelo === "todos"}
+          >
+            Limpar filtros
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-muted-foreground">Carregando...</div>
+        ) : (
+          <ContratoList contratos={contratosFiltrados} />
         )}
       </div>
     </MainLayout>

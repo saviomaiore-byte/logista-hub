@@ -84,6 +84,7 @@ export const seguroSchema = Yup.object().shape({
 // Schema para Contratos
 export const contratoSchema = Yup.object().shape({
   tipo: requiredString('Tipo'),
+  modelo: requiredString('Modelo'),
   empresa: requiredString('Empresa'),
   cnpj: cnpjValidation,
   observacoes: optionalString(1000),

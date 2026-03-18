@@ -718,8 +718,19 @@ export default function Transportadores() {
                   {errors.cpf_cnpj && touched.cpf_cnpj && <p className="text-sm text-destructive mt-1">{errors.cpf_cnpj}</p>}
                 </div>
                 <div>
-                  <Label>Inscrição Estadual</Label>
-                  <Field as={Input} name="inscricao_estadual" />
+                  <Label>Regime Tributário</Label>
+                  <Select value={values.inscricao_estadual} onValueChange={(value) => setFieldValue("inscricao_estadual", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o regime tributário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REGIME_TRIBUTARIO_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Contato / Telefone</Label>

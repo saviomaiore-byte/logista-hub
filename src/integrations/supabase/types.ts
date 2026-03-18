@@ -639,8 +639,8 @@ export type Database = {
           tipo: string
           updated_at: string
           valor_premio: number | null
-          vigencia_fim: string
-          vigencia_inicio: string
+          vigencia_fim: string | null
+          vigencia_inicio: string | null
         }
         Insert: {
           arquivo_url?: string | null
@@ -654,8 +654,8 @@ export type Database = {
           tipo: string
           updated_at?: string
           valor_premio?: number | null
-          vigencia_fim: string
-          vigencia_inicio: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Update: {
           arquivo_url?: string | null
@@ -669,8 +669,8 @@ export type Database = {
           tipo?: string
           updated_at?: string
           valor_premio?: number | null
-          vigencia_fim?: string
-          vigencia_inicio?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Relationships: [
           {

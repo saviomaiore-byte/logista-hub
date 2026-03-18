@@ -41,8 +41,8 @@ interface Seguro {
   seguradora: string;
   numero_apolice: string | null;
   valor_premio: number | null;
-  vigencia_inicio: string;
-  vigencia_fim: string;
+  vigencia_inicio: string | null;
+  vigencia_fim: string | null;
   status: string | null;
   observacoes: string | null;
   arquivo_url: string | null;
@@ -173,8 +173,8 @@ function SegurosTab() {
         seguradora: data.seguradora,
         numero_apolice: data.numero_apolice || null,
         valor_premio: data.valor_premio ? parseFloat(data.valor_premio) : null,
-        vigencia_inicio: data.vigencia_inicio,
-        vigencia_fim: data.vigencia_fim,
+        vigencia_inicio: data.vigencia_inicio || null,
+        vigencia_fim: data.vigencia_fim || null,
         status: data.status,
         observacoes: data.observacoes || null,
         arquivo_url: data.arquivo_url || null,
@@ -201,8 +201,8 @@ function SegurosTab() {
         seguradora: data.seguradora,
         numero_apolice: data.numero_apolice || null,
         valor_premio: data.valor_premio ? parseFloat(data.valor_premio) : null,
-        vigencia_inicio: data.vigencia_inicio,
-        vigencia_fim: data.vigencia_fim,
+        vigencia_inicio: data.vigencia_inicio || null,
+        vigencia_fim: data.vigencia_fim || null,
         status: data.status,
         observacoes: data.observacoes || null,
         arquivo_url: data.arquivo_url || null,
@@ -266,9 +266,16 @@ function SegurosTab() {
     formikReset();
   };
 
+  const formatVigencia = (data?: string | null) => {
+    if (!data) return "-";
+    return format(parseISO(data), "dd/MM/yyyy", { locale: ptBR });
+  };
+
   const getStatusBadge = (seguro: Seguro) => {
     if (seguro.status === "cancelado") return <Badge variant="secondary">Cancelado</Badge>;
     if (seguro.status === "vencido") return <Badge variant="destructive">Vencido</Badge>;
+    if (!seguro.vigencia_fim) return <Badge variant="outline">Sem vigência</Badge>;
+
     const diasRestantes = differenceInDays(parseISO(seguro.vigencia_fim), new Date());
     if (diasRestantes < 0) return <Badge variant="destructive">Vencido</Badge>;
     if (diasRestantes <= 30) return <Badge className="bg-warning text-warning-foreground">Vence em {diasRestantes} dias</Badge>;
@@ -284,12 +291,13 @@ function SegurosTab() {
   );
 
   const segurosVencendo = seguros?.filter((s) => {
+    if (!s.vigencia_fim) return false;
     const dias = differenceInDays(parseISO(s.vigencia_fim), new Date());
     return dias >= 0 && dias <= 30;
   }).length || 0;
 
   const segurosVencidos = seguros?.filter((s) =>
-    differenceInDays(parseISO(s.vigencia_fim), new Date()) < 0
+    s.vigencia_fim ? differenceInDays(parseISO(s.vigencia_fim), new Date()) < 0 : false
   ).length || 0;
 
   return (
@@ -349,8 +357,8 @@ function SegurosTab() {
                         </SelectContent>
                       </Select>
                     </FormSelectWrapper>
-                    <FormField name="vigencia_inicio" label="Vigência Início" type="date" required />
-                    <FormField name="vigencia_fim" label="Vigência Fim" type="date" required />
+                    <FormField name="vigencia_inicio" label="Vigência Início" type="date" />
+                    <FormField name="vigencia_fim" label="Vigência Fim" type="date" />
                   </div>
                   <FormField name="observacoes" label="Observações" as="textarea" />
                   <div className="space-y-2">
@@ -398,7 +406,7 @@ function SegurosTab() {
             <div>
               <p className="text-sm text-muted-foreground">Ativos</p>
               <p className="text-2xl font-bold text-foreground">
-                {seguros?.filter(s => differenceInDays(parseISO(s.vigencia_fim), new Date()) > 30).length || 0}
+                {seguros?.filter(s => s.vigencia_fim ? differenceInDays(parseISO(s.vigencia_fim), new Date()) > 30 : s.status === "ativo").length || 0}
               </p>
             </div>
           </div>
@@ -471,7 +479,7 @@ function SegurosTab() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-muted-foreground text-xs">Vigência</p>
-                    <p className="text-foreground">{format(parseISO(seguro.vigencia_inicio), "dd/MM/yy")} - {format(parseISO(seguro.vigencia_fim), "dd/MM/yy")}</p>
+                    <p className="text-foreground">{formatVigencia(seguro.vigencia_inicio)} - {formatVigencia(seguro.vigencia_fim)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Valor</p>
@@ -540,8 +548,8 @@ function SegurosTab() {
                   <TableCell>{seguro.numero_apolice || "-"}</TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <p>{format(parseISO(seguro.vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })}</p>
-                      <p className="text-muted-foreground">até {format(parseISO(seguro.vigencia_fim), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      <p>{formatVigencia(seguro.vigencia_inicio)}</p>
+                      <p className="text-muted-foreground">até {formatVigencia(seguro.vigencia_fim)}</p>
                     </div>
                   </TableCell>
                   <TableCell>

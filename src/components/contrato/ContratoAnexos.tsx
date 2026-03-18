@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 interface Contrato {
   id: string;
   tipo: string;
+  modelo: string | null;
   empresa: string;
   cnpj: string | null;
   status: string | null;
@@ -26,22 +27,43 @@ interface ContratoAnexosProps {
   nome: string;
 }
 
+const tipoLabels: Record<string, string> = {
+  contrato: "Contrato",
+  distrato: "Distrato",
+  adesao: "Termo de Adesão",
+};
+
+const modeloLabels: Record<string, string> = {
+  Maiore: "Maiore",
+  Start: "Start",
+  Comodato: "Comodato",
+};
+
 export function ContratoAnexos({ motorista_id, transportador_id, nome }: ContratoAnexosProps) {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
+  const [modelo, setModelo] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [arquivoUrl, setArquivoUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchContratos = async () => {
+    setLoading(true);
+
     let query = supabase.from("contratos").select("*").order("created_at", { ascending: false });
     if (motorista_id) query = query.eq("motorista_id", motorista_id);
     if (transportador_id) query = query.eq("transportador_id", transportador_id);
-    
+
     const { data, error } = await query;
-    if (!error) setContratos(data || []);
+
+    if (error) {
+      toast.error("Erro ao carregar contratos");
+    } else {
+      setContratos((data as Contrato[]) || []);
+    }
+
     setLoading(false);
   };
 
@@ -49,14 +71,25 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     fetchContratos();
   }, [motorista_id, transportador_id]);
 
+  const resetForm = () => {
+    setTipo("");
+    setModelo("");
+    setObservacoes("");
+    setArquivoUrl("");
+    setShowForm(false);
+  };
+
   const handleAdd = async () => {
-    if (!tipo) {
-      toast.error("Selecione o tipo do contrato");
+    if (!tipo || !modelo) {
+      toast.error("Selecione o tipo e o modelo do contrato");
       return;
     }
+
     setSaving(true);
+
     const { error } = await supabase.from("contratos").insert({
       tipo,
+      modelo,
       empresa: nome,
       observacoes: observacoes || null,
       arquivo_url: arquivoUrl || null,
@@ -69,18 +102,19 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
       toast.error("Erro ao salvar contrato");
     } else {
       toast.success("Contrato adicionado!");
-      setTipo("");
-      setObservacoes("");
-      setArquivoUrl("");
-      setShowForm(false);
+      resetForm();
       fetchContratos();
     }
+
     setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("contratos").delete().eq("id", id);
-    if (!error) {
+
+    if (error) {
+      toast.error("Erro ao excluir contrato");
+    } else {
       toast.success("Contrato excluído!");
       fetchContratos();
     }
@@ -93,8 +127,10 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
       pendente: { class: "bg-muted text-muted-foreground", label: "Pendente", icon: Clock },
       recusado: { class: "status-danger", label: "Recusado", icon: XCircle },
     };
+
     const s = status || "pendente";
     const { class: className, label, icon: Icon } = config[s] || config.pendente;
+
     return (
       <span className={cn("status-badge inline-flex items-center gap-1 text-xs", className)}>
         <Icon className="h-3 w-3" />
@@ -103,30 +139,29 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     );
   };
 
-  const tipoLabels: Record<string, string> = {
-    contrato: "Contrato",
-    distrato: "Distrato",
-    adesao: "Termo de Adesão",
-  };
-
-  if (loading) return <p className="text-sm text-muted-foreground py-4">Carregando contratos...</p>;
+  if (loading) return <p className="py-4 text-sm text-muted-foreground">Carregando contratos...</p>;
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="font-medium text-sm">Contratos ({contratos.length})</h4>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-medium">Contratos ({contratos.length})</h4>
+          <p className="text-xs text-muted-foreground">Esses contratos são compartilhados com o módulo central de contratos.</p>
+        </div>
         <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-3 w-3 mr-1" />
+          <Plus className="mr-1 h-3 w-3" />
           Novo Contrato
         </Button>
       </div>
 
       {showForm && (
-        <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/30">
+        <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
           <div>
             <Label className="text-sm">Tipo *</Label>
             <Select value={tipo} onValueChange={setTipo}>
-              <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="contrato">Contrato</SelectItem>
                 <SelectItem value="distrato">Distrato</SelectItem>
@@ -134,12 +169,33 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label className="text-sm">Modelo *</Label>
+            <Select value={modelo} onValueChange={setModelo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o modelo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Maiore">Maiore</SelectItem>
+                <SelectItem value="Start">Start</SelectItem>
+                <SelectItem value="Comodato">Comodato</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-sm">Empresa</Label>
+            <Input value={nome} disabled />
+          </div>
+
           <div>
             <Label className="text-sm">Observações</Label>
             <Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Observações..." />
           </div>
+
           <div>
-            <Label className="text-sm">Anexar Documento (PDF)</Label>
+            <Label className="text-sm">Anexar Documento</Label>
             <FileUpload
               currentUrl={arquivoUrl || undefined}
               onUpload={(url) => setArquivoUrl(url)}
@@ -149,32 +205,40 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               label="Anexar Contrato"
             />
           </div>
+
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo}>
+            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo || !modelo}>
               {saving ? "Salvando..." : "Adicionar"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+            <Button size="sm" variant="ghost" onClick={resetForm}>
+              Cancelar
+            </Button>
           </div>
         </div>
       )}
 
       {contratos.length === 0 ? (
-        <div className="text-center py-6 text-muted-foreground">
-          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <div className="py-6 text-center text-muted-foreground">
+          <FileText className="mx-auto mb-2 h-8 w-8 opacity-50" />
           <p className="text-sm">Nenhum contrato vinculado</p>
         </div>
       ) : (
         <div className="space-y-2">
           {contratos.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+            <div key={c.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{tipoLabels[c.tipo] || c.tipo}</span>
+                  {c.modelo && (
+                    <span className="status-badge bg-secondary text-secondary-foreground">
+                      {modeloLabels[c.modelo] || c.modelo}
+                    </span>
+                  )}
                   {getStatusBadge(c.status)}
                 </div>
-                {c.observacoes && <p className="text-xs text-muted-foreground truncate mt-0.5">{c.observacoes}</p>}
+                {c.observacoes && <p className="mt-0.5 truncate text-xs text-muted-foreground">{c.observacoes}</p>}
               </div>
-              <div className="flex items-center gap-1 ml-2">
+              <div className="ml-2 flex items-center gap-1">
                 {c.arquivo_url && (
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(c.arquivo_url!, "_blank")}>
                     <Download className="h-3.5 w-3.5" />

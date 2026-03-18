@@ -108,8 +108,8 @@ export default function Transportadores() {
   const [editingCavalo, setEditingCavalo] = useState<Cavalo | null>(null);
   const [showReboqueDialog, setShowReboqueDialog] = useState(false);
   const [editingReboque, setEditingReboque] = useState<Reboque | null>(null);
-  const [contratosTransp, setContratosTransp] = useState<Transportador | null>(null);
   const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
+  const [docsTab, setDocsTab] = useState("anexos");
 
   const { data: transportadores = [] } = useQuery({
     queryKey: ["transportadores"],
@@ -386,10 +386,10 @@ export default function Transportadores() {
                         </Button>
                       </div>
                       <div className="flex items-center gap-1 pt-1 border-t border-border flex-wrap">
-                        <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)}>
+                        <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("anexos"); }}>
                           <FileText className="h-4 w-4 mr-1" /> Ver docs
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)}>
+                        <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("contratos"); }}>
                           <FileText className="h-4 w-4 mr-1" /> Ver contratos
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
@@ -460,10 +460,10 @@ export default function Transportadores() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1 flex-wrap">
-                                <Button variant="ghost" size="sm" onClick={() => setDocsTransp(t)} title="Ver docs">
+                                <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("anexos"); }} title="Ver docs">
                                   <FileText className="h-4 w-4 mr-1" /> Ver docs
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setContratosTransp(t)} title="Ver contratos">
+                                <Button variant="ghost" size="sm" onClick={() => { setDocsTransp(t); setDocsTab("contratos"); }} title="Ver contratos">
                                   <FileText className="h-4 w-4 mr-1" /> Ver contratos
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => { setEditingTransp(t); setShowTranspDialog(true); }}>
@@ -892,12 +892,17 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!docsTransp} onOpenChange={(v) => !v && setDocsTransp(null)}>
+      <Dialog open={!!docsTransp} onOpenChange={(open) => {
+        if (!open) {
+          setDocsTransp(null);
+          setDocsTab("anexos");
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Documentos - {docsTransp?.razao_social}</DialogTitle>
+            <DialogTitle>{docsTab === "contratos" ? "Contratos" : "Documentos"} - {docsTransp?.razao_social}</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="anexos" className="w-full">
+          <Tabs value={docsTab} onValueChange={setDocsTab} className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
               <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
@@ -913,17 +918,6 @@ export default function Transportadores() {
               )}
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!contratosTransp} onOpenChange={(v) => !v && setContratosTransp(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Contratos - {contratosTransp?.razao_social}</DialogTitle>
-          </DialogHeader>
-          {contratosTransp && (
-            <ContratoAnexos transportador_id={contratosTransp.id} nome={contratosTransp.razao_social} />
-          )}
         </DialogContent>
       </Dialog>
     </MainLayout>

@@ -59,11 +59,18 @@ type Reboque = {
   transportadores?: { razao_social: string } | null;
 };
 
+const REGIME_TRIBUTARIO_OPTIONS = [
+  "Simples nacional",
+  "Lucro presumido",
+  "Lucro real",
+  "MEI caminhoneiro",
+] as const;
+
 // Schemas
 const transportadorSchema = Yup.object().shape({
   razao_social: Yup.string().trim().required("Razão Social é obrigatória"),
   cpf_cnpj: Yup.string().trim().required("CPF/CNPJ é obrigatório"),
-  inscricao_estadual: Yup.string().trim().nullable(),
+  inscricao_estadual: Yup.string().trim().oneOf([...REGIME_TRIBUTARIO_OPTIONS]).nullable(),
   contato: Yup.string().trim().nullable(),
   endereco: Yup.string().trim().nullable(),
   data_nascimento: Yup.string().nullable(),

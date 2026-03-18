@@ -892,12 +892,17 @@ export default function Transportadores() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!docsTransp} onOpenChange={(v) => !v && setDocsTransp(null)}>
+      <Dialog open={!!docsTransp} onOpenChange={(open) => {
+        if (!open) {
+          setDocsTransp(null);
+          setDocsTab("anexos");
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Documentos - {docsTransp?.razao_social}</DialogTitle>
+            <DialogTitle>{docsTab === "contratos" ? "Contratos" : "Documentos"} - {docsTransp?.razao_social}</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="anexos" className="w-full">
+          <Tabs value={docsTab} onValueChange={setDocsTab} className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
               <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
@@ -913,17 +918,6 @@ export default function Transportadores() {
               )}
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!contratosTransp} onOpenChange={(v) => !v && setContratosTransp(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Contratos - {contratosTransp?.razao_social}</DialogTitle>
-          </DialogHeader>
-          {contratosTransp && (
-            <ContratoAnexos transportador_id={contratosTransp.id} nome={contratosTransp.razao_social} />
-          )}
         </DialogContent>
       </Dialog>
     </MainLayout>

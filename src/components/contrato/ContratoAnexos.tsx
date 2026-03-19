@@ -108,13 +108,18 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
   };
 
   const handleAdd = async () => {
-    if (!tipo || !modelo) {
-      toast.error("Selecione o tipo e o modelo do contrato");
+    if (!tipo) {
+      toast.error("Selecione o tipo do contrato");
       return;
     }
 
     if (isFromMotorista && !selectedTransportadorId) {
-      toast.error("Selecione a transportadora do contrato");
+      toast.error("Selecione a transportadora no campo Modelo");
+      return;
+    }
+
+    if (!isFromMotorista && !modelo) {
+      toast.error("Selecione o modelo do contrato");
       return;
     }
 

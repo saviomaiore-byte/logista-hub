@@ -41,28 +41,28 @@ export function AlertCard({ alerts }: AlertCardProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="p-4 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-2">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="border-b border-border bg-muted/30 p-4">
+        <div className="flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-warning" />
           <h3 className="font-semibold text-foreground">Documentos com Atenção</h3>
-          <span className="ml-auto status-badge status-warning">{alerts.length} alertas</span>
+          <span className="status-badge status-warning sm:ml-auto">{alerts.length} alertas</span>
         </div>
       </div>
       <div className="divide-y divide-border">
         {alerts.map((alert) => (
-          <div key={alert.id} className="p-4 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
+          <div key={alert.id} className="p-4 transition-colors hover:bg-muted/30">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                 {getTypeIcon(alert.type)}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{alert.motorista}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-foreground">{alert.motorista}</p>
                 <p className="text-sm text-muted-foreground">
                   {alert.documento} • Venc: {alert.vencimento}
                 </p>
               </div>
-              <span className={cn("status-badge", getStatusColor(alert.diasRestantes))}>
+              <span className={cn("status-badge w-fit", getStatusColor(alert.diasRestantes))}>
                 {getStatusText(alert.diasRestantes)}
               </span>
             </div>
@@ -70,8 +70,8 @@ export function AlertCard({ alerts }: AlertCardProps) {
         ))}
       </div>
       {alerts.length > 5 && (
-        <div className="p-3 text-center border-t border-border">
-          <button className="text-sm text-primary hover:underline font-medium">
+        <div className="border-t border-border p-3 text-center">
+          <button className="text-sm font-medium text-primary hover:underline">
             Ver todos os alertas
           </button>
         </div>

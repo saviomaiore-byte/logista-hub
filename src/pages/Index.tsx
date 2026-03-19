@@ -15,7 +15,6 @@ export default function Index() {
     valorPendente: 0,
     docsVencidos: 0,
     certificados: 0,
-    
   });
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,19 +23,16 @@ export default function Index() {
     const fetchStats = async () => {
       const hoje = new Date();
 
-      // Motoristas
       const { count: motoristasCount } = await supabase
         .from("motoristas")
         .select("*", { count: "exact", head: true })
         .eq("status", "ativo");
 
-      // Contratos
       const { count: contratosCount } = await supabase
         .from("contratos")
         .select("*", { count: "exact", head: true })
         .in("status", ["assinado", "enviado"]);
 
-      // Boletos pendentes
       const { data: boletos } = await supabase
         .from("boletos")
         .select("valor")
@@ -44,7 +40,6 @@ export default function Index() {
 
       const valorPendente = boletos?.reduce((acc, b) => acc + (b.valor || 0), 0) || 0;
 
-      // Documentos vencidos (motoristas)
       const { data: motoristas } = await supabase
         .from("motoristas")
         .select("id, nome, cnh_vencimento, mopp_vencimento, antt_vencimento");
@@ -84,11 +79,9 @@ export default function Index() {
         checkDoc("ANTT", m.antt_vencimento);
       });
 
-      // Certificados
       const { count: certCount } = await supabase
         .from("certificados")
         .select("*", { count: "exact", head: true });
-
 
       setStats({
         motoristas: motoristasCount || 0,
@@ -97,7 +90,6 @@ export default function Index() {
         valorPendente,
         docsVencidos,
         certificados: certCount || 0,
-        
       });
 
       alertsList.sort((a, b) => a.diasRestantes - b.diasRestantes);
@@ -115,8 +107,8 @@ export default function Index() {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       </MainLayout>
     );
@@ -124,15 +116,13 @@ export default function Index() {
 
   return (
     <MainLayout>
-      <div className="animate-fade-in">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Visão geral do sistema de gestão de transportadores</p>
+      <div className="animate-fade-in space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">Visão geral do sistema de gestão de transportadores</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Motoristas Ativos"
             value={stats.motoristas}
@@ -163,8 +153,7 @@ export default function Index() {
           />
         </div>
 
-        {/* Secondary Stats */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="grid gap-4 sm:grid-cols-2">
           <StatCard
             title="Certificados"
             value={stats.certificados}
@@ -181,29 +170,25 @@ export default function Index() {
           />
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Alerts - Takes 2 columns */}
           <div className="lg:col-span-2">
             {alerts.length > 0 ? (
               <AlertCard alerts={alerts} />
             ) : (
-              <div className="bg-card rounded-xl border border-border p-8 text-center">
-                <AlertTriangle className="h-12 w-12 mx-auto text-success mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">Tudo em dia!</h3>
+              <div className="rounded-xl border border-border bg-card p-8 text-center">
+                <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-success" />
+                <h3 className="mb-2 font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="text-muted-foreground">Nenhum documento próximo do vencimento.</p>
               </div>
             )}
           </div>
 
-          {/* Quick Actions */}
           <div>
             <QuickActions />
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mt-6">
+        <div>
           <RecentActivityCard activities={mockActivities} />
         </div>
       </div>

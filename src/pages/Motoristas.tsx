@@ -237,10 +237,21 @@ export default function Motoristas() {
     return <span className={cn("status-badge", styles[status])}>{labels[status]}</span>;
   };
 
-  const filteredMotoristas = motoristas.filter((m) =>
-    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.cpf.includes(searchTerm)
-  );
+  const filteredMotoristas = motoristas.filter((m) => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const transportadorasDoMotorista = motoristaTransportadoras[m.id] || [];
+
+    const matchesSearch =
+      normalizedSearch.length === 0 ||
+      m.nome.toLowerCase().includes(normalizedSearch) ||
+      m.cpf.includes(searchTerm);
+
+    const matchesStatus = statusFilter === "todos" || m.status === statusFilter;
+    const matchesTransportadora =
+      transportadoraFilter === "todas" || transportadorasDoMotorista.includes(transportadoraFilter);
+
+    return matchesSearch && matchesStatus && matchesTransportadora;
+  });
 
   return (
     <MainLayout>

@@ -22,6 +22,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { Textarea } from "@/components/ui/textarea";
 import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComparativo";
 import { usePdfExtraction } from "@/hooks/usePdfExtraction";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Conferencia {
   id: string;

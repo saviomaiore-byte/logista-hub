@@ -101,6 +101,9 @@ export default function Motoristas() {
   const [motoristaTransportadoras, setMotoristaTransportadoras] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [transportadoraFilter, setTransportadoraFilter] = useState("todas");
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);

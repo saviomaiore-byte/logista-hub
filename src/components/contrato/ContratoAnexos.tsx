@@ -274,7 +274,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
           </div>
 
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo || !modelo || (isFromMotorista && !selectedTransportadorId)}>
+            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo || (isFromMotorista ? !selectedTransportadorId : !modelo)}>
               {saving ? "Salvando..." : "Adicionar"}
             </Button>
             <Button size="sm" variant="ghost" onClick={resetForm}>

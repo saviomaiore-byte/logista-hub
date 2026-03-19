@@ -332,9 +332,9 @@ export default function Transportadores() {
             <TabsTrigger value="reboques">Reboques</TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2 mt-4">
-            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="sm:max-w-md" />
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:max-w-md" />
           </div>
 
           <TabsContent value="transportadores" className="space-y-4">

@@ -28,7 +28,7 @@ const baseNavigation = [
   { name: "Seguros", href: "/seguros", icon: Shield },
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
-  { name: "Certificados", href: "/certificados", icon: Calendar },
+  { name: "Certificados Digitais", href: "/certificados", icon: Calendar },
 ];
 
 const adminNavigation = [

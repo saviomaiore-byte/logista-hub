@@ -60,6 +60,7 @@ export default function ConferenciaSeguros() {
   const [newArquivoUrl, setNewArquivoUrl] = useState("");
   const [newObs, setNewObs] = useState("");
   const [activeTab, setActiveTab] = useState("manual");
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();

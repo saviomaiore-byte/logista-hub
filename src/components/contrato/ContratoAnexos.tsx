@@ -191,30 +191,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
 
       {showForm && (
         <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-          {isFromMotorista && (
-            <div>
-              <Label className="text-sm">Transportadora *</Label>
-              {transportadoras.length === 0 ? (
-                <p className="text-xs text-destructive mt-1">
-                  Nenhuma transportadora vinculada a este motorista. Vincule uma transportadora primeiro.
-                </p>
-              ) : (
-                <Select value={selectedTransportadorId} onValueChange={setSelectedTransportadorId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a transportadora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transportadoras.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.razao_social}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          )}
-
           <div>
             <Label className="text-sm">Tipo *</Label>
             <Select value={tipo} onValueChange={setTipo}>
@@ -231,16 +207,41 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
 
           <div>
             <Label className="text-sm">Modelo *</Label>
-            <Select value={modelo} onValueChange={setModelo}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o modelo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Maiore">Maiore</SelectItem>
-                <SelectItem value="Start">Start</SelectItem>
-                <SelectItem value="Comodato">Comodato</SelectItem>
-              </SelectContent>
-            </Select>
+            {isFromMotorista ? (
+              transportadoras.length === 0 ? (
+                <p className="text-xs text-destructive mt-1">
+                  Nenhuma transportadora vinculada a este motorista. Vincule uma transportadora primeiro.
+                </p>
+              ) : (
+                <Select value={selectedTransportadorId} onValueChange={(val) => {
+                  setSelectedTransportadorId(val);
+                  const transp = transportadoras.find(t => t.id === val);
+                  setModelo(transp?.razao_social || "");
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a transportadora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transportadoras.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.razao_social}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )
+            ) : (
+              <Select value={modelo} onValueChange={setModelo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Maiore">Maiore</SelectItem>
+                  <SelectItem value="Start">Start</SelectItem>
+                  <SelectItem value="Comodato">Comodato</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {!isFromMotorista && (

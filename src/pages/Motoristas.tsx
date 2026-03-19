@@ -603,7 +603,7 @@ export default function Motoristas() {
 
         {/* Docs Dialog */}
         <Dialog open={!!docsMotorista} onOpenChange={(v) => !v && setDocsMotorista(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Documentos - {docsMotorista?.nome}</DialogTitle>
             </DialogHeader>
@@ -613,17 +613,17 @@ export default function Motoristas() {
                 <TabsTrigger value="anexos" className="flex-1">Anexos</TabsTrigger>
                 <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
               </TabsList>
-              <TabsContent value="docs" className="space-y-4 mt-4">
+              <TabsContent value="docs" className="mt-4 space-y-4">
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
                   { label: "MOPP", numero: (docsMotorista as any)?.mopp_vitalicio ? "Vitalício" : null, vencimento: docsMotorista?.mopp_vencimento },
                 ].map((doc) => (
-                  <div key={doc.label} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div key={doc.label} className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-medium text-sm">{doc.label}</p>
+                      <p className="text-sm font-medium">{doc.label}</p>
                       <p className="text-xs text-muted-foreground">{doc.numero || "Não informado"}</p>
                     </div>
-                    <div className="text-right text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground sm:text-right">
                       {doc.vencimento ? `Vence: ${new Date(doc.vencimento).toLocaleDateString("pt-BR")}` : "Sem vencimento"}
                     </div>
                   </div>
@@ -645,7 +645,7 @@ export default function Motoristas() {
 
         {/* Edit Dialog */}
         <Dialog open={!!editMotorista} onOpenChange={(v) => !v && setEditMotorista(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Editar Motorista</DialogTitle>
             </DialogHeader>
@@ -695,8 +695,6 @@ export default function Motoristas() {
                     return;
                   }
 
-
-                  // Sync transportadora links
                   await syncTransportadoraLinks(editMotorista.id, selectedTransportadoras);
 
                   toast.success("Motorista atualizado!");
@@ -708,19 +706,19 @@ export default function Motoristas() {
               >
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="nome" label="Nome Completo" required />
                       <FormField name="cpf" label="CPF" placeholder="000.000.000-00" mask="cpf" required />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="telefone" label="Telefone" placeholder="(00) 00000-0000" mask="telefone" />
                       <FormField name="email" label="Email" type="email" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="rg" label="RG" />
                       <FormField name="data_nascimento" label="Data de Nascimento" type="date" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormSelectWrapper name="estado_civil" label="Estado Civil">
                         <Select
                           value={values.estado_civil || ""}
@@ -740,7 +738,7 @@ export default function Motoristas() {
                       </FormSelectWrapper>
                       <FormField name="endereco" label="Endereço" />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <FormField name="cidade" label="Cidade" />
                       <FormField name="estado" label="Estado" placeholder="SP" maxLength={2} />
                       <FormSelectWrapper name="status" label="Status">
@@ -779,7 +777,7 @@ export default function Motoristas() {
                         </SelectContent>
                       </Select>
                       {selectedTransportadoras.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           {selectedTransportadoras.map((id) => {
                             const t = transportadoras.find((tr) => tr.id === id);
                             return (
@@ -789,7 +787,7 @@ export default function Motoristas() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTransportadoras(selectedTransportadoras.filter((x) => x !== id))}
-                                  className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                  className="ml-1 rounded-full p-0.5 hover:bg-muted"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -800,13 +798,13 @@ export default function Motoristas() {
                       )}
                     </div>
 
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="font-medium mb-3">Documentos</h4>
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="mt-4 border-t pt-4">
+                      <h4 className="mb-3 font-medium">Documentos</h4>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField name="cnh_numero" label="CNH Número" />
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
                         <div className="flex items-end pb-2">
                           <div className="flex items-center gap-2">
@@ -815,7 +813,7 @@ export default function Motoristas() {
                               checked={values.mopp_vitalicio}
                               onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
                             />
-                            <Label htmlFor="mopp_vitalicio_edit" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                            <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
                           </div>
                         </div>
                       </div>

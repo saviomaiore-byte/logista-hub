@@ -20,17 +20,17 @@ export function QuickActions() {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <h3 className="font-semibold text-foreground mb-4">Ações Rápidas</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="rounded-xl border border-border bg-card p-4">
+      <h3 className="mb-4 font-semibold text-foreground">Ações Rápidas</h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
         {actions.map((action) => (
           <Button
             key={action.name}
             onClick={() => handleAction(action.path)}
-            className={`h-auto flex-col gap-2 py-4 ${action.color} text-primary-foreground`}
+            className={`h-auto justify-start gap-3 px-4 py-4 text-left ${action.color} text-primary-foreground`}
           >
-            <action.icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{action.name}</span>
+            <action.icon className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium leading-tight">{action.name}</span>
           </Button>
         ))}
       </div>

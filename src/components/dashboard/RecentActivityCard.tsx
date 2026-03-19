@@ -37,27 +37,27 @@ export function RecentActivityCard({ activities }: RecentActivityCardProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="p-4 border-b border-border bg-muted/30">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="border-b border-border bg-muted/30 p-4">
         <h3 className="font-semibold text-foreground">Atividades Recentes</h3>
       </div>
       <div className="divide-y divide-border">
         {activities.map((activity) => (
-          <div key={activity.id} className="p-4 hover:bg-muted/30 transition-colors">
-            <div className="flex items-start gap-3">
+          <div key={activity.id} className="p-4 transition-colors hover:bg-muted/30">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                   getActivityColor(activity.type)
                 )}
               >
                 {getActivityIcon(activity.type)}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground text-sm">{activity.title}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">{activity.description}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground break-words">{activity.description}</p>
               </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+              <span className="text-xs text-muted-foreground sm:whitespace-nowrap">{activity.time}</span>
             </div>
           </div>
         ))}

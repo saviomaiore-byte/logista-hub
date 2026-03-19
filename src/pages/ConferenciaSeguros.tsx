@@ -22,6 +22,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { Textarea } from "@/components/ui/textarea";
 import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComparativo";
 import { usePdfExtraction } from "@/hooks/usePdfExtraction";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Conferencia {
   id: string;
@@ -59,6 +60,7 @@ export default function ConferenciaSeguros() {
   const [newArquivoUrl, setNewArquivoUrl] = useState("");
   const [newObs, setNewObs] = useState("");
   const [activeTab, setActiveTab] = useState("manual");
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();
@@ -230,7 +232,7 @@ export default function ConferenciaSeguros() {
           </div>
           <Dialog open={openNew} onOpenChange={setOpenNew}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Nova Conferência
               </Button>
@@ -275,7 +277,7 @@ export default function ConferenciaSeguros() {
                     onChange={(e) => setNewObs(e.target.value)}
                   />
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <Button variant="outline" onClick={() => setOpenNew(false)}>
                     Cancelar
                   </Button>
@@ -395,7 +397,7 @@ export default function ConferenciaSeguros() {
 
                   <TabsContent value="manual">
                     <div className="space-y-4">
-                      <div className="bg-card rounded-xl border border-border p-4">
+                      <div className="rounded-xl border border-border bg-card p-4">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
                             Cobertura: {cobertosCount}/{totalItens} motoristas
@@ -404,44 +406,78 @@ export default function ConferenciaSeguros() {
                             {cobertura}%
                           </span>
                         </div>
-                        <Progress value={cobertura} className="h-3 mt-2" />
+                        <Progress value={cobertura} className="mt-2 h-3" />
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Search className="h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Buscar motorista por nome ou CPF..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="max-w-md"
+                          className="w-full sm:max-w-md"
                         />
                       </div>
 
-                      <div className="bg-card rounded-xl border border-border overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12">Coberto</TableHead>
-                              <TableHead>Motorista</TableHead>
-                              <TableHead>CPF</TableHead>
-                              <TableHead>Observação</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {loadingItens ? (
+                      {loadingItens ? (
+                        <div className="py-8 text-center text-muted-foreground">Carregando...</div>
+                      ) : filteredItens?.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground">Nenhum motorista encontrado</div>
+                      ) : isMobile ? (
+                        <div className="space-y-3">
+                          {filteredItens?.map((item) => (
+                            <div key={item.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <Checkbox
+                                    checked={item.coberto}
+                                    onCheckedChange={(checked) =>
+                                      toggleCobertoMutation.mutate({
+                                        itemId: item.id,
+                                        coberto: !!checked,
+                                      })
+                                    }
+                                  />
+                                  <div>
+                                    <p className="font-medium text-foreground">{item.motoristas?.nome}</p>
+                                    <p className="text-xs text-muted-foreground">{item.motoristas?.cpf}</p>
+                                  </div>
+                                </div>
+                                {item.coberto ? (
+                                  <Badge className="bg-success text-success-foreground text-xs">Coberto</Badge>
+                                ) : (
+                                  <Badge variant="destructive" className="text-xs">Descoberto</Badge>
+                                )}
+                              </div>
+                              <Input
+                                placeholder="Obs..."
+                                defaultValue={item.observacoes || ""}
+                                className="h-9 text-sm"
+                                onBlur={(e) => {
+                                  if (e.target.value !== (item.observacoes || "")) {
+                                    updateItemObsMutation.mutate({
+                                      itemId: item.id,
+                                      observacoes: e.target.value,
+                                    });
+                                  }
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="overflow-hidden rounded-xl border border-border bg-card">
+                          <Table>
+                            <TableHeader>
                               <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8">
-                                  Carregando...
-                                </TableCell>
+                                <TableHead className="w-12">Coberto</TableHead>
+                                <TableHead>Motorista</TableHead>
+                                <TableHead>CPF</TableHead>
+                                <TableHead>Observação</TableHead>
                               </TableRow>
-                            ) : filteredItens?.length === 0 ? (
-                              <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8">
-                                  <p className="text-muted-foreground">Nenhum motorista encontrado</p>
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              filteredItens?.map((item) => (
+                            </TableHeader>
+                            <TableBody>
+                              {filteredItens?.map((item) => (
                                 <TableRow key={item.id}>
                                   <TableCell>
                                     <Checkbox
@@ -483,11 +519,11 @@ export default function ConferenciaSeguros() {
                                     />
                                   </TableCell>
                                 </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 

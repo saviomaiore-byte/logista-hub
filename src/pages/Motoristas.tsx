@@ -101,6 +101,9 @@ export default function Motoristas() {
   const [motoristaTransportadoras, setMotoristaTransportadoras] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [transportadoraFilter, setTransportadoraFilter] = useState("todas");
   const [open, setOpen] = useState(false);
   const [docsMotorista, setDocsMotorista] = useState<Motorista | null>(null);
   const [editMotorista, setEditMotorista] = useState<Motorista | null>(null);
@@ -234,10 +237,21 @@ export default function Motoristas() {
     return <span className={cn("status-badge", styles[status])}>{labels[status]}</span>;
   };
 
-  const filteredMotoristas = motoristas.filter((m) =>
-    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.cpf.includes(searchTerm)
-  );
+  const filteredMotoristas = motoristas.filter((m) => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const transportadorasDoMotorista = motoristaTransportadoras[m.id] || [];
+
+    const matchesSearch =
+      normalizedSearch.length === 0 ||
+      m.nome.toLowerCase().includes(normalizedSearch) ||
+      m.cpf.includes(searchTerm);
+
+    const matchesStatus = statusFilter === "todos" || m.status === statusFilter;
+    const matchesTransportadora =
+      transportadoraFilter === "todas" || transportadorasDoMotorista.includes(transportadoraFilter);
+
+    return matchesSearch && matchesStatus && matchesTransportadora;
+  });
 
   return (
     <MainLayout>
@@ -415,20 +429,73 @@ export default function Motoristas() {
           </Dialog>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou CPF..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" className="gap-2" onClick={() => setShowFilters((prev) => !prev)}>
+              <Filter className="h-4 w-4" />
+              Filtros
+            </Button>
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filtros
-          </Button>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Transportadora</Label>
+                <Select value={transportadoraFilter} onValueChange={setTransportadoraFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as transportadoras" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as transportadoras</SelectItem>
+                    {transportadoras.map((transportadora) => (
+                      <SelectItem key={transportadora.id} value={transportadora.id}>
+                        {transportadora.razao_social}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("todos");
+                    setTransportadoraFilter("todas");
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {loading ? (

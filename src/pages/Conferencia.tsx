@@ -186,8 +186,8 @@ export default function Conferencia() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center gap-4">
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
+          <div className="flex items-center gap-4 rounded-xl border border-destructive/20 bg-destructive/10 p-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/20">
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
@@ -196,7 +196,7 @@ export default function Conferencia() {
               <p className="text-sm text-destructive/80">Documentos vencidos</p>
             </div>
           </div>
-          <div className="bg-warning/10 border border-warning/20 rounded-xl p-4 flex items-center gap-4">
+          <div className="flex items-center gap-4 rounded-xl border border-warning/20 bg-warning/10 p-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning/20">
               <Clock className="h-6 w-6 text-warning" />
             </div>
@@ -205,7 +205,7 @@ export default function Conferencia() {
               <p className="text-sm text-warning/80">Vencem em 30 dias</p>
             </div>
           </div>
-          <div className="bg-success/10 border border-success/20 rounded-xl p-4 flex items-center gap-4">
+          <div className="flex items-center gap-4 rounded-xl border border-success/20 bg-success/10 p-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/20">
               <CheckCircle className="h-6 w-6 text-success" />
             </div>
@@ -216,9 +216,9 @@ export default function Conferencia() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:items-center">
           <div className="relative flex-1 sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por motorista..."
               value={searchTerm}
@@ -226,7 +226,7 @@ export default function Conferencia() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             {[
               { key: "todos", label: "Todos" },
               { key: "vencido", label: "Vencidos" },
@@ -238,7 +238,7 @@ export default function Conferencia() {
                 variant={filterStatus === item.key ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilterStatus(item.key)}
-                className={filterStatus === item.key ? "bg-primary text-primary-foreground" : ""}
+                className={cn("flex-1 sm:flex-none", filterStatus === item.key ? "bg-primary text-primary-foreground" : "")}
               >
                 {item.label}
               </Button>

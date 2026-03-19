@@ -159,7 +159,7 @@ export default function Certificados() {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground">
+              <Button className="w-full bg-primary text-primary-foreground sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Certificado
               </Button>

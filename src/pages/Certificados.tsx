@@ -152,21 +152,21 @@ export default function Certificados() {
       <div className="animate-fade-in">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Certificados</h1>
+            <h1 className="text-2xl font-bold text-foreground">Certificados Digitais</h1>
             <p className="mt-1 text-muted-foreground">
-              Gerencie certificados e agendamentos de renovação
+              Gerencie certificados digitais e agendamentos de renovação
             </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="w-full bg-primary text-primary-foreground sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
-                Novo Certificado
+                Novo Certificado Digital
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Certificado</DialogTitle>
+                <DialogTitle>Adicionar Certificado Digital</DialogTitle>
               </DialogHeader>
               <Formik
                 initialValues={initialValues}
@@ -191,7 +191,7 @@ export default function Certificados() {
                     </FormSelectWrapper>
                     <FormField
                       name="tipo"
-                      label="Tipo de Certificado"
+                      label="Tipo de Certificado Digital"
                       placeholder="e-CNPJ, e-CPF, NF-e, etc."
                       required
                     />
@@ -201,14 +201,14 @@ export default function Certificados() {
                     </div>
                     <FormField name="observacoes" label="Observações" as="textarea" />
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Anexar Certificado</label>
+                      <label className="text-sm font-medium text-foreground">Anexar Certificado Digital</label>
                       <FileUpload
                         currentUrl={values.arquivo_url || undefined}
                         onUpload={(url) => setFieldValue("arquivo_url", url)}
                         onRemove={() => setFieldValue("arquivo_url", "")}
                         folder="certificados"
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        label="Anexar Certificado"
+                        label="Anexar Certificado Digital"
                       />
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting || transportadoras.length === 0}>

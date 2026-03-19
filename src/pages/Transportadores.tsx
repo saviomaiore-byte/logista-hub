@@ -684,7 +684,7 @@ export default function Transportadores() {
                 <div>
                   <Label>Razão Social / Nome *</Label>
                   <Field as={Input} name="razao_social" />
-                  {errors.razao_social && touched.razao_social && <p className="text-sm text-destructive mt-1">{errors.razao_social}</p>}
+                  {errors.razao_social && touched.razao_social && <p className="mt-1 text-sm text-destructive">{errors.razao_social}</p>}
                 </div>
                 <div>
                   <Label>CPF/CNPJ *</Label>
@@ -695,7 +695,7 @@ export default function Transportadores() {
                       setFieldValue("cpf_cnpj", raw.length > 11 ? masks.cnpj(e.target.value) : masks.cpf(e.target.value));
                     }}
                   />
-                  {errors.cpf_cnpj && touched.cpf_cnpj && <p className="text-sm text-destructive mt-1">{errors.cpf_cnpj}</p>}
+                  {errors.cpf_cnpj && touched.cpf_cnpj && <p className="mt-1 text-sm text-destructive">{errors.cpf_cnpj}</p>}
                 </div>
                 <div>
                   <Label>Regime Tributário</Label>
@@ -716,18 +716,18 @@ export default function Transportadores() {
                   <Label>Contato / Telefone</Label>
                   <Field as={Input} name="contato" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>Email</Label>
                     <Field as={Input} name="email" type="email" />
-                    {errors.email && touched.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+                    {errors.email && touched.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div>
                     <Label>RG</Label>
                     <Field as={Input} name="rg" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>Data de Nascimento</Label>
                     <Field as={Input} name="data_nascimento" type="date" />
@@ -761,7 +761,7 @@ export default function Transportadores() {
                   </Select>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>Salvar</Button>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>
                 </DialogFooter>
               </Form>
             )}
@@ -775,18 +775,18 @@ export default function Transportadores() {
             <DialogTitle>Vincular Motorista</DialogTitle>
           </DialogHeader>
           {vinculoTranspId && (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="max-h-80 space-y-2 overflow-y-auto">
               {getAvailableMotoristas(vinculoTranspId).length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Todos os motoristas já estão vinculados</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">Todos os motoristas já estão vinculados</p>
               ) : (
                 getAvailableMotoristas(vinculoTranspId).map((m) => (
-                  <div key={m.id} className="flex items-center justify-between p-2 border rounded-lg">
+                  <div key={m.id} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium">{m.nome}</p>
                       <p className="text-xs text-muted-foreground">{m.cpf}</p>
                     </div>
-                    <Button size="sm" onClick={() => addVinculo.mutate({ transportador_id: vinculoTranspId, motorista_id: m.id })}>
-                      <Link2 className="h-3 w-3 mr-1" /> Vincular
+                    <Button size="sm" className="w-full sm:w-auto" onClick={() => addVinculo.mutate({ transportador_id: vinculoTranspId, motorista_id: m.id })}>
+                      <Link2 className="mr-1 h-3 w-3" /> Vincular
                     </Button>
                   </div>
                 ))
@@ -822,7 +822,7 @@ export default function Transportadores() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.transportador_id && touched.transportador_id && <p className="text-sm text-destructive mt-1">{errors.transportador_id}</p>}
+                  {errors.transportador_id && touched.transportador_id && <p className="mt-1 text-sm text-destructive">{errors.transportador_id}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Anexo do documento</Label>
@@ -836,7 +836,7 @@ export default function Transportadores() {
                   />
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>Salvar</Button>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>
                 </DialogFooter>
               </Form>
             )}
@@ -870,7 +870,7 @@ export default function Transportadores() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.transportador_id && touched.transportador_id && <p className="text-sm text-destructive mt-1">{errors.transportador_id}</p>}
+                  {errors.transportador_id && touched.transportador_id && <p className="mt-1 text-sm text-destructive">{errors.transportador_id}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Anexo do documento</Label>
@@ -884,7 +884,7 @@ export default function Transportadores() {
                   />
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>Salvar</Button>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>
                 </DialogFooter>
               </Form>
             )}
@@ -898,7 +898,7 @@ export default function Transportadores() {
           setDocsTab("anexos");
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{docsTab === "contratos" ? "Contratos" : "Documentos"} - {docsTransp?.razao_social}</DialogTitle>
           </DialogHeader>

@@ -302,16 +302,15 @@ function SegurosTab() {
 
   return (
     <div className="space-y-6">
-      {/* New button */}
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="w-full gap-2 sm:w-auto">
               <Plus className="h-4 w-4" />
               Novo Seguro
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingSeguro ? "Editar Seguro" : "Novo Seguro"}</DialogTitle>
             </DialogHeader>
@@ -323,7 +322,7 @@ function SegurosTab() {
             >
               {({ isSubmitting, setFieldValue, values }) => (
                 <Form className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormSelectWrapper name="motorista_id" label="Segurado (opcional)">
                       <Select value={values.motorista_id} onValueChange={(v) => setFieldValue("motorista_id", v)}>
                         <SelectTrigger><SelectValue placeholder="Selecione um segurado" /></SelectTrigger>
@@ -372,7 +371,7 @@ function SegurosTab() {
                       label="Anexar Apólice"
                     />
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>Cancelar</Button>
                     <Button type="submit" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
                       {editingSeguro ? "Salvar" : "Cadastrar"}
@@ -385,11 +384,10 @@ function SegurosTab() {
         </Dialog>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Shield className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -398,9 +396,9 @@ function SegurosTab() {
             </div>
           </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
               <Shield className="h-5 w-5 text-success" />
             </div>
             <div>
@@ -411,9 +409,9 @@ function SegurosTab() {
             </div>
           </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
               <AlertTriangle className="h-5 w-5 text-warning" />
             </div>
             <div>
@@ -422,9 +420,9 @@ function SegurosTab() {
             </div>
           </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div>
@@ -435,14 +433,13 @@ function SegurosTab() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
         <Input
           placeholder="Buscar por seguradora, tipo, segurado ou apólice..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="sm:max-w-md"
+          className="w-full sm:max-w-md"
         />
       </div>
 

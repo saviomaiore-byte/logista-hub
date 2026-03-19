@@ -232,7 +232,7 @@ export default function ConferenciaSeguros() {
           </div>
           <Dialog open={openNew} onOpenChange={setOpenNew}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Nova Conferência
               </Button>
@@ -277,7 +277,7 @@ export default function ConferenciaSeguros() {
                     onChange={(e) => setNewObs(e.target.value)}
                   />
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <Button variant="outline" onClick={() => setOpenNew(false)}>
                     Cancelar
                   </Button>

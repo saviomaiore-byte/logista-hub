@@ -287,6 +287,9 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{tipoLabels[c.tipo] || c.tipo}</span>
+                  {c.modelo && (
+                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{c.modelo}</span>
+                  )}
                   {getStatusBadge(c.status)}
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">

@@ -107,12 +107,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     }
 
     if (isFromMotorista && !selectedTransportadorId) {
-      toast.error("Selecione a transportadora no campo Modelo");
-      return;
-    }
-
-    if (!isFromMotorista && !modelo) {
-      toast.error("Selecione o modelo do contrato");
+      toast.error("Selecione a transportadora");
       return;
     }
 

@@ -38,12 +38,7 @@ const tipoLabels: Record<string, string> = {
   contrato: "Contrato",
   distrato: "Distrato",
   adesao: "Termo de Adesão",
-};
-
-const modeloLabels: Record<string, string> = {
-  Maiore: "Maiore",
-  Start: "Start",
-  Comodato: "Comodato",
+  transportadora: "Transportadora",
 };
 
 export function ContratoAnexos({ motorista_id, transportador_id, nome }: ContratoAnexosProps) {
@@ -51,7 +46,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
-  const [modelo, setModelo] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [arquivoUrl, setArquivoUrl] = useState("");
   const [saving, setSaving] = useState(false);
@@ -100,7 +94,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
 
   const resetForm = () => {
     setTipo("");
-    setModelo("");
     setObservacoes("");
     setArquivoUrl("");
     setSelectedTransportadorId("");
@@ -114,12 +107,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     }
 
     if (isFromMotorista && !selectedTransportadorId) {
-      toast.error("Selecione a transportadora no campo Modelo");
-      return;
-    }
-
-    if (!isFromMotorista && !modelo) {
-      toast.error("Selecione o modelo do contrato");
+      toast.error("Selecione a transportadora");
       return;
     }
 
@@ -129,7 +117,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     setSaving(true);
     const { error } = await supabase.from("contratos").insert({
       tipo,
-      modelo,
       empresa: empresaNome,
       observacoes: observacoes || null,
       arquivo_url: arquivoUrl || null,
@@ -206,23 +193,20 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
                 <SelectItem value="contrato">Contrato</SelectItem>
                 <SelectItem value="distrato">Distrato</SelectItem>
                 <SelectItem value="adesao">Termo de Adesão</SelectItem>
+                <SelectItem value="transportadora">Transportadora</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <Label className="text-sm">Modelo *</Label>
-            {isFromMotorista ? (
-              transportadoras.length === 0 ? (
+          {isFromMotorista && (
+            <div>
+              <Label className="text-sm">Transportadora *</Label>
+              {transportadoras.length === 0 ? (
                 <p className="text-xs text-destructive mt-1">
                   Nenhuma transportadora vinculada a este motorista. Vincule uma transportadora primeiro.
                 </p>
               ) : (
-                <Select value={selectedTransportadorId} onValueChange={(val) => {
-                  setSelectedTransportadorId(val);
-                  const transp = transportadoras.find(t => t.id === val);
-                  setModelo(transp?.razao_social || "");
-                }}>
+                <Select value={selectedTransportadorId} onValueChange={setSelectedTransportadorId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a transportadora" />
                   </SelectTrigger>
@@ -234,20 +218,9 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
                     ))}
                   </SelectContent>
                 </Select>
-              )
-            ) : (
-              <Select value={modelo} onValueChange={setModelo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o modelo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Maiore">Maiore</SelectItem>
-                  <SelectItem value="Start">Start</SelectItem>
-                  <SelectItem value="Comodato">Comodato</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {!isFromMotorista && (
             <div>
@@ -274,7 +247,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
           </div>
 
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo || (isFromMotorista ? !selectedTransportadorId : !modelo)}>
+            <Button size="sm" onClick={handleAdd} disabled={saving || !tipo || (isFromMotorista && !selectedTransportadorId)}>
               {saving ? "Salvando..." : "Adicionar"}
             </Button>
             <Button size="sm" variant="ghost" onClick={resetForm}>
@@ -296,11 +269,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{tipoLabels[c.tipo] || c.tipo}</span>
-                  {c.modelo && (
-                    <span className="status-badge bg-secondary text-secondary-foreground">
-                      {modeloLabels[c.modelo] || c.modelo}
-                    </span>
-                  )}
                   {getStatusBadge(c.status)}
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">

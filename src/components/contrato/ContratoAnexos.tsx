@@ -46,6 +46,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
+  const [modelo, setModelo] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [arquivoUrl, setArquivoUrl] = useState("");
   const [saving, setSaving] = useState(false);

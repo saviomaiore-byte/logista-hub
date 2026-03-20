@@ -119,6 +119,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     setSaving(true);
     const { error } = await supabase.from("contratos").insert({
       tipo,
+      modelo: (!isFromMotorista && modelo) ? modelo : null,
       empresa: empresaNome,
       observacoes: observacoes || null,
       arquivo_url: arquivoUrl || null,

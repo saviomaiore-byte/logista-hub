@@ -198,19 +198,15 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
             </Select>
           </div>
 
-          <div>
-            <Label className="text-sm">Modelo *</Label>
-            {isFromMotorista ? (
-              transportadoras.length === 0 ? (
+          {isFromMotorista && (
+            <div>
+              <Label className="text-sm">Transportadora *</Label>
+              {transportadoras.length === 0 ? (
                 <p className="text-xs text-destructive mt-1">
                   Nenhuma transportadora vinculada a este motorista. Vincule uma transportadora primeiro.
                 </p>
               ) : (
-                <Select value={selectedTransportadorId} onValueChange={(val) => {
-                  setSelectedTransportadorId(val);
-                  const transp = transportadoras.find(t => t.id === val);
-                  setModelo(transp?.razao_social || "");
-                }}>
+                <Select value={selectedTransportadorId} onValueChange={setSelectedTransportadorId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a transportadora" />
                   </SelectTrigger>
@@ -222,20 +218,9 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
                     ))}
                   </SelectContent>
                 </Select>
-              )
-            ) : (
-              <Select value={modelo} onValueChange={setModelo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o modelo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Maiore">Maiore</SelectItem>
-                  <SelectItem value="Start">Start</SelectItem>
-                  <SelectItem value="Comodato">Comodato</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {!isFromMotorista && (
             <div>

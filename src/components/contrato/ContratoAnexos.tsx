@@ -226,10 +226,25 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
           )}
 
           {!isFromMotorista && (
-            <div>
-              <Label className="text-sm">Empresa</Label>
-              <Input value={nome} disabled />
-            </div>
+            <>
+              <div>
+                <Label className="text-sm">Empresa</Label>
+                <Input value={nome} disabled />
+              </div>
+              <div>
+                <Label className="text-sm">Modelo</Label>
+                <Select value={modelo} onValueChange={setModelo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Start">Start</SelectItem>
+                    <SelectItem value="Maiore">Maiore</SelectItem>
+                    <SelectItem value="Comodato">Comodato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <div>

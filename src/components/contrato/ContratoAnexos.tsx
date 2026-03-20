@@ -193,6 +193,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
                 <SelectItem value="contrato">Contrato</SelectItem>
                 <SelectItem value="distrato">Distrato</SelectItem>
                 <SelectItem value="adesao">Termo de Adesão</SelectItem>
+                <SelectItem value="transportadora">Transportadora</SelectItem>
               </SelectContent>
             </Select>
           </div>

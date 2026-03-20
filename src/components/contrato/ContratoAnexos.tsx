@@ -95,6 +95,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
 
   const resetForm = () => {
     setTipo("");
+    setModelo("");
     setObservacoes("");
     setArquivoUrl("");
     setSelectedTransportadorId("");

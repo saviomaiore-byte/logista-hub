@@ -38,12 +38,7 @@ const tipoLabels: Record<string, string> = {
   contrato: "Contrato",
   distrato: "Distrato",
   adesao: "Termo de Adesão",
-};
-
-const modeloLabels: Record<string, string> = {
-  Maiore: "Maiore",
-  Start: "Start",
-  Comodato: "Comodato",
+  transportadora: "Transportadora",
 };
 
 export function ContratoAnexos({ motorista_id, transportador_id, nome }: ContratoAnexosProps) {

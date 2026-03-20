@@ -46,6 +46,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
+  const [modelo, setModelo] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [arquivoUrl, setArquivoUrl] = useState("");
   const [saving, setSaving] = useState(false);
@@ -94,6 +95,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
 
   const resetForm = () => {
     setTipo("");
+    setModelo("");
     setObservacoes("");
     setArquivoUrl("");
     setSelectedTransportadorId("");
@@ -117,6 +119,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     setSaving(true);
     const { error } = await supabase.from("contratos").insert({
       tipo,
+      modelo: (!isFromMotorista && modelo) ? modelo : null,
       empresa: empresaNome,
       observacoes: observacoes || null,
       arquivo_url: arquivoUrl || null,
@@ -223,10 +226,25 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
           )}
 
           {!isFromMotorista && (
-            <div>
-              <Label className="text-sm">Empresa</Label>
-              <Input value={nome} disabled />
-            </div>
+            <>
+              <div>
+                <Label className="text-sm">Empresa</Label>
+                <Input value={nome} disabled />
+              </div>
+              <div>
+                <Label className="text-sm">Modelo</Label>
+                <Select value={modelo} onValueChange={setModelo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Start">Start</SelectItem>
+                    <SelectItem value="Maiore">Maiore</SelectItem>
+                    <SelectItem value="Comodato">Comodato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <div>
@@ -269,6 +287,9 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{tipoLabels[c.tipo] || c.tipo}</span>
+                  {c.modelo && (
+                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{c.modelo}</span>
+                  )}
                   {getStatusBadge(c.status)}
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">

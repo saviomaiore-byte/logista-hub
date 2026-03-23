@@ -18,6 +18,7 @@ export default function Auth() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem("rememberEmail") !== null);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);

@@ -66,6 +66,11 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
+          if (rememberMe) {
+            localStorage.setItem("rememberEmail", email);
+          } else {
+            localStorage.removeItem("rememberEmail");
+          }
           toast.success("Login realizado com sucesso!");
           navigate("/");
         }

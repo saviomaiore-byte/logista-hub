@@ -73,16 +73,12 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("documentos")
-          .getPublicUrl(storagePath);
-
         const { error: insertError } = await supabase
           .from("transportador_arquivos")
           .insert({
             transportador_id: transportadorId,
             nome_arquivo: file.name,
-            arquivo_url: urlData.publicUrl,
+            arquivo_url: storagePath,
             tipo_arquivo: file.type || null,
             tamanho_bytes: file.size,
           });

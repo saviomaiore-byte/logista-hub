@@ -125,7 +125,7 @@ export function FileUpload({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => window.open(currentUrl, "_blank")}
+              onClick={() => openSignedFile(currentUrl)}
             >
               <Download className="h-4 w-4" />
             </Button>

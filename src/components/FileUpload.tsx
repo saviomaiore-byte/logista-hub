@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getSignedFileUrl, openSignedFile } from "@/lib/storage";
 
 interface FileUploadProps {
   currentUrl?: string | null;

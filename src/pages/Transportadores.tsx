@@ -592,7 +592,7 @@ export default function Transportadores() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm text-muted-foreground">Documento</span>
                       {r.arquivo_url ? (
-                        <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                        <Button variant="outline" size="sm" onClick={() => openSignedFile(r.arquivo_url!)}>
                           <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                         </Button>
                       ) : (

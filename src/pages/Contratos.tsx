@@ -392,7 +392,7 @@ export default function Contratos() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(contrato.arquivo_url!, "_blank")}
+                        onClick={() => openSignedFile(contrato.arquivo_url!)}
                         title="Baixar Arquivo"
                       >
                         <Download className="h-4 w-4" />

@@ -300,7 +300,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               </div>
               <div className="ml-2 flex items-center gap-1">
                 {c.arquivo_url && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openSignedFile(c.arquivo_url!)}>
                     <Download className="h-3.5 w-3.5" />
                   </Button>
                 )}

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { TransportadorAnexos } from "@/components/transportador/TransportadorAnexos";
+import { openSignedFile } from "@/lib/storage";
 import { FileUpload } from "@/components/FileUpload";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";

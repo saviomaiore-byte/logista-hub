@@ -128,8 +128,7 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
   const handleDelete = async (arquivo: Arquivo) => {
     if (!confirm(`Excluir "${arquivo.nome_arquivo}" de ${transportadorNome}?`)) return;
 
-    const urlParts = arquivo.arquivo_url.split("/documentos/");
-    const storagePath = urlParts[urlParts.length - 1];
+    const storagePath = extractStoragePath(arquivo.arquivo_url);
 
     await supabase.storage.from("documentos").remove([storagePath]);
     const { error } = await supabase.from("transportador_arquivos").delete().eq("id", arquivo.id);

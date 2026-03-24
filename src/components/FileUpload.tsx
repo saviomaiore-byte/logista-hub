@@ -50,11 +50,8 @@ export function FileUpload({
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from("documentos")
-        .getPublicUrl(fileName);
-
-      onUpload(data.publicUrl);
+      // Store the storage path (not public URL) for signed URL generation
+      onUpload(fileName);
       toast({ title: "Arquivo enviado com sucesso!" });
     } catch (error: any) {
       console.error("Upload error:", error);

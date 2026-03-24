@@ -128,7 +128,7 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
   const handleDelete = async (arquivo: Arquivo) => {
     if (!confirm(`Excluir "${arquivo.nome_arquivo}"?`)) return;
 
-    const storagePath = extractPathFromUrl(arquivo.arquivo_url);
+    const storagePath = extractStoragePath(arquivo.arquivo_url);
 
     await supabase.storage.from("documentos").remove([storagePath]);
     const { error } = await supabase.from("motorista_arquivos").delete().eq("id", arquivo.id);

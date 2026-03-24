@@ -230,9 +230,12 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => {
-                      setPreviewUrl(arq.arquivo_url);
-                      setPreviewName(arq.nome_arquivo);
+                    onClick={async () => {
+                      const url = await getSignedFileUrl(arq.arquivo_url);
+                      if (url) {
+                        setPreviewUrl(url);
+                        setPreviewName(arq.nome_arquivo);
+                      }
                     }}
                     title="Pré-visualizar"
                   >

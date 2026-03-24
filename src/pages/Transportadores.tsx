@@ -543,7 +543,7 @@ export default function Transportadores() {
                           <TableCell className="font-medium">{c.transportadores?.razao_social || "-"}</TableCell>
                           <TableCell>
                             {c.arquivo_url ? (
-                              <Button variant="outline" size="sm" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                              <Button variant="outline" size="sm" onClick={() => openSignedFile(c.arquivo_url!)}>
                                 <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                               </Button>
                             ) : (

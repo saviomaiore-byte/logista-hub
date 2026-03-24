@@ -37,6 +37,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
+import { openSignedFile } from "@/lib/storage";
 import { FormSelectWrapper } from "@/components/form/FormField";
 
 interface Contrato {

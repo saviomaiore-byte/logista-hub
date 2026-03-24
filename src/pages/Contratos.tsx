@@ -315,7 +315,7 @@ export default function Contratos() {
 
             <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1">
               {contrato.arquivo_url && (
-                <Button variant="ghost" size="sm" onClick={() => window.open(contrato.arquivo_url!, "_blank")}>
+                <Button variant="ghost" size="sm" onClick={() => openSignedFile(contrato.arquivo_url!)}>
                   <Download className="mr-1 h-4 w-4" /> Baixar
                 </Button>
               )}

@@ -73,16 +73,12 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("documentos")
-          .getPublicUrl(storagePath);
-
         const { error: insertError } = await supabase
           .from("motorista_arquivos")
           .insert({
             motorista_id: motoristaId,
             nome_arquivo: file.name,
-            arquivo_url: urlData.publicUrl,
+            arquivo_url: storagePath,
             tipo_arquivo: file.type || null,
             tamanho_bytes: file.size,
           });

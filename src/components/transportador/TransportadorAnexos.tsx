@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getSignedFileUrl, extractStoragePath } from "@/lib/storage";
 
 interface Arquivo {
   id: string;

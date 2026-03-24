@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getSignedFileUrl, extractStoragePath } from "@/lib/storage";
 
 interface Arquivo {
   id: string;
@@ -72,16 +73,12 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("documentos")
-          .getPublicUrl(storagePath);
-
         const { error: insertError } = await supabase
           .from("transportador_arquivos")
           .insert({
             transportador_id: transportadorId,
             nome_arquivo: file.name,
-            arquivo_url: urlData.publicUrl,
+            arquivo_url: storagePath,
             tipo_arquivo: file.type || null,
             tamanho_bytes: file.size,
           });
@@ -131,8 +128,7 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
   const handleDelete = async (arquivo: Arquivo) => {
     if (!confirm(`Excluir "${arquivo.nome_arquivo}" de ${transportadorNome}?`)) return;
 
-    const urlParts = arquivo.arquivo_url.split("/documentos/");
-    const storagePath = urlParts[urlParts.length - 1];
+    const storagePath = extractStoragePath(arquivo.arquivo_url);
 
     await supabase.storage.from("documentos").remove([storagePath]);
     const { error } = await supabase.from("transportador_arquivos").delete().eq("id", arquivo.id);
@@ -234,9 +230,12 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => {
-                      setPreviewUrl(arq.arquivo_url);
-                      setPreviewName(arq.nome_arquivo);
+                    onClick={async () => {
+                      const url = await getSignedFileUrl(arq.arquivo_url);
+                      if (url) {
+                        setPreviewUrl(url);
+                        setPreviewName(arq.nome_arquivo);
+                      }
                     }}
                     title="Pré-visualizar"
                   >

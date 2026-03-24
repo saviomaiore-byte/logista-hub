@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { TransportadorAnexos } from "@/components/transportador/TransportadorAnexos";
+import { openSignedFile } from "@/lib/storage";
 import { FileUpload } from "@/components/FileUpload";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
@@ -507,7 +508,7 @@ export default function Transportadores() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm text-muted-foreground">Documento</span>
                       {c.arquivo_url ? (
-                        <Button variant="outline" size="sm" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                        <Button variant="outline" size="sm" onClick={() => openSignedFile(c.arquivo_url!)}>
                           <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                         </Button>
                       ) : (
@@ -542,7 +543,7 @@ export default function Transportadores() {
                           <TableCell className="font-medium">{c.transportadores?.razao_social || "-"}</TableCell>
                           <TableCell>
                             {c.arquivo_url ? (
-                              <Button variant="outline" size="sm" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                              <Button variant="outline" size="sm" onClick={() => openSignedFile(c.arquivo_url!)}>
                                 <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                               </Button>
                             ) : (
@@ -591,7 +592,7 @@ export default function Transportadores() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm text-muted-foreground">Documento</span>
                       {r.arquivo_url ? (
-                        <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                        <Button variant="outline" size="sm" onClick={() => openSignedFile(r.arquivo_url!)}>
                           <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                         </Button>
                       ) : (
@@ -626,7 +627,7 @@ export default function Transportadores() {
                           <TableCell className="font-medium">{r.transportadores?.razao_social || "-"}</TableCell>
                           <TableCell>
                             {r.arquivo_url ? (
-                              <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                              <Button variant="outline" size="sm" onClick={() => openSignedFile(r.arquivo_url!)}>
                                 <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                               </Button>
                             ) : (

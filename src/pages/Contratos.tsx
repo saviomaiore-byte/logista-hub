@@ -37,6 +37,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
+import { openSignedFile } from "@/lib/storage";
 import { FormSelectWrapper } from "@/components/form/FormField";
 
 interface Contrato {
@@ -314,7 +315,7 @@ export default function Contratos() {
 
             <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1">
               {contrato.arquivo_url && (
-                <Button variant="ghost" size="sm" onClick={() => window.open(contrato.arquivo_url!, "_blank")}>
+                <Button variant="ghost" size="sm" onClick={() => openSignedFile(contrato.arquivo_url!)}>
                   <Download className="mr-1 h-4 w-4" /> Baixar
                 </Button>
               )}
@@ -391,7 +392,7 @@ export default function Contratos() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(contrato.arquivo_url!, "_blank")}
+                        onClick={() => openSignedFile(contrato.arquivo_url!)}
                         title="Baixar Arquivo"
                       >
                         <Download className="h-4 w-4" />

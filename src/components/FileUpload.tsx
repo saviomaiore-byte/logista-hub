@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getSignedFileUrl, openSignedFile } from "@/lib/storage";
 
 interface FileUploadProps {
   currentUrl?: string | null;
@@ -49,11 +50,8 @@ export function FileUpload({
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from("documentos")
-        .getPublicUrl(fileName);
-
-      onUpload(data.publicUrl);
+      // Store the storage path (not public URL) for signed URL generation
+      onUpload(fileName);
       toast({ title: "Arquivo enviado com sucesso!" });
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -127,7 +125,7 @@ export function FileUpload({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => window.open(currentUrl, "_blank")}
+              onClick={() => openSignedFile(currentUrl)}
             >
               <Download className="h-4 w-4" />
             </Button>

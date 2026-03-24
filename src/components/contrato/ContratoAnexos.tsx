@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Download, Trash2, Plus, Clock, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { openSignedFile } from "@/lib/storage";
 
 interface Contrato {
   id: string;
@@ -299,7 +300,7 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
               </div>
               <div className="ml-2 flex items-center gap-1">
                 {c.arquivo_url && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(c.arquivo_url!, "_blank")}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openSignedFile(c.arquivo_url!)}>
                     <Download className="h-3.5 w-3.5" />
                   </Button>
                 )}

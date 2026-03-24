@@ -627,7 +627,7 @@ export default function Transportadores() {
                           <TableCell className="font-medium">{r.transportadores?.razao_social || "-"}</TableCell>
                           <TableCell>
                             {r.arquivo_url ? (
-                              <Button variant="outline" size="sm" onClick={() => window.open(r.arquivo_url!, "_blank")}>
+                              <Button variant="outline" size="sm" onClick={() => openSignedFile(r.arquivo_url!)}>
                                 <FileText className="h-4 w-4 mr-1" /> Abrir anexo
                               </Button>
                             ) : (

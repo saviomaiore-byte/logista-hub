@@ -51,6 +51,7 @@ export type Database = {
         Row: {
           cnpj: string | null
           created_at: string
+          created_by: string | null
           data_pagamento: string | null
           empresa: string
           id: string
@@ -63,6 +64,7 @@ export type Database = {
         Insert: {
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_pagamento?: string | null
           empresa: string
           id?: string
@@ -75,6 +77,7 @@ export type Database = {
         Update: {
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_pagamento?: string | null
           empresa?: string
           id?: string
@@ -92,6 +95,7 @@ export type Database = {
           arquivo_url: string | null
           chassi: string | null
           created_at: string
+          created_by: string | null
           id: string
           marca_modelo: string | null
           placa: string | null
@@ -105,6 +109,7 @@ export type Database = {
           arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           marca_modelo?: string | null
           placa?: string | null
@@ -118,6 +123,7 @@ export type Database = {
           arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           marca_modelo?: string | null
           placa?: string | null
@@ -140,6 +146,7 @@ export type Database = {
         Row: {
           arquivo_url: string | null
           created_at: string
+          created_by: string | null
           data_renovacao_agendada: string | null
           empresa: string
           id: string
@@ -152,6 +159,7 @@ export type Database = {
         Insert: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           data_renovacao_agendada?: string | null
           empresa: string
           id?: string
@@ -164,6 +172,7 @@ export type Database = {
         Update: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           data_renovacao_agendada?: string | null
           empresa?: string
           id?: string
@@ -179,6 +188,7 @@ export type Database = {
         Row: {
           arquivo_apolice_url: string | null
           created_at: string
+          created_by: string | null
           id: string
           observacoes: string | null
           periodo_referencia: string
@@ -188,6 +198,7 @@ export type Database = {
         Insert: {
           arquivo_apolice_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           observacoes?: string | null
           periodo_referencia: string
@@ -197,6 +208,7 @@ export type Database = {
         Update: {
           arquivo_apolice_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           observacoes?: string | null
           periodo_referencia?: string
@@ -303,6 +315,7 @@ export type Database = {
           arquivo_url: string | null
           cnpj: string | null
           created_at: string
+          created_by: string | null
           data_assinatura: string | null
           data_envio: string | null
           empresa: string
@@ -319,6 +332,7 @@ export type Database = {
           arquivo_url?: string | null
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_assinatura?: string | null
           data_envio?: string | null
           empresa: string
@@ -335,6 +349,7 @@ export type Database = {
           arquivo_url?: string | null
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_assinatura?: string | null
           data_envio?: string | null
           empresa?: string
@@ -368,6 +383,7 @@ export type Database = {
         Row: {
           arquivo_url: string | null
           created_at: string
+          created_by: string | null
           descricao: string | null
           empresa: string
           id: string
@@ -379,6 +395,7 @@ export type Database = {
         Insert: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           empresa: string
           id?: string
@@ -390,6 +407,7 @@ export type Database = {
         Update: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           empresa?: string
           id?: string
@@ -447,6 +465,7 @@ export type Database = {
           cnh_vencimento: string | null
           cpf: string
           created_at: string
+          created_by: string | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
@@ -471,6 +490,7 @@ export type Database = {
           cnh_vencimento?: string | null
           cpf: string
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -495,6 +515,7 @@ export type Database = {
           cnh_vencimento?: string | null
           cpf?: string
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -517,6 +538,7 @@ export type Database = {
         Row: {
           competencia: string
           created_at: string
+          created_by: string | null
           data_lancamento: string | null
           empresa: string
           id: string
@@ -529,6 +551,7 @@ export type Database = {
         Insert: {
           competencia: string
           created_at?: string
+          created_by?: string | null
           data_lancamento?: string | null
           empresa: string
           id?: string
@@ -541,6 +564,7 @@ export type Database = {
         Update: {
           competencia?: string
           created_at?: string
+          created_by?: string | null
           data_lancamento?: string | null
           empresa?: string
           id?: string
@@ -583,6 +607,7 @@ export type Database = {
         Row: {
           cnpj: string | null
           created_at: string
+          created_by: string | null
           data_compartilhamento: string | null
           empresa: string
           id: string
@@ -594,6 +619,7 @@ export type Database = {
         Insert: {
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_compartilhamento?: string | null
           empresa: string
           id?: string
@@ -605,6 +631,7 @@ export type Database = {
         Update: {
           cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           data_compartilhamento?: string | null
           empresa?: string
           id?: string
@@ -620,6 +647,7 @@ export type Database = {
           ano: string | null
           arquivo_url: string | null
           created_at: string
+          created_by: string | null
           id: string
           placa: string | null
           renavam: string | null
@@ -632,6 +660,7 @@ export type Database = {
           ano?: string | null
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           placa?: string | null
           renavam?: string | null
@@ -644,6 +673,7 @@ export type Database = {
           ano?: string | null
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           placa?: string | null
           renavam?: string | null
@@ -666,6 +696,7 @@ export type Database = {
         Row: {
           arquivo_url: string | null
           created_at: string
+          created_by: string | null
           id: string
           motorista_id: string | null
           numero_apolice: string | null
@@ -681,6 +712,7 @@ export type Database = {
         Insert: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           motorista_id?: string | null
           numero_apolice?: string | null
@@ -696,6 +728,7 @@ export type Database = {
         Update: {
           arquivo_url?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           motorista_id?: string | null
           numero_apolice?: string | null
@@ -797,6 +830,7 @@ export type Database = {
           contato: string | null
           cpf_cnpj: string
           created_at: string
+          created_by: string | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
@@ -813,6 +847,7 @@ export type Database = {
           contato?: string | null
           cpf_cnpj: string
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -829,6 +864,7 @@ export type Database = {
           contato?: string | null
           cpf_cnpj?: string
           created_at?: string
+          created_by?: string | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null

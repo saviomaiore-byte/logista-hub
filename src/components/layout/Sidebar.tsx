@@ -11,6 +11,7 @@ import {
   Truck,
   LogOut,
   Shield,
+  ShieldCheck,
   UsersRound,
   Menu,
 } from "lucide-react";

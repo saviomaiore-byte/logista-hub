@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +21,32 @@ serve(async (req) => {
   }
 
   try {
-    const { images } = await req.json(); // array of base64 data URLs
+    // --- JWT Verification ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Não autorizado. Token de autenticação ausente." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Token inválido ou expirado." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // --- End JWT Verification ---
+
+    const { images } = await req.json();
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return new Response(
@@ -36,7 +62,6 @@ serve(async (req) => {
 
     const allSegurados: Segurado[] = [];
 
-    // Process in batches of 2 pages to avoid timeout
     const batchSize = 2;
     for (let i = 0; i < images.length; i += batchSize) {
       const batch = images.slice(i, i + batchSize);
@@ -165,7 +190,6 @@ Datas devem estar no formato DD/MM/YYYY.`,
       }
     }
 
-    // Deduplicate by nome (in case same person appears on multiple pages)
     const unique = new Map<string, Segurado>();
     for (const s of allSegurados) {
       const key = s.nome.trim().toUpperCase();

@@ -14,6 +14,7 @@ import Conferencia from "./pages/Conferencia";
 import Certificados from "./pages/Certificados";
 import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
+import Seguranca from "./pages/Seguranca";
 
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();

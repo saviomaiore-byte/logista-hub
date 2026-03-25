@@ -11,6 +11,7 @@ import {
   Truck,
   LogOut,
   Shield,
+  ShieldCheck,
   UsersRound,
   Menu,
 } from "lucide-react";
@@ -33,6 +34,7 @@ const baseNavigation = [
 
 const adminNavigation = [
   { name: "Usuários", href: "/usuarios", icon: UsersRound },
+  { name: "Segurança", href: "/seguranca", icon: ShieldCheck },
 ];
 
 function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {

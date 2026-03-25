@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Truck, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Truck, Mail, Lock, User, ArrowLeft, ShieldAlert } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { validatePassword } from "@/lib/passwordPolicy";
+import { isLockedOut, recordFailedAttempt, resetAttempts } from "@/lib/rateLimiter";
+import { MfaVerify } from "@/components/auth/MfaVerify";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -23,6 +26,47 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const ALLOWED_DOMAIN = "@maiore.com.br";
+
+  // Password validation state
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [showPasswordErrors, setShowPasswordErrors] = useState(false);
+
+  // Rate limiting state
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // MFA state
+  const [showMfaVerify, setShowMfaVerify] = useState(false);
+
+  // Check lockout on mount
+  useEffect(() => {
+    const { locked, remainingSeconds } = isLockedOut();
+    if (locked) setLockoutSeconds(remainingSeconds);
+  }, []);
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutSeconds]);
+
+  // Validate password on change (only for signup)
+  useEffect(() => {
+    if (!isLogin && password) {
+      const result = validatePassword(password);
+      setPasswordErrors(result.errors);
+    } else {
+      setPasswordErrors([]);
+    }
+  }, [password, isLogin]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +93,25 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check rate limiting
+    const lockStatus = isLockedOut();
+    if (lockStatus.locked) {
+      setLockoutSeconds(lockStatus.remainingSeconds);
+      toast.error(`Muitas tentativas. Aguarde ${Math.ceil(lockStatus.remainingSeconds / 60)} minutos.`);
+      return;
+    }
+
+    // Validate password on signup
+    if (!isLogin) {
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setShowPasswordErrors(true);
+        toast.error("A senha não atende aos requisitos mínimos.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -60,12 +123,31 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message === "Email not confirmed") {
+          const result = recordFailedAttempt();
+          if (result.locked) {
+            setLockoutSeconds(300);
+            toast.error("Conta bloqueada por 5 minutos devido a muitas tentativas.");
+          } else if (error.message === "Email not confirmed") {
             toast.error("Email não confirmado. Verifique sua caixa de entrada.");
           } else {
-            toast.error(error.message);
+            toast.error(`${error.message} (${result.remainingAttempts} tentativa(s) restante(s))`);
           }
         } else {
+          resetAttempts();
+
+          // Check if user has MFA factors
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const hasTotp = factors?.totp && factors.totp.length > 0;
+
+          if (hasTotp) {
+            // Check AAL level
+            const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+            if (aalData?.currentLevel === "aal1" && aalData?.nextLevel === "aal2") {
+              setShowMfaVerify(true);
+              return;
+            }
+          }
+
           if (rememberMe) {
             localStorage.setItem("rememberEmail", email);
           } else {
@@ -86,6 +168,17 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (showMfaVerify) {
+    return (
+      <MfaVerify
+        onVerified={() => {
+          toast.success("Login realizado com sucesso!");
+          navigate("/");
+        }}
+      />
+    );
+  }
 
   if (forgotPassword) {
     return (
@@ -152,6 +245,15 @@ export default function Auth() {
             </p>
           </div>
 
+          {lockoutSeconds > 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive shrink-0" />
+              <p className="text-sm text-destructive">
+                Conta bloqueada. Tente novamente em {Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, "0")}
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
@@ -211,11 +313,27 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => !isLogin && setShowPasswordErrors(true)}
                   className="pl-10"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
+
+              {!isLogin && showPasswordErrors && passwordErrors.length > 0 && (
+                <ul className="text-xs space-y-1 mt-1">
+                  {passwordErrors.map((err) => (
+                    <li key={err} className="text-destructive flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-destructive inline-block" />
+                      {err}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {!isLogin && showPasswordErrors && passwordErrors.length === 0 && password && (
+                <p className="text-xs text-green-600 mt-1">✓ Senha atende aos requisitos</p>
+              )}
             </div>
 
             {isLogin && (
@@ -234,7 +352,7 @@ export default function Auth() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || lockoutSeconds > 0}
             >
               {loading ? "Carregando..." : isLogin ? "Entrar" : "Cadastrar"}
             </Button>

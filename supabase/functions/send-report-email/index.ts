@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -142,13 +143,37 @@ function buildHtmlReport(dados: z.infer<typeof TransportadorSchema>[], corpo: st
   return html;
 }
 
+async function sendEmailViaSMTP(
+  to: string[],
+  subject: string,
+  htmlContent: string
+): Promise<void> {
+  const client = new SmtpClient();
+
+  await client.connectTLS({
+    hostname: Deno.env.get("SMTP_HOST") ?? "smtp.titan.email",
+    port: 587,
+    username: Deno.env.get("SMTP_USER") ?? "",
+    password: Deno.env.get("SMTP_PASS") ?? "",
+  });
+
+  await client.send({
+    from: Deno.env.get("SMTP_FROM") ?? Deno.env.get("SMTP_USER") ?? "",
+    to: to,
+    subject: subject,
+    content: "Este e-mail requer um cliente com suporte a HTML.",
+    html: htmlContent,
+  });
+
+  await client.close();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Validate JWT
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -182,11 +207,10 @@ Deno.serve(async (req) => {
     const { destinatarios, assunto, corpo, dados } = parsed.data;
     const htmlContent = buildHtmlReport(dados, corpo);
 
-    // Use Lovable AI gateway to send email via a simple approach
-    // For now, we'll store the report sending log and return success
-    // The actual email sending would require email domain setup
+    // Send email via SMTP
+    await sendEmailViaSMTP(destinatarios, assunto, htmlContent);
 
-    // Log the send attempt
+    // Log the send
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -209,12 +233,12 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Relatório registrado para envio a ${destinatarios.length} destinatário(s).`,
-        html_preview: htmlContent,
+        message: `Relatório enviado com sucesso para ${destinatarios.length} destinatário(s).`,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error sending email:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

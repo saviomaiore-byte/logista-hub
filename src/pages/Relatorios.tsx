@@ -447,7 +447,16 @@ export default function Relatorios() {
   }
 
   async function enviarRelatorio() {
-    if (destinatarios.length === 0) {
+    // Auto-add email from input before sending
+    const email = novoEmail.trim().toLowerCase();
+    let finalDestinatarios = [...destinatarios];
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
+      finalDestinatarios.push(email);
+      setDestinatarios(finalDestinatarios);
+      setNovoEmail("");
+    }
+
+    if (finalDestinatarios.length === 0) {
       toast({ title: "Adicione pelo menos um destinatário", variant: "destructive" });
       return;
     }
@@ -455,7 +464,7 @@ export default function Relatorios() {
     try {
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
-          destinatarios,
+          destinatarios: finalDestinatarios,
           assunto,
           corpo,
           dados: dados.map((t) => ({

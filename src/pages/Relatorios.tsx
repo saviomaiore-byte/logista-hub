@@ -148,8 +148,17 @@ export default function Relatorios() {
   }
 
   async function saveConfig() {
+    // Auto-add email typed in the input field before saving
+    const email = novoEmail.trim().toLowerCase();
+    let finalDestinatarios = [...destinatarios];
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
+      finalDestinatarios.push(email);
+      setDestinatarios(finalDestinatarios);
+      setNovoEmail("");
+    }
+
     const configData = {
-      destinatarios,
+      destinatarios: finalDestinatarios,
       assunto_padrao: assunto,
       corpo_padrao: corpo,
       dia_envio: diaEnvio,
@@ -438,7 +447,16 @@ export default function Relatorios() {
   }
 
   async function enviarRelatorio() {
-    if (destinatarios.length === 0) {
+    // Auto-add email from input before sending
+    const email = novoEmail.trim().toLowerCase();
+    let finalDestinatarios = [...destinatarios];
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
+      finalDestinatarios.push(email);
+      setDestinatarios(finalDestinatarios);
+      setNovoEmail("");
+    }
+
+    if (finalDestinatarios.length === 0) {
       toast({ title: "Adicione pelo menos um destinatário", variant: "destructive" });
       return;
     }
@@ -446,7 +464,7 @@ export default function Relatorios() {
     try {
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
-          destinatarios,
+          destinatarios: finalDestinatarios,
           assunto,
           corpo,
           dados: dados.map((t) => ({
@@ -499,7 +517,7 @@ export default function Relatorios() {
               <FileText className="h-4 w-4 mr-2" />
               PDF
             </Button>
-            <Button size="sm" onClick={enviarRelatorio} disabled={sending || destinatarios.length === 0}>
+            <Button size="sm" onClick={enviarRelatorio} disabled={sending || (destinatarios.length === 0 && !novoEmail.trim())}>
               <Send className={`h-4 w-4 mr-2 ${sending ? "animate-spin" : ""}`} />
               Enviar
             </Button>

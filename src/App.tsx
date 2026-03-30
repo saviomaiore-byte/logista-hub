@@ -15,7 +15,7 @@ import Certificados from "./pages/Certificados";
 import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
 import Seguranca from "./pages/Seguranca";
-
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -69,6 +69,7 @@ function AppRoutes() {
       <Route path="/certificados" element={<ProtectedRoute><Certificados /></ProtectedRoute>} />
       <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
       <Route path="/seguranca" element={<ProtectedRoute><Seguranca /></ProtectedRoute>} />
+      <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

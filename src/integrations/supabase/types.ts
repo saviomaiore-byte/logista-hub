@@ -458,8 +458,12 @@ export type Database = {
       }
       motoristas: {
         Row: {
+          alvara_numero: string | null
+          alvara_vencimento: string | null
           antt_numero: string | null
           antt_vencimento: string | null
+          certificado_numero: string | null
+          certificado_vencimento: string | null
           cidade: string | null
           cnh_numero: string | null
           cnh_vencimento: string | null
@@ -478,13 +482,18 @@ export type Database = {
           mopp_vitalicio: boolean
           nome: string
           rg: string | null
+          situacao_operacional: string | null
           status: string | null
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          alvara_numero?: string | null
+          alvara_vencimento?: string | null
           antt_numero?: string | null
           antt_vencimento?: string | null
+          certificado_numero?: string | null
+          certificado_vencimento?: string | null
           cidade?: string | null
           cnh_numero?: string | null
           cnh_vencimento?: string | null
@@ -503,13 +512,18 @@ export type Database = {
           mopp_vitalicio?: boolean
           nome: string
           rg?: string | null
+          situacao_operacional?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          alvara_numero?: string | null
+          alvara_vencimento?: string | null
           antt_numero?: string | null
           antt_vencimento?: string | null
+          certificado_numero?: string | null
+          certificado_vencimento?: string | null
           cidade?: string | null
           cnh_numero?: string | null
           cnh_vencimento?: string | null
@@ -528,6 +542,7 @@ export type Database = {
           mopp_vitalicio?: boolean
           nome?: string
           rg?: string | null
+          situacao_operacional?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
@@ -691,6 +706,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      relatorio_config: {
+        Row: {
+          assunto_padrao: string | null
+          corpo_padrao: string | null
+          created_at: string | null
+          created_by: string | null
+          destinatarios: string[] | null
+          dia_envio: string | null
+          envio_automatico: boolean | null
+          horario_envio: string | null
+          id: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          assunto_padrao?: string | null
+          corpo_padrao?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          destinatarios?: string[] | null
+          dia_envio?: string | null
+          envio_automatico?: boolean | null
+          horario_envio?: string | null
+          id?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assunto_padrao?: string | null
+          corpo_padrao?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          destinatarios?: string[] | null
+          dia_envio?: string | null
+          envio_automatico?: boolean | null
+          horario_envio?: string | null
+          id?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       seguros: {
         Row: {

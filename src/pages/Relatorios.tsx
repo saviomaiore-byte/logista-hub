@@ -92,7 +92,7 @@ const DIAS_SEMANA = [
 
 function checkMotoristaAptidao(m: any, temContrato: boolean): { apto: boolean; motivos: string[] } {
   const motivos: string[] = [];
-  const today = new Date();
+
 
   if (!temContrato) motivos.push("Sem contrato assinado");
   if (m.antt_vencimento && isPast(parseISO(m.antt_vencimento))) motivos.push("ANTT vencida");

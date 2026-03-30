@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -148,17 +148,22 @@ async function sendEmailViaSMTP(
   subject: string,
   htmlContent: string
 ): Promise<void> {
-  const client = new SmtpClient();
-
-  await client.connectTLS({
-    hostname: Deno.env.get("SMTP_HOST") ?? "smtp.titan.email",
-    port: 587,
-    username: Deno.env.get("SMTP_USER") ?? "",
-    password: Deno.env.get("SMTP_PASS") ?? "",
+  const client = new SMTPClient({
+    connection: {
+      hostname: Deno.env.get("SMTP_HOST") ?? "smtp.titan.email",
+      port: 587,
+      tls: false,
+      auth: {
+        username: Deno.env.get("SMTP_USER") ?? "",
+        password: Deno.env.get("SMTP_PASS") ?? "",
+      },
+    },
   });
 
+  const fromEmail = Deno.env.get("SMTP_FROM") ?? Deno.env.get("SMTP_USER") ?? "";
+
   await client.send({
-    from: Deno.env.get("SMTP_FROM") ?? Deno.env.get("SMTP_USER") ?? "",
+    from: fromEmail,
     to: to,
     subject: subject,
     content: "Este e-mail requer um cliente com suporte a HTML.",

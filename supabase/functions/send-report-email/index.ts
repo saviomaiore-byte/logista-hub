@@ -192,9 +192,145 @@ function buildHtmlReport(dados: z.infer<typeof TransportadorSchema>[], corpo: st
 
 class SmtpSocket {
   private buffer = "";
+  private conn: Deno.Conn;
 
-  constructor(private readonly conn: Deno.Conn) {}
+  constructor(conn: Deno.Conn) {
+    this.conn = conn;
+  }
 
+  async readResponse(expectedCodes?: number[]): Promise<{ code: number; message: string }> {
+    const lines: string[] = [];
+    let code: number | null = null;
+
+    while (true) {
+      const line = await this.readLine();
+      if (line === null) throw new Error("SMTP connection closed unexpectedly");
+      lines.push(line);
+      const match = line.match(/^(\d{3})([ -])(.*)$/);
+      if (!match) continue;
+      code = Number(match[1]);
+      if (match[2] === " ") break;
+    }
+
+    if (code === null) throw new Error(`Invalid SMTP response: ${lines.join(" | ")}`);
+    if (expectedCodes && !expectedCodes.includes(code)) {
+      throw new Error(`SMTP ${code}: ${lines.join(" | ")}`);
+    }
+    return { code, message: lines.join("\n") };
+  }
+
+  async sendLine(line: string): Promise<void> {
+    await this.conn.write(encoder.encode(`${line}\r\n`));
+  }
+
+  async sendRaw(value: string): Promise<void> {
+    await this.conn.write(encoder.encode(value));
+  }
+
+  async upgradeToTls(hostname: string): Promise<void> {
+    this.buffer = "";
+    this.conn = await Deno.startTls(this.conn as Deno.TcpConn, { hostname });
+  }
+
+  async close(): Promise<void> {
+    try { this.conn.close(); } catch { /* noop */ }
+  }
+
+  private async readLine(): Promise<string | null> {
+    while (!this.buffer.includes("\n")) {
+      const chunk = new Uint8Array(1024);
+      const size = await this.conn.read(chunk);
+      if (size === null) {
+        if (this.buffer.length === 0) return null;
+        const rest = this.buffer;
+        this.buffer = "";
+        return rest.replace(/\r$/, "");
+      }
+      this.buffer += decoder.decode(chunk.subarray(0, size));
+    }
+    const idx = this.buffer.indexOf("\n");
+    const line = this.buffer.slice(0, idx);
+    this.buffer = this.buffer.slice(idx + 1);
+    return line.replace(/\r$/, "");
+  }
+}
+
+async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: string): Promise<void> {
+  const hostname = getRequiredEnv("SMTP_HOST");
+  const username = getRequiredEnv("SMTP_USER");
+  const password = getRequiredEnv("SMTP_PASS");
+  const fromHeader = getRequiredEnv("SMTP_FROM");
+  const fromEnvelope = extractEmailAddress(fromHeader);
+  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
+
+  console.log(`Connecting to SMTP ${hostname}:${port}...`);
+  const conn = await Deno.connect({ hostname, port });
+  const socket = new SmtpSocket(conn);
+
+  try {
+    await socket.readResponse([220]);
+    await socket.sendLine(`EHLO ${hostname}`);
+    const ehloResp = await socket.readResponse([250]);
+    console.log("EHLO response received");
+
+    // Upgrade to STARTTLS if server supports it (standard for port 587)
+    if (ehloResp.message.toUpperCase().includes("STARTTLS")) {
+      console.log("STARTTLS supported, upgrading...");
+      await socket.sendLine("STARTTLS");
+      await socket.readResponse([220]);
+      await socket.upgradeToTls(hostname);
+      console.log("TLS upgrade complete");
+
+      // Re-EHLO after TLS
+      await socket.sendLine(`EHLO ${hostname}`);
+      await socket.readResponse([250]);
+    }
+
+    // AUTH LOGIN
+    console.log("Authenticating...");
+    await socket.sendLine("AUTH LOGIN");
+    await socket.readResponse([334]);
+    await socket.sendLine(btoa(username));
+    await socket.readResponse([334]);
+    await socket.sendLine(btoa(password));
+    await socket.readResponse([235]);
+    console.log("Authentication successful");
+
+    await socket.sendLine(`MAIL FROM:<${fromEnvelope}>`);
+    await socket.readResponse([250]);
+
+    for (const recipient of to) {
+      await socket.sendLine(`RCPT TO:<${recipient}>`);
+      await socket.readResponse([250, 251]);
+    }
+
+    await socket.sendLine("DATA");
+    await socket.readResponse([354]);
+
+    const message = [
+      `Date: ${new Date().toUTCString()}`,
+      `From: ${fromHeader}`,
+      `To: ${to.join(", ")}`,
+      `Subject: ${encodeMimeHeader(subject)}`,
+      "MIME-Version: 1.0",
+      'Content-Type: text/html; charset="UTF-8"',
+      "Content-Transfer-Encoding: 8bit",
+      "",
+      dotStuff(htmlContent),
+      ".",
+      "",
+    ].join("\r\n");
+
+    await socket.sendRaw(message);
+    await socket.readResponse([250]);
+    console.log("Email sent successfully");
+
+    await socket.sendLine("QUIT");
+    try { await socket.readResponse([221]); } catch { /* server may close */ }
+  } finally {
+    await socket.close();
+  }
+}
   async readResponse(expectedCodes?: number[]): Promise<{ code: number; message: string }> {
     const lines: string[] = [];
     let code: number | null = null;

@@ -517,7 +517,7 @@ export default function Relatorios() {
               <FileText className="h-4 w-4 mr-2" />
               PDF
             </Button>
-            <Button size="sm" onClick={enviarRelatorio} disabled={sending || destinatarios.length === 0}>
+            <Button size="sm" onClick={enviarRelatorio} disabled={sending || (destinatarios.length === 0 && !novoEmail.trim())}>
               <Send className={`h-4 w-4 mr-2 ${sending ? "animate-spin" : ""}`} />
               Enviar
             </Button>

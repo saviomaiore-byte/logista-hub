@@ -15,7 +15,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   FileText,
-  Download,
   Send,
   Settings,
   Eye,
@@ -28,10 +27,11 @@ import {
   AlertTriangle,
   Clock,
   Truck,
+  Users,
   MapPin,
   Navigation,
 } from "lucide-react";
-import { format, isPast, isValid, parseISO } from "date-fns";
+import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

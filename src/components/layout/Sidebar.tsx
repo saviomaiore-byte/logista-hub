@@ -31,6 +31,7 @@ const baseNavigation = [
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados Digitais", href: "/certificados", icon: Calendar },
+  { name: "Relatórios", href: "/relatorios", icon: ClipboardList },
 ];
 
 const adminNavigation = [

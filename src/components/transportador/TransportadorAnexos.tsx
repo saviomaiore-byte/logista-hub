@@ -65,7 +65,10 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
 
       try {
         const fileExt = file.name.split(".").pop();
-        const storagePath = `transportadores/${transportadorId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) throw new Error("Usuário não autenticado");
+        const storagePath = `${userId}/transportadores/${transportadorId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("documentos")

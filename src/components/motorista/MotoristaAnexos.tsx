@@ -65,7 +65,10 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
 
       try {
         const fileExt = file.name.split(".").pop();
-        const storagePath = `motoristas/${motoristaId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) throw new Error("Usuário não autenticado");
+        const storagePath = `${userId}/motoristas/${motoristaId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("documentos")

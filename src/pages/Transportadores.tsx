@@ -717,35 +717,10 @@ export default function Transportadores() {
                   <Label>Contato / Telefone</Label>
                   <Field as={Input} name="contato" />
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>Email</Label>
-                    <Field as={Input} name="email" type="email" />
-                    {errors.email && touched.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
-                  </div>
-                  <div>
-                    <Label>RG</Label>
-                    <Field as={Input} name="rg" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>Data de Nascimento</Label>
-                    <Field as={Input} name="data_nascimento" type="date" />
-                  </div>
-                  <div>
-                    <Label>Estado Civil</Label>
-                    <Select value={values.estado_civil || ""} onValueChange={(v) => setFieldValue("estado_civil", v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="solteiro">Solteiro(a)</SelectItem>
-                        <SelectItem value="casado">Casado(a)</SelectItem>
-                        <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                        <SelectItem value="viuvo">Viúvo(a)</SelectItem>
-                        <SelectItem value="uniao_estavel">União Estável</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label>Email</Label>
+                  <Field as={Input} name="email" type="email" />
+                  {errors.email && touched.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <div>
                   <Label>Endereço</Label>

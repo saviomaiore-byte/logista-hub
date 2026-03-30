@@ -148,8 +148,17 @@ export default function Relatorios() {
   }
 
   async function saveConfig() {
+    // Auto-add email typed in the input field before saving
+    const email = novoEmail.trim().toLowerCase();
+    let finalDestinatarios = [...destinatarios];
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
+      finalDestinatarios.push(email);
+      setDestinatarios(finalDestinatarios);
+      setNovoEmail("");
+    }
+
     const configData = {
-      destinatarios,
+      destinatarios: finalDestinatarios,
       assunto_padrao: assunto,
       corpo_padrao: corpo,
       dia_envio: diaEnvio,

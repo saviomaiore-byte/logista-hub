@@ -733,6 +733,14 @@ export default function Motoristas() {
                 <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
               </TabsList>
               <TabsContent value="docs" className="mt-4 space-y-4">
+                {docsMotorista?.situacao_operacional && (
+                  <div className="flex items-center gap-2 rounded-lg border border-border p-3">
+                    <p className="text-sm font-medium">Situação Operacional:</p>
+                    <Badge variant="outline">
+                      {({ em_praca: "Em Praça", em_viagem: "Em Viagem", apto: "Apto", inapto: "Inapto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
+                    </Badge>
+                  </div>
+                )}
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
                   { label: "MOPP", numero: docsMotorista?.mopp_vitalicio ? "Vitalício" : docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vitalicio ? null : docsMotorista?.mopp_vencimento },

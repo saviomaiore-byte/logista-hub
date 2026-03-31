@@ -177,11 +177,22 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
   const password = getRequiredEnv("SMTP_PASS");
   const fromHeader = getRequiredEnv("SMTP_FROM");
   const fromEnvelope = extractEmailAddress(fromHeader);
-  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
+  const port = Number(Deno.env.get("SMTP_PORT") ?? "465");
 
   console.log(`SMTP: connecting to ${hostname}:${port}`);
-  const conn = await Deno.connect({ hostname, port });
-  const socket = new SmtpSocket(conn);
+
+  let socket: SmtpSocket;
+
+  if (port === 465) {
+    // Port 465: Implicit TLS (connect directly with TLS)
+    console.log("SMTP: using implicit TLS (port 465)");
+    const conn = await Deno.connectTls({ hostname, port });
+    socket = new SmtpSocket(conn);
+  } else {
+    // Port 587: Plain connection + STARTTLS upgrade
+    const conn = await Deno.connect({ hostname, port });
+    socket = new SmtpSocket(conn);
+  }
 
   try {
     await socket.readResponse([220]);
@@ -189,14 +200,13 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
     await socket.sendLine(`EHLO ${hostname}`);
     const ehlo = await socket.readResponse([250]);
 
-    // STARTTLS upgrade (required on port 587 for most providers)
-    if (ehlo.message.toUpperCase().includes("STARTTLS")) {
+    // STARTTLS upgrade only for port 587
+    if (port !== 465 && ehlo.message.toUpperCase().includes("STARTTLS")) {
       console.log("SMTP: upgrading to STARTTLS");
       await socket.sendLine("STARTTLS");
       await socket.readResponse([220]);
       await socket.upgradeToTls(hostname);
 
-      // Re-EHLO after TLS
       await socket.sendLine(`EHLO ${hostname}`);
       await socket.readResponse([250]);
     }

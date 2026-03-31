@@ -61,10 +61,18 @@ export const motoristaSchema = Yup.object().shape({
   estado_civil: optionalString(50),
   rg: optionalString(30),
   status: Yup.string().oneOf(['ativo', 'inativo', 'pendente']).required(),
+  situacao_operacional: Yup.string().oneOf(['em_praca', 'em_viagem', 'apto', 'inapto']).nullable(),
   cnh_numero: optionalString(20),
   cnh_vencimento: optionalDateValidation,
+  mopp_numero: optionalString(20),
   mopp_vencimento: optionalDateValidation,
   mopp_vitalicio: Yup.boolean(),
+  antt_numero: optionalString(30),
+  antt_vencimento: optionalDateValidation,
+  alvara_numero: optionalString(30),
+  alvara_vencimento: optionalDateValidation,
+  certificado_numero: optionalString(30),
+  certificado_vencimento: optionalDateValidation,
 });
 
 // Schema para Seguros

@@ -386,8 +386,6 @@ export default function Motoristas() {
                         </Select>
                       </FormSelectWrapper>
                     </div>
-                    </div>
-
 
                     <div className="space-y-2">
                       <Label>Transportadoras vinculadas</Label>
@@ -440,17 +438,28 @@ export default function Motoristas() {
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="mopp_numero" label="MOPP Número" />
                         <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
-                        <div className="flex items-end pb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="mopp_vitalicio"
-                              checked={values.mopp_vitalicio}
-                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
-                            />
-                            <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
-                          </div>
-                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Checkbox
+                          id="mopp_vitalicio"
+                          checked={values.mopp_vitalicio}
+                          onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                        />
+                        <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="alvara_numero" label="Alvará Número" />
+                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="certificado_numero" label="Certificado Número" />
+                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
                       </div>
                     </div>
 

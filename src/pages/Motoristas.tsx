@@ -887,6 +887,24 @@ export default function Motoristas() {
                         </Select>
                       </FormSelectWrapper>
                     </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
+                        <Select
+                          value={values.situacao_operacional || ""}
+                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="em_praca">Em Praça</SelectItem>
+                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
+                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="inapto">Inapto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
 
                     <div className="space-y-2">
                       <Label>Transportadoras vinculadas</Label>
@@ -940,17 +958,28 @@ export default function Motoristas() {
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                       </div>
                       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="mopp_numero" label="MOPP Número" />
                         <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
-                        <div className="flex items-end pb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="mopp_vitalicio_edit"
-                              checked={values.mopp_vitalicio}
-                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
-                            />
-                            <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
-                          </div>
-                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Checkbox
+                          id="mopp_vitalicio_edit"
+                          checked={values.mopp_vitalicio}
+                          onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                        />
+                        <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="alvara_numero" label="Alvará Número" />
+                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="certificado_numero" label="Certificado Número" />
+                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>

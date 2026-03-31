@@ -97,10 +97,18 @@ const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
+  situacao_operacional: "em_praca",
   cnh_numero: "",
   cnh_vencimento: "",
+  mopp_numero: "",
   mopp_vencimento: "",
   mopp_vitalicio: false,
+  antt_numero: "",
+  antt_vencimento: "",
+  alvara_numero: "",
+  alvara_vencimento: "",
+  certificado_numero: "",
+  certificado_vencimento: "",
 };
 
 export default function Motoristas() {

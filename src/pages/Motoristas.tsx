@@ -368,6 +368,25 @@ export default function Motoristas() {
                         </Select>
                       </FormSelectWrapper>
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
+                        <Select
+                          value={values.situacao_operacional || ""}
+                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="em_praca">Em Praça</SelectItem>
+                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
+                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="inapto">Inapto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
+                    </div>
 
 
                     <div className="space-y-2">

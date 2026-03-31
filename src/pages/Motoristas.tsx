@@ -71,10 +71,18 @@ interface Motorista {
   estado_civil: string | null;
   rg: string | null;
   status: string;
+  situacao_operacional: string | null;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
+  mopp_numero: string | null;
   mopp_vencimento: string | null;
   mopp_vitalicio: boolean;
+  antt_numero: string | null;
+  antt_vencimento: string | null;
+  alvara_numero: string | null;
+  alvara_vencimento: string | null;
+  certificado_numero: string | null;
+  certificado_vencimento: string | null;
 }
 
 const initialValues = {
@@ -89,10 +97,18 @@ const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
+  situacao_operacional: "em_praca",
   cnh_numero: "",
   cnh_vencimento: "",
+  mopp_numero: "",
   mopp_vencimento: "",
   mopp_vitalicio: false,
+  antt_numero: "",
+  antt_vencimento: "",
+  alvara_numero: "",
+  alvara_vencimento: "",
+  certificado_numero: "",
+  certificado_vencimento: "",
 };
 
 export default function Motoristas() {
@@ -182,10 +198,18 @@ export default function Motoristas() {
       estado_civil: values.estado_civil || null,
       rg: values.rg || null,
       status: values.status,
+      situacao_operacional: values.situacao_operacional || null,
       cnh_numero: values.cnh_numero || null,
       cnh_vencimento: values.cnh_vencimento || null,
+      mopp_numero: values.mopp_numero || null,
       mopp_vencimento: values.mopp_vitalicio ? null : (values.mopp_vencimento || null),
       mopp_vitalicio: values.mopp_vitalicio,
+      antt_numero: values.antt_numero || null,
+      antt_vencimento: values.antt_vencimento || null,
+      alvara_numero: values.alvara_numero || null,
+      alvara_vencimento: values.alvara_vencimento || null,
+      certificado_numero: values.certificado_numero || null,
+      certificado_vencimento: values.certificado_vencimento || null,
     };
 
     const { data: inserted, error } = await supabase.from("motoristas").insert(motoristaData).select().single();
@@ -352,7 +376,24 @@ export default function Motoristas() {
                         </Select>
                       </FormSelectWrapper>
                     </div>
-
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
+                        <Select
+                          value={values.situacao_operacional || ""}
+                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="em_praca">Em Praça</SelectItem>
+                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
+                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="inapto">Inapto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
 
                     <div className="space-y-2">
                       <Label>Transportadoras vinculadas</Label>
@@ -405,17 +446,28 @@ export default function Motoristas() {
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="mopp_numero" label="MOPP Número" />
                         <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
-                        <div className="flex items-end pb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="mopp_vitalicio"
-                              checked={values.mopp_vitalicio}
-                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
-                            />
-                            <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
-                          </div>
-                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Checkbox
+                          id="mopp_vitalicio"
+                          checked={values.mopp_vitalicio}
+                          onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                        />
+                        <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="alvara_numero" label="Alvará Número" />
+                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <FormField name="certificado_numero" label="Certificado Número" />
+                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
                       </div>
                     </div>
 
@@ -681,9 +733,20 @@ export default function Motoristas() {
                 <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
               </TabsList>
               <TabsContent value="docs" className="mt-4 space-y-4">
+                {docsMotorista?.situacao_operacional && (
+                  <div className="flex items-center gap-2 rounded-lg border border-border p-3">
+                    <p className="text-sm font-medium">Situação Operacional:</p>
+                    <Badge variant="outline">
+                      {({ em_praca: "Em Praça", em_viagem: "Em Viagem", apto: "Apto", inapto: "Inapto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
+                    </Badge>
+                  </div>
+                )}
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
-                  { label: "MOPP", numero: (docsMotorista as any)?.mopp_vitalicio ? "Vitalício" : null, vencimento: docsMotorista?.mopp_vencimento },
+                  { label: "MOPP", numero: docsMotorista?.mopp_vitalicio ? "Vitalício" : docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vitalicio ? null : docsMotorista?.mopp_vencimento },
+                  { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
+                  { label: "Alvará", numero: docsMotorista?.alvara_numero, vencimento: docsMotorista?.alvara_vencimento },
+                  { label: "Certificado", numero: docsMotorista?.certificado_numero, vencimento: docsMotorista?.certificado_vencimento },
                 ].map((doc) => (
                   <div key={doc.label} className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -725,15 +788,23 @@ export default function Motoristas() {
                   email: editMotorista.email || "",
                   cidade: editMotorista.cidade || "",
                   estado: editMotorista.estado || "",
-                  endereco: (editMotorista as any).endereco || "",
-                  data_nascimento: (editMotorista as any).data_nascimento || "",
-                  estado_civil: (editMotorista as any).estado_civil || "",
-                  rg: (editMotorista as any).rg || "",
+                  endereco: editMotorista.endereco || "",
+                  data_nascimento: editMotorista.data_nascimento || "",
+                  estado_civil: editMotorista.estado_civil || "",
+                  rg: editMotorista.rg || "",
                   status: editMotorista.status || "ativo",
+                  situacao_operacional: editMotorista.situacao_operacional || "em_praca",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
+                  mopp_numero: editMotorista.mopp_numero || "",
                   mopp_vencimento: editMotorista.mopp_vencimento || "",
-                  mopp_vitalicio: (editMotorista as any).mopp_vitalicio || false,
+                  mopp_vitalicio: editMotorista.mopp_vitalicio || false,
+                  antt_numero: editMotorista.antt_numero || "",
+                  antt_vencimento: editMotorista.antt_vencimento || "",
+                  alvara_numero: editMotorista.alvara_numero || "",
+                  alvara_vencimento: editMotorista.alvara_vencimento || "",
+                  certificado_numero: editMotorista.certificado_numero || "",
+                  certificado_vencimento: editMotorista.certificado_vencimento || "",
                 }}
                 validationSchema={motoristaSchema}
                 onSubmit={async (values) => {
@@ -751,10 +822,18 @@ export default function Motoristas() {
                       estado_civil: values.estado_civil || null,
                       rg: values.rg || null,
                       status: values.status,
+                      situacao_operacional: values.situacao_operacional || null,
                       cnh_numero: values.cnh_numero || null,
                       cnh_vencimento: values.cnh_vencimento || null,
+                      mopp_numero: values.mopp_numero || null,
                       mopp_vencimento: values.mopp_vitalicio ? null : (values.mopp_vencimento || null),
                       mopp_vitalicio: values.mopp_vitalicio,
+                      antt_numero: values.antt_numero || null,
+                      antt_vencimento: values.antt_vencimento || null,
+                      alvara_numero: values.alvara_numero || null,
+                      alvara_vencimento: values.alvara_vencimento || null,
+                      certificado_numero: values.certificado_numero || null,
+                      certificado_vencimento: values.certificado_vencimento || null,
                     })
                     .eq("id", editMotorista.id);
                   if (error) {
@@ -819,6 +898,24 @@ export default function Motoristas() {
                         </Select>
                       </FormSelectWrapper>
                     </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
+                        <Select
+                          value={values.situacao_operacional || ""}
+                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="em_praca">Em Praça</SelectItem>
+                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
+                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="inapto">Inapto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                    </div>
 
                     <div className="space-y-2">
                       <Label>Transportadoras vinculadas</Label>
@@ -872,17 +969,28 @@ export default function Motoristas() {
                         <FormField name="cnh_vencimento" label="CNH Vencimento" type="date" />
                       </div>
                       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="mopp_numero" label="MOPP Número" />
                         <FormField name="mopp_vencimento" label="MOPP Vencimento" type="date" disabled={values.mopp_vitalicio} />
-                        <div className="flex items-end pb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="mopp_vitalicio_edit"
-                              checked={values.mopp_vitalicio}
-                              onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
-                            />
-                            <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
-                          </div>
-                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Checkbox
+                          id="mopp_vitalicio_edit"
+                          checked={values.mopp_vitalicio}
+                          onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
+                        />
+                        <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="antt_numero" label="ANTT Número" />
+                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="alvara_numero" label="Alvará Número" />
+                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField name="certificado_numero" label="Certificado Número" />
+                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>

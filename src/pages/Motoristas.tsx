@@ -97,7 +97,7 @@ const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
-  situacao_operacional: "em_praca",
+  situacao_operacional: "em_praca_apto",
   cnh_numero: "",
   cnh_vencimento: "",
   mopp_numero: "",

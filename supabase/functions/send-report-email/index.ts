@@ -228,7 +228,6 @@ function buildMimeMessage(
 
   // Attachment parts
   for (const att of attachments) {
-    const encodedFilename = encodeMimeHeader(att.filename);
     // Split base64 into 76-char lines for MIME compliance
     const b64Lines = att.content.match(/.{1,76}/g)?.join("\r\n") || att.content;
     parts.push(

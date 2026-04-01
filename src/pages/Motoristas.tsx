@@ -792,7 +792,7 @@ export default function Motoristas() {
                   estado_civil: editMotorista.estado_civil || "",
                   rg: editMotorista.rg || "",
                   status: editMotorista.status || "ativo",
-                  situacao_operacional: editMotorista.situacao_operacional || "em_praca",
+                  situacao_operacional: editMotorista.situacao_operacional || "em_praca_apto",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
                   mopp_numero: editMotorista.mopp_numero || "",

@@ -69,15 +69,19 @@ interface MotoristaRelatorio {
 }
 
 const SITUACAO_LABELS: Record<string, string> = {
-  em_praca: "Em Praça",
-  em_viagem: "Em Viagem",
-  indisponivel: "Indisponível",
+  em_praca_apto: "Em Praça Apto",
+  em_viagem_apto: "Em Viagem Apto",
+  inapto: "Inapto",
+  em_praca: "Em Praça Apto",
+  em_viagem: "Em Viagem Apto",
 };
 
 const SITUACAO_ICONS: Record<string, typeof MapPin> = {
+  em_praca_apto: MapPin,
+  em_viagem_apto: Navigation,
+  inapto: Clock,
   em_praca: MapPin,
   em_viagem: Navigation,
-  indisponivel: Clock,
 };
 
 const DIAS_SEMANA = [

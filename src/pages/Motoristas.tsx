@@ -97,7 +97,7 @@ const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
-  situacao_operacional: "em_praca",
+  situacao_operacional: "em_praca_apto",
   cnh_numero: "",
   cnh_vencimento: "",
   mopp_numero: "",
@@ -386,9 +386,8 @@ export default function Motoristas() {
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="em_praca">Em Praça</SelectItem>
-                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
-                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
+                            <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
                             <SelectItem value="inapto">Inapto</SelectItem>
                           </SelectContent>
                         </Select>
@@ -737,7 +736,7 @@ export default function Motoristas() {
                   <div className="flex items-center gap-2 rounded-lg border border-border p-3">
                     <p className="text-sm font-medium">Situação Operacional:</p>
                     <Badge variant="outline">
-                      {({ em_praca: "Em Praça", em_viagem: "Em Viagem", apto: "Apto", inapto: "Inapto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
+                      {({ em_praca_apto: "Em Praça Apto", em_viagem_apto: "Em Viagem Apto", inapto: "Inapto", em_praca: "Em Praça Apto", em_viagem: "Em Viagem Apto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
                     </Badge>
                   </div>
                 )}
@@ -793,7 +792,7 @@ export default function Motoristas() {
                   estado_civil: editMotorista.estado_civil || "",
                   rg: editMotorista.rg || "",
                   status: editMotorista.status || "ativo",
-                  situacao_operacional: editMotorista.situacao_operacional || "em_praca",
+                  situacao_operacional: editMotorista.situacao_operacional || "em_praca_apto",
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
                   mopp_numero: editMotorista.mopp_numero || "",
@@ -908,9 +907,8 @@ export default function Motoristas() {
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="em_praca">Em Praça</SelectItem>
-                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
-                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
+                            <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
                             <SelectItem value="inapto">Inapto</SelectItem>
                           </SelectContent>
                         </Select>

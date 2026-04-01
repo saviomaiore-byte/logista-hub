@@ -736,7 +736,7 @@ export default function Motoristas() {
                   <div className="flex items-center gap-2 rounded-lg border border-border p-3">
                     <p className="text-sm font-medium">Situação Operacional:</p>
                     <Badge variant="outline">
-                      {({ em_praca: "Em Praça", em_viagem: "Em Viagem", apto: "Apto", inapto: "Inapto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
+                      {({ em_praca_apto: "Em Praça Apto", em_viagem_apto: "Em Viagem Apto", inapto: "Inapto", em_praca: "Em Praça Apto", em_viagem: "Em Viagem Apto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
                     </Badge>
                   </div>
                 )}

@@ -907,9 +907,8 @@ export default function Motoristas() {
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="em_praca">Em Praça</SelectItem>
-                            <SelectItem value="em_viagem">Em Viagem</SelectItem>
-                            <SelectItem value="apto">Apto</SelectItem>
+                            <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
+                            <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
                             <SelectItem value="inapto">Inapto</SelectItem>
                           </SelectContent>
                         </Select>

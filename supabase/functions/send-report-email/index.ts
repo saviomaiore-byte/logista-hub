@@ -29,11 +29,18 @@ const TransportadorSchema = z.object({
   motoristas: z.array(MotoristaSchema),
 });
 
+const AnexoSchema = z.object({
+  filename: z.string(),
+  content: z.string(), // base64
+  contentType: z.string(),
+});
+
 const BodySchema = z.object({
   destinatarios: z.array(z.string().email()).min(1),
   assunto: z.string().min(1).max(255),
   corpo: z.string().min(1),
   dados: z.array(TransportadorSchema),
+  anexos: z.array(AnexoSchema).optional(),
 });
 
 function escapeHtml(v: string): string {
@@ -88,6 +95,8 @@ tr:nth-child(even){background:#f9fafb}
 .motivo{color:#dc2626;font-size:12px}
 p.corpo{color:#555;margin-bottom:20px}
 .footer{margin-top:30px;color:#999;font-size:12px}
+.anexos{background:#f8fafc;padding:12px 16px;border-radius:6px;margin-top:20px;border:1px solid #e2e8f0}
+.anexos p{margin:0;font-size:13px;color:#475569}
 </style></head><body>
 <h1>Relatório Semanal de Motoristas</h1>
 <p style="color:#666;font-size:13px">Gerado em: ${escapeHtml(dataAtual)}</p>
@@ -116,6 +125,8 @@ p.corpo{color:#555;margin-bottom:20px}
     }
     html += `</table>`;
   }
+
+  html += `<div class="anexos"><p>📎 Este e-mail contém anexos: relatório em PDF e planilha Excel com os dados detalhados.</p></div>`;
   html += `<div class="footer"><p>Este relatório foi gerado automaticamente pelo sistema Pactum Logística.</p></div></body></html>`;
   return html;
 }
@@ -171,7 +182,77 @@ class SmtpSocket {
   }
 }
 
-async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: string): Promise<void> {
+// ── Build MIME message with attachments ──
+
+interface Attachment {
+  filename: string;
+  content: string; // base64
+  contentType: string;
+}
+
+function buildMimeMessage(
+  fromHeader: string,
+  to: string[],
+  subject: string,
+  htmlContent: string,
+  attachments: Attachment[],
+): string {
+  const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, "")}`;
+
+  const headers = [
+    `Date: ${new Date().toUTCString()}`,
+    `From: ${fromHeader}`,
+    `To: ${to.join(", ")}`,
+    `Subject: ${encodeMimeHeader(subject)}`,
+    "MIME-Version: 1.0",
+  ];
+
+  if (attachments.length === 0) {
+    headers.push('Content-Type: text/html; charset="UTF-8"');
+    headers.push("Content-Transfer-Encoding: 8bit");
+    return [...headers, "", dotStuff(htmlContent), ".", ""].join("\r\n");
+  }
+
+  headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+
+  const parts: string[] = [];
+
+  // HTML body part
+  parts.push(
+    `--${boundary}\r\n` +
+    `Content-Type: text/html; charset="UTF-8"\r\n` +
+    `Content-Transfer-Encoding: 8bit\r\n` +
+    `\r\n` +
+    htmlContent
+  );
+
+  // Attachment parts
+  for (const att of attachments) {
+    // Split base64 into 76-char lines for MIME compliance
+    const b64Lines = att.content.match(/.{1,76}/g)?.join("\r\n") || att.content;
+    parts.push(
+      `--${boundary}\r\n` +
+      `Content-Type: ${att.contentType}; name="${att.filename}"\r\n` +
+      `Content-Disposition: attachment; filename="${att.filename}"\r\n` +
+      `Content-Transfer-Encoding: base64\r\n` +
+      `\r\n` +
+      b64Lines
+    );
+  }
+
+  // Closing boundary
+  parts.push(`--${boundary}--`);
+
+  const body = parts.join("\r\n");
+  return [...headers, "", dotStuff(body), ".", ""].join("\r\n");
+}
+
+async function sendEmailViaSMTP(
+  to: string[],
+  subject: string,
+  htmlContent: string,
+  attachments: Attachment[] = [],
+): Promise<void> {
   const hostname = getRequiredEnv("SMTP_HOST");
   const username = getRequiredEnv("SMTP_USER");
   const password = getRequiredEnv("SMTP_PASS");
@@ -184,12 +265,10 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
   let socket: SmtpSocket;
 
   if (port === 465) {
-    // Port 465: Implicit TLS (connect directly with TLS)
     console.log("SMTP: using implicit TLS (port 465)");
     const conn = await Deno.connectTls({ hostname, port });
     socket = new SmtpSocket(conn);
   } else {
-    // Port 587: Plain connection + STARTTLS upgrade
     const conn = await Deno.connect({ hostname, port });
     socket = new SmtpSocket(conn);
   }
@@ -200,7 +279,6 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
     await socket.sendLine(`EHLO ${hostname}`);
     const ehlo = await socket.readResponse([250]);
 
-    // STARTTLS upgrade only for port 587
     if (port !== 465 && ehlo.message.toUpperCase().includes("STARTTLS")) {
       console.log("SMTP: upgrading to STARTTLS");
       await socket.sendLine("STARTTLS");
@@ -211,7 +289,6 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
       await socket.readResponse([250]);
     }
 
-    // AUTH LOGIN
     console.log("SMTP: authenticating");
     await socket.sendLine("AUTH LOGIN");
     await socket.readResponse([334]);
@@ -232,23 +309,10 @@ async function sendEmailViaSMTP(to: string[], subject: string, htmlContent: stri
     await socket.sendLine("DATA");
     await socket.readResponse([354]);
 
-    const msg = [
-      `Date: ${new Date().toUTCString()}`,
-      `From: ${fromHeader}`,
-      `To: ${to.join(", ")}`,
-      `Subject: ${encodeMimeHeader(subject)}`,
-      "MIME-Version: 1.0",
-      'Content-Type: text/html; charset="UTF-8"',
-      "Content-Transfer-Encoding: 8bit",
-      "",
-      dotStuff(htmlContent),
-      ".",
-      "",
-    ].join("\r\n");
-
+    const msg = buildMimeMessage(fromHeader, to, subject, htmlContent, attachments);
     await socket.sendRaw(msg);
     await socket.readResponse([250]);
-    console.log("SMTP: email sent");
+    console.log(`SMTP: email sent with ${attachments.length} attachment(s)`);
 
     await socket.sendLine("QUIT");
     try { await socket.readResponse([221]); } catch { /* server may close early */ }
@@ -301,13 +365,19 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { destinatarios, assunto, corpo, dados } = parsed.data;
+    const { destinatarios, assunto, corpo, dados, anexos } = parsed.data;
     const htmlContent = buildHtmlReport(dados, corpo);
 
-    await sendEmailViaSMTP(destinatarios, assunto, htmlContent);
+    const attachments: Attachment[] = (anexos || []).map(a => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType,
+    }));
+
+    await sendEmailViaSMTP(destinatarios, assunto, htmlContent, attachments);
     await insertAuditLog(claimsData.claims.sub, destinatarios, assunto, dados);
 
-    return new Response(JSON.stringify({ success: true, message: `Relatório enviado com sucesso para ${destinatarios.length} destinatário(s).` }), {
+    return new Response(JSON.stringify({ success: true, message: `Relatório enviado com sucesso para ${destinatarios.length} destinatário(s) com ${attachments.length} anexo(s).` }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

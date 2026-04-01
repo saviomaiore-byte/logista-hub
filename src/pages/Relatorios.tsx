@@ -30,6 +30,8 @@ import {
   Users,
   MapPin,
   Navigation,
+  Download,
+  Paperclip,
 } from "lucide-react";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -97,7 +99,6 @@ const DIAS_SEMANA = [
 function checkMotoristaAptidao(m: any, temContrato: boolean): { apto: boolean; motivos: string[] } {
   const motivos: string[] = [];
 
-
   if (!temContrato) motivos.push("Sem contrato assinado");
   if (m.antt_vencimento && isPast(parseISO(m.antt_vencimento))) motivos.push("ANTT vencida");
   if (!m.antt_numero) motivos.push("ANTT não cadastrada");
@@ -118,6 +119,11 @@ export default function Relatorios() {
   const [dados, setDados] = useState<TransportadorComMotoristas[]>([]);
   const [activeTab, setActiveTab] = useState("preview");
 
+  // Preview state
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [excelPreviewData, setExcelPreviewData] = useState<Record<string, any[][]> | null>(null);
+  const [activeExcelSheet, setActiveExcelSheet] = useState<string>("");
+
   // Email config
   const [destinatarios, setDestinatarios] = useState<string[]>([]);
   const [novoEmail, setNovoEmail] = useState("");
@@ -132,6 +138,13 @@ export default function Relatorios() {
     fetchDados();
     fetchConfig();
   }, []);
+
+  // Clean up PDF blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+  }, [pdfPreviewUrl]);
 
   async function fetchConfig() {
     const { data } = await supabase
@@ -152,7 +165,6 @@ export default function Relatorios() {
   }
 
   async function saveConfig() {
-    // Auto-add email typed in the input field before saving
     const email = novoEmail.trim().toLowerCase();
     let finalDestinatarios = [...destinatarios];
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
@@ -182,23 +194,19 @@ export default function Relatorios() {
   async function fetchDados() {
     setLoading(true);
     try {
-      // Fetch transportadores
       const { data: transportadores } = await supabase
         .from("transportadores")
         .select("id, razao_social, cpf_cnpj, status")
         .eq("status", "ativo");
 
-      // Fetch all links
       const { data: links } = await supabase
         .from("transportador_motoristas")
         .select("transportador_id, motorista_id");
 
-      // Fetch all motoristas
       const { data: motoristas } = await supabase
         .from("motoristas")
         .select("*");
 
-      // Fetch contratos (signed)
       const { data: contratos } = await supabase
         .from("contratos")
         .select("motorista_id, status")
@@ -291,10 +299,9 @@ export default function Relatorios() {
     return { label: "Regular", variant: "default" as const };
   }
 
-  // PDF Generation
-  function gerarPDF() {
+  // ─── PDF generation (returns jsPDF doc) ───
+  function buildPdfDoc(): jsPDF {
     const doc = new jsPDF({ orientation: "landscape" });
-    const pageWidth = doc.internal.pageSize.getWidth();
     const dataAtual = format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR });
 
     doc.setFontSize(16);
@@ -381,12 +388,11 @@ export default function Relatorios() {
       styles: { fontSize: 11 },
     });
 
-    doc.save(`relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast({ title: "PDF gerado com sucesso!" });
+    return doc;
   }
 
-  // Excel Generation
-  function gerarExcel() {
+  // ─── Excel generation (returns workbook) ───
+  function buildExcelWorkbook(): XLSX.WorkBook {
     const wb = XLSX.utils.book_new();
 
     dados.forEach((t) => {
@@ -416,7 +422,6 @@ export default function Relatorios() {
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
 
-    // Summary sheet
     const summaryData = [
       { Indicador: "Total de Transportadoras", Quantidade: resumo.totalTransportadoras },
       { Indicador: "Total de Motoristas", Quantidade: resumo.totalMotoristas },
@@ -428,8 +433,53 @@ export default function Relatorios() {
     const summaryWs = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo");
 
+    return wb;
+  }
+
+  function gerarPDF() {
+    const doc = buildPdfDoc();
+    doc.save(`relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    toast({ title: "PDF gerado com sucesso!" });
+  }
+
+  function gerarExcel() {
+    const wb = buildExcelWorkbook();
     XLSX.writeFile(wb, `relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
     toast({ title: "Excel gerado com sucesso!" });
+  }
+
+  // ─── Preview functions ───
+  function gerarPreviewPDF() {
+    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    const doc = buildPdfDoc();
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    setPdfPreviewUrl(url);
+    setActiveTab("preview-pdf");
+  }
+
+  function gerarPreviewExcel() {
+    const wb = buildExcelWorkbook();
+    const sheetsData: Record<string, any[][]> = {};
+    wb.SheetNames.forEach((name) => {
+      const ws = wb.Sheets[name];
+      sheetsData[name] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+    });
+    setExcelPreviewData(sheetsData);
+    setActiveExcelSheet(wb.SheetNames[0] || "");
+    setActiveTab("preview-excel");
+  }
+
+  // ─── Get base64 for sending ───
+  function getPdfBase64(): string {
+    const doc = buildPdfDoc();
+    return doc.output("datauristring").split(",")[1];
+  }
+
+  function getExcelBase64(): string {
+    const wb = buildExcelWorkbook();
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "base64" });
+    return wbout;
   }
 
   function addDestinatario() {
@@ -451,7 +501,6 @@ export default function Relatorios() {
   }
 
   async function enviarRelatorio() {
-    // Auto-add email from input before sending
     const email = novoEmail.trim().toLowerCase();
     let finalDestinatarios = [...destinatarios];
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !finalDestinatarios.includes(email)) {
@@ -466,6 +515,10 @@ export default function Relatorios() {
     }
     setSending(true);
     try {
+      const pdfBase64 = getPdfBase64();
+      const excelBase64 = getExcelBase64();
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           destinatarios: finalDestinatarios,
@@ -487,6 +540,18 @@ export default function Relatorios() {
               motivos_inaptidao: m.motivos_inaptidao,
             })),
           })),
+          anexos: [
+            {
+              filename: `relatorio-motoristas-${dateStr}.pdf`,
+              content: pdfBase64,
+              contentType: "application/pdf",
+            },
+            {
+              filename: `relatorio-motoristas-${dateStr}.xlsx`,
+              content: excelBase64,
+              contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            },
+          ],
         },
       });
       if (error) throw error;
@@ -591,14 +656,23 @@ export default function Relatorios() {
           <TabsList>
             <TabsTrigger value="preview">
               <Eye className="h-4 w-4 mr-2" />
-              Pré-visualização
+              Dados
+            </TabsTrigger>
+            <TabsTrigger value="preview-pdf" onClick={gerarPreviewPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Pré-visualizar PDF
+            </TabsTrigger>
+            <TabsTrigger value="preview-excel" onClick={gerarPreviewExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Pré-visualizar Excel
             </TabsTrigger>
             <TabsTrigger value="config">
               <Settings className="h-4 w-4 mr-2" />
-              Configurações de Envio
+              Configurações
             </TabsTrigger>
           </TabsList>
 
+          {/* Data preview tab */}
           <TabsContent value="preview" className="mt-4 space-y-6">
             {loading ? (
               <div className="flex items-center justify-center py-16">
@@ -626,88 +700,90 @@ export default function Relatorios() {
                     {t.motoristas.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-4">Nenhum motorista vinculado.</p>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Motorista</TableHead>
-                            <TableHead>Aptidão</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Situação</TableHead>
-                            <TableHead>Contrato</TableHead>
-                            <TableHead>ANTT</TableHead>
-                            <TableHead>Certificado</TableHead>
-                            <TableHead>Alvará</TableHead>
-                            <TableHead>Motivos Inaptidão</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {t.motoristas.map((m) => {
-                            const SituacaoIcon = SITUACAO_ICONS[m.situacao_operacional || "em_praca"] || MapPin;
-                            return (
-                              <TableRow key={m.id}>
-                                <TableCell>
-                                  <div>
-                                    <p className="font-medium">{m.nome}</p>
-                                    <p className="text-xs text-muted-foreground">{m.cpf}</p>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={m.apto ? "default" : "destructive"}>
-                                    {m.apto ? "Apto" : "Inapto"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={m.status === "ativo" ? "secondary" : "outline"}>
-                                    {m.status === "ativo" ? "Ativo" : "Inativo"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1.5">
-                                    <SituacaoIcon className="h-3.5 w-3.5" />
-                                    <span className="text-sm">
-                                      {SITUACAO_LABELS[m.situacao_operacional || "em_praca"]}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={m.tem_contrato ? "default" : "destructive"}>
-                                    {m.tem_contrato ? "Sim" : "Não"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={docStatus(m.antt_vencimento, m.antt_numero).variant}>
-                                    {docStatus(m.antt_vencimento, m.antt_numero).label}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={docStatus(m.certificado_vencimento, m.certificado_numero).variant}>
-                                    {docStatus(m.certificado_vencimento, m.certificado_numero).label}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={docStatus(m.alvara_vencimento, m.alvara_numero).variant}>
-                                    {docStatus(m.alvara_vencimento, m.alvara_numero).label}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {m.motivos_inaptidao.length > 0 ? (
-                                    <div className="space-y-1">
-                                      {m.motivos_inaptidao.map((motivo, i) => (
-                                        <div key={i} className="flex items-center gap-1 text-xs text-destructive">
-                                          <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-                                          {motivo}
-                                        </div>
-                                      ))}
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Motorista</TableHead>
+                              <TableHead>Aptidão</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Situação</TableHead>
+                              <TableHead>Contrato</TableHead>
+                              <TableHead>ANTT</TableHead>
+                              <TableHead>Certificado</TableHead>
+                              <TableHead>Alvará</TableHead>
+                              <TableHead>Motivos Inaptidão</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {t.motoristas.map((m) => {
+                              const SituacaoIcon = SITUACAO_ICONS[m.situacao_operacional || "em_praca"] || MapPin;
+                              return (
+                                <TableRow key={m.id}>
+                                  <TableCell>
+                                    <div>
+                                      <p className="font-medium">{m.nome}</p>
+                                      <p className="text-xs text-muted-foreground">{m.cpf}</p>
                                     </div>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={m.apto ? "default" : "destructive"}>
+                                      {m.apto ? "Apto" : "Inapto"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={m.status === "ativo" ? "secondary" : "outline"}>
+                                      {m.status === "ativo" ? "Ativo" : "Inativo"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1.5">
+                                      <SituacaoIcon className="h-3.5 w-3.5" />
+                                      <span className="text-sm">
+                                        {SITUACAO_LABELS[m.situacao_operacional || "em_praca"]}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={m.tem_contrato ? "default" : "destructive"}>
+                                      {m.tem_contrato ? "Sim" : "Não"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={docStatus(m.antt_vencimento, m.antt_numero).variant}>
+                                      {docStatus(m.antt_vencimento, m.antt_numero).label}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={docStatus(m.certificado_vencimento, m.certificado_numero).variant}>
+                                      {docStatus(m.certificado_vencimento, m.certificado_numero).label}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={docStatus(m.alvara_vencimento, m.alvara_numero).variant}>
+                                      {docStatus(m.alvara_vencimento, m.alvara_numero).label}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {m.motivos_inaptidao.length > 0 ? (
+                                      <div className="space-y-1">
+                                        {m.motivos_inaptidao.map((motivo, i) => (
+                                          <div key={i} className="flex items-center gap-1 text-xs text-destructive">
+                                            <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                            {motivo}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">—</span>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -715,12 +791,132 @@ export default function Relatorios() {
             )}
           </TabsContent>
 
+          {/* PDF Preview tab */}
+          <TabsContent value="preview-pdf" className="mt-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Pré-visualização do PDF
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={gerarPDF}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Baixar PDF
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {pdfPreviewUrl ? (
+                  <iframe
+                    src={pdfPreviewUrl}
+                    className="w-full rounded-md border"
+                    style={{ height: "70vh" }}
+                    title="Pré-visualização PDF"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-3 opacity-40" />
+                    <p>Clique na aba para gerar a pré-visualização do PDF</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Excel Preview tab */}
+          <TabsContent value="preview-excel" className="mt-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Pré-visualização da Planilha
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={gerarExcel}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Baixar Excel
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {excelPreviewData ? (
+                  <div className="space-y-4">
+                    {/* Sheet selector */}
+                    <div className="flex gap-2 flex-wrap">
+                      {Object.keys(excelPreviewData).map((sheetName) => (
+                        <Button
+                          key={sheetName}
+                          variant={activeExcelSheet === sheetName ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveExcelSheet(sheetName)}
+                        >
+                          {sheetName}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Sheet data */}
+                    {activeExcelSheet && excelPreviewData[activeExcelSheet] && (
+                      <div className="overflow-x-auto border rounded-md">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {(excelPreviewData[activeExcelSheet][0] || []).map((cell: any, i: number) => (
+                                <TableHead key={i} className="whitespace-nowrap text-xs">
+                                  {cell ?? ""}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {excelPreviewData[activeExcelSheet].slice(1).map((row, ri) => (
+                              <TableRow key={ri}>
+                                {(excelPreviewData[activeExcelSheet][0] || []).map((_: any, ci: number) => (
+                                  <TableCell key={ci} className="whitespace-nowrap text-xs">
+                                    {row[ci] ?? ""}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Paperclip className="h-3 w-3" />
+                      <span>Esta planilha será enviada como anexo no e-mail</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <FileSpreadsheet className="h-12 w-12 mb-3 opacity-40" />
+                    <p>Clique na aba para gerar a pré-visualização da planilha</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Config tab */}
           <TabsContent value="config" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Configurações de Envio</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Attachments info */}
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-medium text-sm">Anexos do E-mail</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O relatório será enviado com dois anexos: um arquivo PDF e uma planilha Excel contendo todos os dados dos motoristas organizados por transportadora.
+                  </p>
+                </div>
+
                 {/* Destinatários */}
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Destinatários</Label>

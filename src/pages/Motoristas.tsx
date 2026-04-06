@@ -757,9 +757,9 @@ export default function Motoristas() {
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
                   { label: "MOPP", numero: docsMotorista?.mopp_vitalicio ? "Vitalício" : docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vitalicio ? null : docsMotorista?.mopp_vencimento },
-                  { label: "ANTT", numero: docsMotorista?.antt_numero, vencimento: docsMotorista?.antt_vencimento },
-                  { label: "Alvará", numero: docsMotorista?.alvara_numero, vencimento: docsMotorista?.alvara_vencimento },
-                  { label: "Certificado", numero: docsMotorista?.certificado_numero, vencimento: docsMotorista?.certificado_vencimento },
+                  { label: "ANTT", numero: docsMotorista?.antt_numero ? "Sim" : "Não", vencimento: null },
+                  { label: "Alvará", numero: docsMotorista?.alvara_numero ? "Sim" : "Não", vencimento: null },
+                  { label: "Certificado", numero: docsMotorista?.certificado_numero ? "Sim" : "Não", vencimento: null },
                 ].map((doc) => (
                   <div key={doc.label} className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>

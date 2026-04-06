@@ -456,17 +456,31 @@ export default function Motoristas() {
                         />
                         <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        <FormField name="antt_numero" label="ANTT Número" />
-                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        <FormField name="alvara_numero" label="Alvará Número" />
-                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        <FormField name="certificado_numero" label="Certificado Número" />
-                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_antt"
+                            checked={!!values.antt_numero}
+                            onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_antt" className="text-sm cursor-pointer">Possui ANTT</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_alvara"
+                            checked={!!values.alvara_numero}
+                            onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_alvara" className="text-sm cursor-pointer">Possui Alvará</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_certificado"
+                            checked={!!values.certificado_numero}
+                            onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_certificado" className="text-sm cursor-pointer">Possui Certificado</Label>
+                        </div>
                       </div>
                     </div>
 
@@ -978,17 +992,31 @@ export default function Motoristas() {
                         />
                         <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
                       </div>
-                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormField name="antt_numero" label="ANTT Número" />
-                        <FormField name="antt_vencimento" label="ANTT Vencimento" type="date" />
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormField name="alvara_numero" label="Alvará Número" />
-                        <FormField name="alvara_vencimento" label="Alvará Vencimento" type="date" />
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormField name="certificado_numero" label="Certificado Número" />
-                        <FormField name="certificado_vencimento" label="Certificado Vencimento" type="date" />
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_antt_edit"
+                            checked={!!values.antt_numero}
+                            onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_antt_edit" className="text-sm cursor-pointer">Possui ANTT</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_alvara_edit"
+                            checked={!!values.alvara_numero}
+                            onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_alvara_edit" className="text-sm cursor-pointer">Possui Alvará</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="tem_certificado_edit"
+                            checked={!!values.certificado_numero}
+                            onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
+                          />
+                          <Label htmlFor="tem_certificado_edit" className="text-sm cursor-pointer">Possui Certificado</Label>
+                        </div>
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>

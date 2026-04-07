@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 // Funções de validação personalizadas
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
 const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/;
-const telefoneRegex = /^\(\d{2}\)\s?\d{4,5}-\d{4}$|^\d{10,11}$/;
+const telefoneRegex = /^[\d\s().\-+/]{8,20}$/;
 
 // Validações comuns
 export const requiredString = (fieldName: string) =>

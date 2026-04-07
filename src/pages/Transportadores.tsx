@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { TransportadorAnexos } from "@/components/transportador/TransportadorAnexos";
 import { openSignedFile } from "@/lib/storage";
@@ -675,6 +676,9 @@ export default function Transportadores() {
               estado_civil: editingTransp?.estado_civil || "",
               rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
+              antt_numero: (editingTransp as any)?.antt_numero || "",
+              alvara_numero: (editingTransp as any)?.alvara_numero || "",
+              certificado_numero: (editingTransp as any)?.certificado_numero || "",
             }}
             validationSchema={transportadorSchema}
             onSubmit={(values) => saveTransp.mutate(values)}
@@ -735,6 +739,33 @@ export default function Transportadores() {
                       <SelectItem value="inativo">Inativo</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="border-t pt-4 mt-2 space-y-3">
+                  <Label className="font-medium">Documentos</Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_antt_transp"
+                      checked={!!values.antt_numero}
+                      onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_antt_transp" className="text-sm cursor-pointer">Possui ANTT</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_alvara_transp"
+                      checked={!!values.alvara_numero}
+                      onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_alvara_transp" className="text-sm cursor-pointer">Possui Alvará</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_certificado_transp"
+                      checked={!!values.certificado_numero}
+                      onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_certificado_transp" className="text-sm cursor-pointer">Possui Certificado</Label>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>

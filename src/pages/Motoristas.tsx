@@ -456,32 +456,6 @@ export default function Motoristas() {
                         />
                         <Label htmlFor="mopp_vitalicio" className="text-sm cursor-pointer">MOPP Vitalício</Label>
                       </div>
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_antt"
-                            checked={!!values.antt_numero}
-                            onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_antt" className="text-sm cursor-pointer">Possui ANTT</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_alvara"
-                            checked={!!values.alvara_numero}
-                            onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_alvara" className="text-sm cursor-pointer">Possui Alvará</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_certificado"
-                            checked={!!values.certificado_numero}
-                            onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_certificado" className="text-sm cursor-pointer">Possui Certificado</Label>
-                        </div>
-                      </div>
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -991,32 +965,6 @@ export default function Motoristas() {
                           onCheckedChange={(checked) => setFieldValue("mopp_vitalicio", !!checked)}
                         />
                         <Label htmlFor="mopp_vitalicio_edit" className="cursor-pointer text-sm">MOPP Vitalício</Label>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_antt_edit"
-                            checked={!!values.antt_numero}
-                            onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_antt_edit" className="text-sm cursor-pointer">Possui ANTT</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_alvara_edit"
-                            checked={!!values.alvara_numero}
-                            onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_alvara_edit" className="text-sm cursor-pointer">Possui Alvará</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="tem_certificado_edit"
-                            checked={!!values.certificado_numero}
-                            onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
-                          />
-                          <Label htmlFor="tem_certificado_edit" className="text-sm cursor-pointer">Possui Certificado</Label>
-                        </div>
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>

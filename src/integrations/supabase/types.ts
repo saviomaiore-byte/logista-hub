@@ -884,6 +884,9 @@ export type Database = {
       }
       transportadores: {
         Row: {
+          alvara_numero: string | null
+          antt_numero: string | null
+          certificado_numero: string | null
           contato: string | null
           cpf_cnpj: string
           created_at: string
@@ -901,6 +904,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alvara_numero?: string | null
+          antt_numero?: string | null
+          certificado_numero?: string | null
           contato?: string | null
           cpf_cnpj: string
           created_at?: string
@@ -918,6 +924,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alvara_numero?: string | null
+          antt_numero?: string | null
+          certificado_numero?: string | null
           contato?: string | null
           cpf_cnpj?: string
           created_at?: string

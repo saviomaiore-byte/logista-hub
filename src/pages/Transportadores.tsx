@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Link2, Unlink, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ContratoAnexos } from "@/components/contrato/ContratoAnexos";
 import { TransportadorAnexos } from "@/components/transportador/TransportadorAnexos";
 import { openSignedFile } from "@/lib/storage";
@@ -675,6 +676,9 @@ export default function Transportadores() {
               estado_civil: editingTransp?.estado_civil || "",
               rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
+              antt_numero: (editingTransp as any)?.antt_numero || "",
+              alvara_numero: (editingTransp as any)?.alvara_numero || "",
+              certificado_numero: (editingTransp as any)?.certificado_numero || "",
             }}
             validationSchema={transportadorSchema}
             onSubmit={(values) => saveTransp.mutate(values)}

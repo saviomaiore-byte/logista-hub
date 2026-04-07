@@ -736,6 +736,33 @@ export default function Transportadores() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="border-t pt-4 mt-2 space-y-3">
+                  <Label className="font-medium">Documentos</Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_antt_transp"
+                      checked={!!values.antt_numero}
+                      onCheckedChange={(checked) => setFieldValue("antt_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_antt_transp" className="text-sm cursor-pointer">Possui ANTT</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_alvara_transp"
+                      checked={!!values.alvara_numero}
+                      onCheckedChange={(checked) => setFieldValue("alvara_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_alvara_transp" className="text-sm cursor-pointer">Possui Alvará</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="tem_certificado_transp"
+                      checked={!!values.certificado_numero}
+                      onCheckedChange={(checked) => setFieldValue("certificado_numero", checked ? "Sim" : "")}
+                    />
+                    <Label htmlFor="tem_certificado_transp" className="text-sm cursor-pointer">Possui Certificado</Label>
+                  </div>
+                </div>
                 <DialogFooter>
                   <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>
                 </DialogFooter>

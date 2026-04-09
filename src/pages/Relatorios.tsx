@@ -678,7 +678,9 @@ export default function Relatorios() {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-base">{t.razao_social}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">CNPJ: {t.cpf_cnpj}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          CNPJ: {t.cpf_cnpj} | ANTT: {t.antt_numero ? "Sim" : "Não"} | Certificado: {t.certificado_numero ? "Sim" : "Não"} | Alvará: {t.alvara_numero ? "Sim" : "Não"}
+                        </p>
                       </div>
                       <Badge variant="secondary">{t.motoristas.length} motorista(s)</Badge>
                     </div>

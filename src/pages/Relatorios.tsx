@@ -268,8 +268,9 @@ export default function Relatorios() {
         totalMotoristas++;
         if (m.apto) aptos++;
         else inaptos++;
-        if (m.situacao_operacional === "em_praca") emPraca++;
-        if (m.situacao_operacional === "em_viagem") emViagem++;
+        const sit = m.situacao_operacional || "em_praca";
+        if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
+        if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       })
     );
 

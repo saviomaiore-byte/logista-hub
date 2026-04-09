@@ -514,6 +514,9 @@ export default function Relatorios() {
           dados: dados.map((t) => ({
             razao_social: t.razao_social,
             cpf_cnpj: t.cpf_cnpj,
+            antt: t.antt_numero ? "Sim" : "Não",
+            certificado: t.certificado_numero ? "Sim" : "Não",
+            alvara: t.alvara_numero ? "Sim" : "Não",
             motoristas: t.motoristas.map((m) => ({
               nome: m.nome,
               cpf: m.cpf,
@@ -521,9 +524,6 @@ export default function Relatorios() {
               status: m.status,
               situacao_operacional: SITUACAO_LABELS[m.situacao_operacional || "em_praca"],
               tem_contrato: m.tem_contrato,
-              antt_status: docStatus(m.antt_vencimento, m.antt_numero).label,
-              certificado_status: docStatus(m.certificado_vencimento, m.certificado_numero).label,
-              alvara_status: docStatus(m.alvara_vencimento, m.alvara_numero).label,
               motivos_inaptidao: m.motivos_inaptidao,
             })),
           })),

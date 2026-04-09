@@ -698,9 +698,6 @@ export default function Relatorios() {
                               <TableHead>Status</TableHead>
                               <TableHead>Situação</TableHead>
                               <TableHead>Contrato</TableHead>
-                              <TableHead>ANTT</TableHead>
-                              <TableHead>Certificado</TableHead>
-                              <TableHead>Alvará</TableHead>
                               <TableHead>Motivos Inaptidão</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -736,21 +733,6 @@ export default function Relatorios() {
                                   <TableCell>
                                     <Badge variant={m.tem_contrato ? "default" : "destructive"}>
                                       {m.tem_contrato ? "Sim" : "Não"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.antt_vencimento, m.antt_numero).variant}>
-                                      {docStatus(m.antt_vencimento, m.antt_numero).label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.certificado_vencimento, m.certificado_numero).variant}>
-                                      {docStatus(m.certificado_vencimento, m.certificado_numero).label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.alvara_vencimento, m.alvara_numero).variant}>
-                                      {docStatus(m.alvara_vencimento, m.alvara_numero).label}
                                     </Badge>
                                   </TableCell>
                                   <TableCell>

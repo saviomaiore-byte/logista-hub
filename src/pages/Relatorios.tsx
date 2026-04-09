@@ -330,9 +330,9 @@ export default function Relatorios() {
         m.status === "ativo" ? "Ativo" : "Inativo",
         SITUACAO_LABELS[m.situacao_operacional || "em_praca"] || "Em Praça",
         m.tem_contrato ? "Sim" : "Não",
-        docStatus(m.antt_vencimento, m.antt_numero).label,
-        docStatus(m.certificado_vencimento, m.certificado_numero).label,
-        docStatus(m.alvara_vencimento, m.alvara_numero).label,
+        t.antt_numero ? "Sim" : "Não",
+        t.certificado_numero ? "Sim" : "Não",
+        t.alvara_numero ? "Sim" : "Não",
         m.apto ? "" : m.motivos_inaptidao.join("; "),
       ]);
 

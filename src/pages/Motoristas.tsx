@@ -284,7 +284,7 @@ export default function Motoristas() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Motoristas</h1>
             <p className="text-muted-foreground mt-1">
-              Gerencie o cadastro de motoristas e documentos
+              {motoristas.length} motorista{motoristas.length !== 1 ? "s" : ""} cadastrado{motoristas.length !== 1 ? "s" : ""} • Gerencie o cadastro de motoristas e documentos
             </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>

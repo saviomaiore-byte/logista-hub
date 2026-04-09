@@ -323,7 +323,7 @@ export default function Transportadores() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Transportadores</h1>
-            <p className="text-muted-foreground">Gestão de transportadores, veículos e vínculos</p>
+            <p className="text-muted-foreground">{transportadores.length} transportador{transportadores.length !== 1 ? "es" : ""} cadastrado{transportadores.length !== 1 ? "s" : ""} • Gestão de transportadores, veículos e vínculos</p>
           </div>
         </div>
 

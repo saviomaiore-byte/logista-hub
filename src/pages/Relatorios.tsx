@@ -192,7 +192,7 @@ export default function Relatorios() {
     try {
       const { data: transportadores } = await supabase
         .from("transportadores")
-        .select("id, razao_social, cpf_cnpj, status")
+        .select("id, razao_social, cpf_cnpj, status, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo");
 
       const { data: links } = await supabase
@@ -219,7 +219,7 @@ export default function Relatorios() {
           .filter((m) => motoristaIds.includes(m.id))
           .map((m) => {
             const temContrato = contratosSet.has(m.id);
-            const { apto, motivos } = checkMotoristaAptidao(m, temContrato);
+            const { apto, motivos } = checkMotoristaAptidao(m, temContrato, t);
             return {
               id: m.id,
               nome: m.nome,
@@ -228,12 +228,6 @@ export default function Relatorios() {
               situacao_operacional: (m as any).situacao_operacional || "em_praca",
               cnh_numero: m.cnh_numero,
               cnh_vencimento: m.cnh_vencimento,
-              antt_numero: m.antt_numero,
-              antt_vencimento: m.antt_vencimento,
-              alvara_numero: (m as any).alvara_numero,
-              alvara_vencimento: (m as any).alvara_vencimento,
-              certificado_numero: (m as any).certificado_numero,
-              certificado_vencimento: (m as any).certificado_vencimento,
               mopp_numero: m.mopp_numero,
               mopp_vencimento: m.mopp_vencimento,
               mopp_vitalicio: m.mopp_vitalicio,
@@ -248,6 +242,9 @@ export default function Relatorios() {
           razao_social: t.razao_social,
           cpf_cnpj: t.cpf_cnpj,
           status: t.status,
+          antt_numero: t.antt_numero,
+          alvara_numero: t.alvara_numero,
+          certificado_numero: t.certificado_numero,
           motoristas: mots,
         };
       });

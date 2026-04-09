@@ -45,6 +45,9 @@ interface TransportadorComMotoristas {
   razao_social: string;
   cpf_cnpj: string;
   status: string;
+  antt_numero: string | null;
+  alvara_numero: string | null;
+  certificado_numero: string | null;
   motoristas: MotoristaRelatorio[];
 }
 
@@ -56,12 +59,6 @@ interface MotoristaRelatorio {
   situacao_operacional: string | null;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
-  antt_numero: string | null;
-  antt_vencimento: string | null;
-  alvara_numero: string | null;
-  alvara_vencimento: string | null;
-  certificado_numero: string | null;
-  certificado_vencimento: string | null;
   mopp_numero: string | null;
   mopp_vencimento: string | null;
   mopp_vitalicio: boolean;
@@ -71,11 +68,11 @@ interface MotoristaRelatorio {
 }
 
 const SITUACAO_LABELS: Record<string, string> = {
-  em_praca_apto: "Em Praça Apto",
-  em_viagem_apto: "Em Viagem Apto",
+  em_praca_apto: "Em Praça - Apto",
+  em_viagem_apto: "Em Viagem - Apto",
   inapto: "Inapto",
-  em_praca: "Em Praça Apto",
-  em_viagem: "Em Viagem Apto",
+  em_praca: "Em Praça - Apto",
+  em_viagem: "Em Viagem - Apto",
 };
 
 const SITUACAO_ICONS: Record<string, typeof MapPin> = {
@@ -96,14 +93,13 @@ const DIAS_SEMANA = [
   { value: "domingo", label: "Domingo" },
 ];
 
-function checkMotoristaAptidao(m: any, temContrato: boolean): { apto: boolean; motivos: string[] } {
+function checkMotoristaAptidao(m: any, temContrato: boolean, transportadora: any): { apto: boolean; motivos: string[] } {
   const motivos: string[] = [];
 
   if (!temContrato) motivos.push("Sem contrato assinado");
-  if (m.antt_vencimento && isPast(parseISO(m.antt_vencimento))) motivos.push("ANTT vencida");
-  if (!m.antt_numero) motivos.push("ANTT não cadastrada");
-  if (m.alvara_vencimento && isPast(parseISO(m.alvara_vencimento))) motivos.push("Alvará vencido");
-  if (m.certificado_vencimento && isPast(parseISO(m.certificado_vencimento))) motivos.push("Certificado vencido");
+  if (!transportadora.antt_numero) motivos.push("Transportadora sem ANTT");
+  if (!transportadora.alvara_numero) motivos.push("Transportadora sem Alvará");
+  if (!transportadora.certificado_numero) motivos.push("Transportadora sem Certificado");
   if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");
   if (!m.mopp_vitalicio && m.mopp_vencimento && isPast(parseISO(m.mopp_vencimento))) motivos.push("MOPP vencido");
   if (m.status === "inativo") motivos.push("Motorista inativo");
@@ -196,7 +192,7 @@ export default function Relatorios() {
     try {
       const { data: transportadores } = await supabase
         .from("transportadores")
-        .select("id, razao_social, cpf_cnpj, status")
+        .select("id, razao_social, cpf_cnpj, status, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo");
 
       const { data: links } = await supabase
@@ -223,7 +219,7 @@ export default function Relatorios() {
           .filter((m) => motoristaIds.includes(m.id))
           .map((m) => {
             const temContrato = contratosSet.has(m.id);
-            const { apto, motivos } = checkMotoristaAptidao(m, temContrato);
+            const { apto, motivos } = checkMotoristaAptidao(m, temContrato, t);
             return {
               id: m.id,
               nome: m.nome,
@@ -232,12 +228,6 @@ export default function Relatorios() {
               situacao_operacional: (m as any).situacao_operacional || "em_praca",
               cnh_numero: m.cnh_numero,
               cnh_vencimento: m.cnh_vencimento,
-              antt_numero: m.antt_numero,
-              antt_vencimento: m.antt_vencimento,
-              alvara_numero: (m as any).alvara_numero,
-              alvara_vencimento: (m as any).alvara_vencimento,
-              certificado_numero: (m as any).certificado_numero,
-              certificado_vencimento: (m as any).certificado_vencimento,
               mopp_numero: m.mopp_numero,
               mopp_vencimento: m.mopp_vencimento,
               mopp_vitalicio: m.mopp_vitalicio,
@@ -252,6 +242,9 @@ export default function Relatorios() {
           razao_social: t.razao_social,
           cpf_cnpj: t.cpf_cnpj,
           status: t.status,
+          antt_numero: t.antt_numero,
+          alvara_numero: t.alvara_numero,
+          certificado_numero: t.certificado_numero,
           motoristas: mots,
         };
       });
@@ -275,8 +268,9 @@ export default function Relatorios() {
         totalMotoristas++;
         if (m.apto) aptos++;
         else inaptos++;
-        if (m.situacao_operacional === "em_praca") emPraca++;
-        if (m.situacao_operacional === "em_viagem") emViagem++;
+        const sit = m.situacao_operacional || "em_praca";
+        if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
+        if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       })
     );
 
@@ -337,9 +331,9 @@ export default function Relatorios() {
         m.status === "ativo" ? "Ativo" : "Inativo",
         SITUACAO_LABELS[m.situacao_operacional || "em_praca"] || "Em Praça",
         m.tem_contrato ? "Sim" : "Não",
-        docStatus(m.antt_vencimento, m.antt_numero).label,
-        docStatus(m.certificado_vencimento, m.certificado_numero).label,
-        docStatus(m.alvara_vencimento, m.alvara_numero).label,
+        t.antt_numero ? "Sim" : "Não",
+        t.certificado_numero ? "Sim" : "Não",
+        t.alvara_numero ? "Sim" : "Não",
         m.apto ? "" : m.motivos_inaptidao.join("; "),
       ]);
 
@@ -403,15 +397,9 @@ export default function Relatorios() {
         Status: m.status === "ativo" ? "Ativo" : "Inativo",
         "Situação Operacional": SITUACAO_LABELS[m.situacao_operacional || "em_praca"] || "Em Praça",
         "Contrato Assinado": m.tem_contrato ? "Sim" : "Não",
-        "ANTT Nº": m.antt_numero || "",
-        "ANTT Vencimento": formatDate(m.antt_vencimento),
-        "ANTT Status": docStatus(m.antt_vencimento, m.antt_numero).label,
-        "Certificado Nº": m.certificado_numero || "",
-        "Certificado Vencimento": formatDate(m.certificado_vencimento),
-        "Certificado Status": docStatus(m.certificado_vencimento, m.certificado_numero).label,
-        "Alvará Nº": m.alvara_numero || "",
-        "Alvará Vencimento": formatDate(m.alvara_vencimento),
-        "Alvará Status": docStatus(m.alvara_vencimento, m.alvara_numero).label,
+        "ANTT (Transportadora)": t.antt_numero ? "Sim" : "Não",
+        "Certificado (Transportadora)": t.certificado_numero ? "Sim" : "Não",
+        "Alvará (Transportadora)": t.alvara_numero ? "Sim" : "Não",
         "CNH Nº": m.cnh_numero || "",
         "CNH Vencimento": formatDate(m.cnh_vencimento),
         "Motivos Inaptidão": m.motivos_inaptidao.join("; "),
@@ -527,6 +515,9 @@ export default function Relatorios() {
           dados: dados.map((t) => ({
             razao_social: t.razao_social,
             cpf_cnpj: t.cpf_cnpj,
+            antt: t.antt_numero ? "Sim" : "Não",
+            certificado: t.certificado_numero ? "Sim" : "Não",
+            alvara: t.alvara_numero ? "Sim" : "Não",
             motoristas: t.motoristas.map((m) => ({
               nome: m.nome,
               cpf: m.cpf,
@@ -534,9 +525,6 @@ export default function Relatorios() {
               status: m.status,
               situacao_operacional: SITUACAO_LABELS[m.situacao_operacional || "em_praca"],
               tem_contrato: m.tem_contrato,
-              antt_status: docStatus(m.antt_vencimento, m.antt_numero).label,
-              certificado_status: docStatus(m.certificado_vencimento, m.certificado_numero).label,
-              alvara_status: docStatus(m.alvara_vencimento, m.alvara_numero).label,
               motivos_inaptidao: m.motivos_inaptidao,
             })),
           })),
@@ -691,7 +679,9 @@ export default function Relatorios() {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-base">{t.razao_social}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">CNPJ: {t.cpf_cnpj}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          CNPJ: {t.cpf_cnpj} | ANTT: {t.antt_numero ? "Sim" : "Não"} | Certificado: {t.certificado_numero ? "Sim" : "Não"} | Alvará: {t.alvara_numero ? "Sim" : "Não"}
+                        </p>
                       </div>
                       <Badge variant="secondary">{t.motoristas.length} motorista(s)</Badge>
                     </div>
@@ -709,9 +699,6 @@ export default function Relatorios() {
                               <TableHead>Status</TableHead>
                               <TableHead>Situação</TableHead>
                               <TableHead>Contrato</TableHead>
-                              <TableHead>ANTT</TableHead>
-                              <TableHead>Certificado</TableHead>
-                              <TableHead>Alvará</TableHead>
                               <TableHead>Motivos Inaptidão</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -747,21 +734,6 @@ export default function Relatorios() {
                                   <TableCell>
                                     <Badge variant={m.tem_contrato ? "default" : "destructive"}>
                                       {m.tem_contrato ? "Sim" : "Não"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.antt_vencimento, m.antt_numero).variant}>
-                                      {docStatus(m.antt_vencimento, m.antt_numero).label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.certificado_vencimento, m.certificado_numero).variant}>
-                                      {docStatus(m.certificado_vencimento, m.certificado_numero).label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={docStatus(m.alvara_vencimento, m.alvara_numero).variant}>
-                                      {docStatus(m.alvara_vencimento, m.alvara_numero).label}
                                     </Badge>
                                   </TableCell>
                                   <TableCell>

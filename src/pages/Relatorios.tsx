@@ -45,6 +45,9 @@ interface TransportadorComMotoristas {
   razao_social: string;
   cpf_cnpj: string;
   status: string;
+  antt_numero: string | null;
+  alvara_numero: string | null;
+  certificado_numero: string | null;
   motoristas: MotoristaRelatorio[];
 }
 
@@ -56,12 +59,6 @@ interface MotoristaRelatorio {
   situacao_operacional: string | null;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
-  antt_numero: string | null;
-  antt_vencimento: string | null;
-  alvara_numero: string | null;
-  alvara_vencimento: string | null;
-  certificado_numero: string | null;
-  certificado_vencimento: string | null;
   mopp_numero: string | null;
   mopp_vencimento: string | null;
   mopp_vitalicio: boolean;
@@ -71,11 +68,11 @@ interface MotoristaRelatorio {
 }
 
 const SITUACAO_LABELS: Record<string, string> = {
-  em_praca_apto: "Em Praça Apto",
-  em_viagem_apto: "Em Viagem Apto",
+  em_praca_apto: "Em Praça - Apto",
+  em_viagem_apto: "Em Viagem - Apto",
   inapto: "Inapto",
-  em_praca: "Em Praça Apto",
-  em_viagem: "Em Viagem Apto",
+  em_praca: "Em Praça - Apto",
+  em_viagem: "Em Viagem - Apto",
 };
 
 const SITUACAO_ICONS: Record<string, typeof MapPin> = {
@@ -96,14 +93,13 @@ const DIAS_SEMANA = [
   { value: "domingo", label: "Domingo" },
 ];
 
-function checkMotoristaAptidao(m: any, temContrato: boolean): { apto: boolean; motivos: string[] } {
+function checkMotoristaAptidao(m: any, temContrato: boolean, transportadora: any): { apto: boolean; motivos: string[] } {
   const motivos: string[] = [];
 
   if (!temContrato) motivos.push("Sem contrato assinado");
-  if (m.antt_vencimento && isPast(parseISO(m.antt_vencimento))) motivos.push("ANTT vencida");
-  if (!m.antt_numero) motivos.push("ANTT não cadastrada");
-  if (m.alvara_vencimento && isPast(parseISO(m.alvara_vencimento))) motivos.push("Alvará vencido");
-  if (m.certificado_vencimento && isPast(parseISO(m.certificado_vencimento))) motivos.push("Certificado vencido");
+  if (!transportadora.antt_numero) motivos.push("Transportadora sem ANTT");
+  if (!transportadora.alvara_numero) motivos.push("Transportadora sem Alvará");
+  if (!transportadora.certificado_numero) motivos.push("Transportadora sem Certificado");
   if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");
   if (!m.mopp_vitalicio && m.mopp_vencimento && isPast(parseISO(m.mopp_vencimento))) motivos.push("MOPP vencido");
   if (m.status === "inativo") motivos.push("Motorista inativo");

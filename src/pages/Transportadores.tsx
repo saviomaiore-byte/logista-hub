@@ -743,6 +743,17 @@ export default function Transportadores() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Situação Operacional</Label>
+                  <Select value={values.situacao_operacional || ""} onValueChange={(v) => setFieldValue("situacao_operacional", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
+                      <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
+                      <SelectItem value="inapto">Inapto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="border-t pt-4 mt-2 space-y-3">
                   <Label className="font-medium">Documentos</Label>
                   <div className="flex items-center gap-2">

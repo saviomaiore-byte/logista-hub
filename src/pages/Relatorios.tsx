@@ -45,6 +45,7 @@ interface TransportadorComMotoristas {
   razao_social: string;
   cpf_cnpj: string;
   status: string;
+  situacao_operacional: string | null;
   antt_numero: string | null;
   alvara_numero: string | null;
   certificado_numero: string | null;
@@ -56,7 +57,6 @@ interface MotoristaRelatorio {
   nome: string;
   cpf: string;
   status: string | null;
-  situacao_operacional: string | null;
   cnh_numero: string | null;
   cnh_vencimento: string | null;
   mopp_numero: string | null;
@@ -192,7 +192,7 @@ export default function Relatorios() {
     try {
       const { data: transportadores } = await supabase
         .from("transportadores")
-        .select("id, razao_social, cpf_cnpj, status, antt_numero, alvara_numero, certificado_numero")
+        .select("id, razao_social, cpf_cnpj, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo");
 
       const { data: links } = await supabase
@@ -225,7 +225,6 @@ export default function Relatorios() {
               nome: m.nome,
               cpf: m.cpf,
               status: m.status,
-              situacao_operacional: (m as any).situacao_operacional || "em_praca",
               cnh_numero: m.cnh_numero,
               cnh_vencimento: m.cnh_vencimento,
               mopp_numero: m.mopp_numero,
@@ -242,6 +241,7 @@ export default function Relatorios() {
           razao_social: t.razao_social,
           cpf_cnpj: t.cpf_cnpj,
           status: t.status,
+          situacao_operacional: (t as any).situacao_operacional || "em_praca_apto",
           antt_numero: t.antt_numero,
           alvara_numero: t.alvara_numero,
           certificado_numero: t.certificado_numero,

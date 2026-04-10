@@ -36,6 +36,7 @@ type Transportador = {
   estado_civil: string | null;
   rg: string | null;
   status: string;
+  situacao_operacional: string | null;
   created_at: string;
   motorista_id: string | null;
 };

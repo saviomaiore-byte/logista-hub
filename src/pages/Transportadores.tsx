@@ -36,6 +36,7 @@ type Transportador = {
   estado_civil: string | null;
   rg: string | null;
   status: string;
+  situacao_operacional: string | null;
   created_at: string;
   motorista_id: string | null;
 };
@@ -171,6 +172,7 @@ export default function Transportadores() {
         email: values.email?.trim() || null,
         estado_civil: values.estado_civil?.trim() || null,
         rg: values.rg?.trim() || null,
+        situacao_operacional: values.situacao_operacional || null,
       };
 
       if (editingTransp) {
@@ -676,6 +678,7 @@ export default function Transportadores() {
               estado_civil: editingTransp?.estado_civil || "",
               rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
+              situacao_operacional: editingTransp?.situacao_operacional || "em_praca_apto",
               antt_numero: (editingTransp as any)?.antt_numero || "",
               alvara_numero: (editingTransp as any)?.alvara_numero || "",
               certificado_numero: (editingTransp as any)?.certificado_numero || "",
@@ -737,6 +740,17 @@ export default function Transportadores() {
                     <SelectContent>
                       <SelectItem value="ativo">Ativo</SelectItem>
                       <SelectItem value="inativo">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Situação Operacional</Label>
+                  <Select value={values.situacao_operacional || ""} onValueChange={(v) => setFieldValue("situacao_operacional", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
+                      <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
+                      <SelectItem value="inapto">Inapto</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

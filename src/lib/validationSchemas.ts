@@ -61,7 +61,7 @@ export const motoristaSchema = Yup.object().shape({
   estado_civil: optionalString(50),
   rg: optionalString(30),
   status: Yup.string().oneOf(['ativo', 'inativo', 'pendente']).required(),
-  situacao_operacional: Yup.string().oneOf(['em_praca_apto', 'em_viagem_apto', 'inapto']).nullable(),
+  
   cnh_numero: optionalString(20),
   cnh_vencimento: optionalDateValidation,
   mopp_numero: optionalString(20),

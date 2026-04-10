@@ -263,16 +263,16 @@ export default function Relatorios() {
     let emPraca = 0;
     let emViagem = 0;
 
-    dados.forEach((t) =>
+    dados.forEach((t) => {
+      const sit = t.situacao_operacional || "em_praca_apto";
+      if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
+      if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       t.motoristas.forEach((m) => {
         totalMotoristas++;
         if (m.apto) aptos++;
         else inaptos++;
-        const sit = m.situacao_operacional || "em_praca";
-        if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
-        if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
-      })
-    );
+      });
+    });
 
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
@@ -329,7 +329,7 @@ export default function Relatorios() {
         m.cpf,
         m.apto ? "APTO" : "INAPTO",
         m.status === "ativo" ? "Ativo" : "Inativo",
-        SITUACAO_LABELS[m.situacao_operacional || "em_praca"] || "Em Praça",
+        SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"] || "Em Praça",
         m.tem_contrato ? "Sim" : "Não",
         t.antt_numero ? "Sim" : "Não",
         t.certificado_numero ? "Sim" : "Não",
@@ -395,7 +395,7 @@ export default function Relatorios() {
         CPF: m.cpf,
         Aptidão: m.apto ? "APTO" : "INAPTO",
         Status: m.status === "ativo" ? "Ativo" : "Inativo",
-        "Situação Operacional": SITUACAO_LABELS[m.situacao_operacional || "em_praca"] || "Em Praça",
+        "Situação Operacional": SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"] || "Em Praça",
         "Contrato Assinado": m.tem_contrato ? "Sim" : "Não",
         "ANTT (Transportadora)": t.antt_numero ? "Sim" : "Não",
         "Certificado (Transportadora)": t.certificado_numero ? "Sim" : "Não",
@@ -523,7 +523,7 @@ export default function Relatorios() {
               cpf: m.cpf,
               apto: m.apto,
               status: m.status,
-              situacao_operacional: SITUACAO_LABELS[m.situacao_operacional || "em_praca"],
+              situacao_operacional: SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"],
               tem_contrato: m.tem_contrato,
               motivos_inaptidao: m.motivos_inaptidao,
             })),
@@ -704,7 +704,7 @@ export default function Relatorios() {
                           </TableHeader>
                           <TableBody>
                             {t.motoristas.map((m) => {
-                              const SituacaoIcon = SITUACAO_ICONS[m.situacao_operacional || "em_praca"] || MapPin;
+                              const SituacaoIcon = SITUACAO_ICONS[t.situacao_operacional || "em_praca_apto"] || MapPin;
                               return (
                                 <TableRow key={m.id}>
                                   <TableCell>
@@ -727,7 +727,7 @@ export default function Relatorios() {
                                     <div className="flex items-center gap-1.5">
                                       <SituacaoIcon className="h-3.5 w-3.5" />
                                       <span className="text-sm">
-                                        {SITUACAO_LABELS[m.situacao_operacional || "em_praca"]}
+                                        {SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"]}
                                       </span>
                                     </div>
                                   </TableCell>

@@ -172,6 +172,7 @@ export default function Transportadores() {
         email: values.email?.trim() || null,
         estado_civil: values.estado_civil?.trim() || null,
         rg: values.rg?.trim() || null,
+        situacao_operacional: values.situacao_operacional || null,
       };
 
       if (editingTransp) {
@@ -677,6 +678,7 @@ export default function Transportadores() {
               estado_civil: editingTransp?.estado_civil || "",
               rg: editingTransp?.rg || "",
               status: editingTransp?.status || "ativo",
+              situacao_operacional: editingTransp?.situacao_operacional || "em_praca_apto",
               antt_numero: (editingTransp as any)?.antt_numero || "",
               alvara_numero: (editingTransp as any)?.alvara_numero || "",
               certificado_numero: (editingTransp as any)?.certificado_numero || "",

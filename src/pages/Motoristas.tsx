@@ -198,7 +198,6 @@ export default function Motoristas() {
       estado_civil: values.estado_civil || null,
       rg: values.rg || null,
       status: values.status,
-      situacao_operacional: values.situacao_operacional || null,
       cnh_numero: values.cnh_numero || null,
       cnh_vencimento: values.cnh_vencimento || null,
       mopp_numero: values.mopp_numero || null,
@@ -372,23 +371,6 @@ export default function Motoristas() {
                             <SelectItem value="ativo">Ativo</SelectItem>
                             <SelectItem value="inativo">Inativo</SelectItem>
                             <SelectItem value="pendente">Pendente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormSelectWrapper>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
-                        <Select
-                          value={values.situacao_operacional || ""}
-                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
-                            <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
-                            <SelectItem value="inapto">Inapto</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormSelectWrapper>
@@ -720,14 +702,6 @@ export default function Motoristas() {
                 <TabsTrigger value="contratos" className="flex-1">Contratos</TabsTrigger>
               </TabsList>
               <TabsContent value="docs" className="mt-4 space-y-4">
-                {docsMotorista?.situacao_operacional && (
-                  <div className="flex items-center gap-2 rounded-lg border border-border p-3">
-                    <p className="text-sm font-medium">Situação Operacional:</p>
-                    <Badge variant="outline">
-                      {({ em_praca_apto: "Em Praça Apto", em_viagem_apto: "Em Viagem Apto", inapto: "Inapto", em_praca: "Em Praça Apto", em_viagem: "Em Viagem Apto" } as Record<string, string>)[docsMotorista.situacao_operacional] || docsMotorista.situacao_operacional}
-                    </Badge>
-                  </div>
-                )}
                 {[
                   { label: "CNH", numero: docsMotorista?.cnh_numero, vencimento: docsMotorista?.cnh_vencimento },
                   { label: "MOPP", numero: docsMotorista?.mopp_vitalicio ? "Vitalício" : docsMotorista?.mopp_numero, vencimento: docsMotorista?.mopp_vitalicio ? null : docsMotorista?.mopp_vencimento },
@@ -780,7 +754,7 @@ export default function Motoristas() {
                   estado_civil: editMotorista.estado_civil || "",
                   rg: editMotorista.rg || "",
                   status: editMotorista.status || "ativo",
-                  situacao_operacional: editMotorista.situacao_operacional || "em_praca_apto",
+                  
                   cnh_numero: editMotorista.cnh_numero || "",
                   cnh_vencimento: editMotorista.cnh_vencimento || "",
                   mopp_numero: editMotorista.mopp_numero || "",
@@ -809,7 +783,7 @@ export default function Motoristas() {
                       estado_civil: values.estado_civil || null,
                       rg: values.rg || null,
                       status: values.status,
-                      situacao_operacional: values.situacao_operacional || null,
+                      
                       cnh_numero: values.cnh_numero || null,
                       cnh_vencimento: values.cnh_vencimento || null,
                       mopp_numero: values.mopp_numero || null,
@@ -881,23 +855,6 @@ export default function Motoristas() {
                             <SelectItem value="ativo">Ativo</SelectItem>
                             <SelectItem value="inativo">Inativo</SelectItem>
                             <SelectItem value="pendente">Pendente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormSelectWrapper>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormSelectWrapper name="situacao_operacional" label="Situação Operacional">
-                        <Select
-                          value={values.situacao_operacional || ""}
-                          onValueChange={(value) => setFieldValue("situacao_operacional", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="em_praca_apto">Em Praça Apto</SelectItem>
-                            <SelectItem value="em_viagem_apto">Em Viagem Apto</SelectItem>
-                            <SelectItem value="inapto">Inapto</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormSelectWrapper>

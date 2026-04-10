@@ -900,6 +900,7 @@ export type Database = {
           motorista_id: string | null
           razao_social: string
           rg: string | null
+          situacao_operacional: string | null
           status: string
           updated_at: string
         }
@@ -920,6 +921,7 @@ export type Database = {
           motorista_id?: string | null
           razao_social: string
           rg?: string | null
+          situacao_operacional?: string | null
           status?: string
           updated_at?: string
         }
@@ -940,6 +942,7 @@ export type Database = {
           motorista_id?: string | null
           razao_social?: string
           rg?: string | null
+          situacao_operacional?: string | null
           status?: string
           updated_at?: string
         }

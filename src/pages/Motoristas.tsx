@@ -71,7 +71,7 @@ interface Motorista {
   estado_civil: string | null;
   rg: string | null;
   status: string;
-  situacao_operacional: string | null;
+  
   cnh_numero: string | null;
   cnh_vencimento: string | null;
   mopp_numero: string | null;
@@ -97,7 +97,7 @@ const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
-  situacao_operacional: "em_praca_apto",
+  
   cnh_numero: "",
   cnh_vencimento: "",
   mopp_numero: "",

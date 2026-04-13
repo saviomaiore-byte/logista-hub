@@ -98,16 +98,6 @@ export const contratoSchema = Yup.object().shape({
   arquivo_url: optionalString(500),
 });
 
-// Schema para Boletos
-export const boletoSchema = Yup.object().shape({
-  empresa: requiredString('Empresa'),
-  cnpj: cnpjValidation,
-  valor: Yup.number()
-    .required('Valor é obrigatório')
-    .positive('Valor deve ser positivo'),
-  vencimento: dateValidation,
-  referencia: optionalString(50),
-});
 
 // Schema para Certificados
 export const certificadoSchema = Yup.object().shape({

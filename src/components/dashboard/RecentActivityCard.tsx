@@ -1,9 +1,9 @@
-import { FileText, Send, CreditCard, UserPlus, CheckCircle } from "lucide-react";
+import { FileText, Send, UserPlus, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Activity {
   id: string;
-  type: "contrato" | "boleto" | "cadastro" | "documento" | "cobranca";
+  type: "contrato" | "cadastro" | "documento" | "cobranca";
   title: string;
   description: string;
   time: string;
@@ -17,7 +17,6 @@ export function RecentActivityCard({ activities }: RecentActivityCardProps) {
   const getActivityIcon = (type: Activity["type"]) => {
     const icons = {
       contrato: <FileText className="h-4 w-4" />,
-      boleto: <CreditCard className="h-4 w-4" />,
       cadastro: <UserPlus className="h-4 w-4" />,
       documento: <Send className="h-4 w-4" />,
       cobranca: <CheckCircle className="h-4 w-4" />,
@@ -28,7 +27,6 @@ export function RecentActivityCard({ activities }: RecentActivityCardProps) {
   const getActivityColor = (type: Activity["type"]) => {
     const colors = {
       contrato: "bg-primary/10 text-primary",
-      boleto: "bg-success/10 text-success",
       cadastro: "bg-sidebar-primary/10 text-sidebar-primary",
       documento: "bg-warning/10 text-warning",
       cobranca: "bg-success/10 text-success",

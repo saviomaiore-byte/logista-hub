@@ -4,7 +4,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
-import { Users, FileText, CreditCard, AlertTriangle, Calendar } from "lucide-react";
+import { Users, FileText, AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {

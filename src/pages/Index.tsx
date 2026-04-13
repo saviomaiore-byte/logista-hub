@@ -31,12 +31,8 @@ export default function Index() {
         .select("*", { count: "exact", head: true })
         .in("status", ["assinado", "enviado"]);
 
-      const { data: boletos } = await supabase
-        .from("boletos")
-        .select("valor")
-        .in("status", ["pendente", "enviado", "vencido"]);
 
-      const valorPendente = boletos?.reduce((acc, b) => acc + (b.valor || 0), 0) || 0;
+
 
       const { data: motoristas } = await supabase
         .from("motoristas")
@@ -84,8 +80,6 @@ export default function Index() {
       setStats({
         motoristas: motoristasCount || 0,
         contratos: contratosCount || 0,
-        boletosPendentes: boletos?.length || 0,
-        valorPendente,
         docsVencidos,
         certificados: certCount || 0,
       });
@@ -120,7 +114,7 @@ export default function Index() {
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">Visão geral do sistema de gestão de transportadores</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
             title="Motoristas Ativos"
             value={stats.motoristas}
@@ -134,13 +128,6 @@ export default function Index() {
             subtitle="Assinados ou enviados"
             icon={FileText}
             variant="success"
-          />
-          <StatCard
-            title="Boletos Pendentes"
-            value={stats.boletosPendentes}
-            subtitle={`R$ ${stats.valorPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em aberto`}
-            icon={CreditCard}
-            variant="warning"
           />
           <StatCard
             title="Docs Vencidos"

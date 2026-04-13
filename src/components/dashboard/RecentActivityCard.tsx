@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface Activity {
   id: string;
-  type: "contrato" | "boleto" | "cadastro" | "documento" | "cobranca";
+  type: "contrato" | "cadastro" | "documento" | "cobranca";
   title: string;
   description: string;
   time: string;

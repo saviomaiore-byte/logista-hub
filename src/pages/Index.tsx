@@ -11,8 +11,6 @@ export default function Index() {
   const [stats, setStats] = useState({
     motoristas: 0,
     contratos: 0,
-    boletosPendentes: 0,
-    valorPendente: 0,
     docsVencidos: 0,
     certificados: 0,
   });

@@ -33,6 +33,7 @@ import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 import { Textarea } from "@/components/ui/textarea";
 import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComparativo";
 import { usePdfExtraction } from "@/hooks/usePdfExtraction";
+import { SegurosList } from "@/components/seguro/SegurosList";
 
 // ====== Types ======
 interface Seguro {

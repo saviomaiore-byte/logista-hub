@@ -115,11 +115,3 @@ export const documentoEmpresaSchema = Yup.object().shape({
   descricao: optionalString(500),
   vencimento: optionalDateValidation,
 });
-
-// Schema para Pronampe
-export const pronampeSchema = Yup.object().shape({
-  empresa: requiredString('Empresa'),
-  cnpj: cnpjValidation,
-  valor: valorValidation,
-  observacoes: optionalString(1000),
-});

@@ -15,6 +15,7 @@ import {
   UsersRound,
   Menu,
   ClipboardList,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +33,7 @@ const baseNavigation = [
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados Digitais", href: "/certificados", icon: Calendar },
+  { name: "Documentos de Empresa", href: "/documentos-empresa", icon: Building2 },
   { name: "Relatórios", href: "/relatorios", icon: ClipboardList },
 ];
 

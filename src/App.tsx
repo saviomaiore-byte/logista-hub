@@ -13,6 +13,7 @@ import ConferenciaSeguros from "./pages/ConferenciaSeguros";
 import Contratos from "./pages/Contratos";
 import Conferencia from "./pages/Conferencia";
 import Certificados from "./pages/Certificados";
+import DocumentosEmpresa from "./pages/DocumentosEmpresa";
 import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
 import Seguranca from "./pages/Seguranca";

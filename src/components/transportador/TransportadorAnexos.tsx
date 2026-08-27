@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { reportDbError } from "@/lib/dbError";
 import { cn } from "@/lib/utils";
 import { getSignedFileUrl, extractStoragePath } from "@/lib/storage";
 
@@ -133,7 +134,8 @@ export function TransportadorAnexos({ transportadorId, transportadorNome }: Tran
 
     const storagePath = extractStoragePath(arquivo.arquivo_url);
 
-    await supabase.storage.from("documentos").remove([storagePath]);
+    const { error: storageError } = await supabase.storage.from("documentos").remove([storagePath]);
+    reportDbError("remover arquivo do armazenamento", storageError);
     const { error } = await supabase.from("transportador_arquivos").delete().eq("id", arquivo.id);
 
     if (error) {

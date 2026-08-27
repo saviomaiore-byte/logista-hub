@@ -54,9 +54,9 @@ Qualquer tarefa abaixo que toque estes pontos exige teste de regressão explíci
 | P2 | T6 Remover `boletos`, `pronampe`, `pins_confins` (zero uso, zero dados, zero FK) ⚠️ Requer confirmação | Escopo já excluiu esses módulos | migration + `lib/validationSchemas.ts` (`pronampeSchema`) | Baixo | Confirmação | Bloqueada |
 | — | ~~T7 Definir `cavalos`/`reboques`~~ | **Classificação incorreta.** CRUD completo já existe nas abas de `pages/Transportadores.tsx`, com FK para transportadores e dados reais (10 cavalos, 1 reboque) | — | — | — | ✅ Já implementada — removida do backlog |
 
-| P2 | T8 Padronizar tratamento de erro | Falhas silenciosas | páginas CRUD | Baixo | — | A fazer |
-| P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/`, `lib/*`, `Relatorios.tsx` | Baixo | — | A fazer |
-| P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/` | Nenhum | T1–T4 | A fazer |
+| P2 | T8 Padronizar tratamento de erro | Falhas silenciosas | `lib/dbError.ts`, Index, Motoristas, Relatorios, Seguros, anexos | Baixo | — | ✅ Concluída |
+| P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/*`, `lib/aptidao.ts`, `vitest.config.ts` | Baixo | — | ✅ Concluída (20 testes verdes) |
+| P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/arquitetura.md` | Nenhum | T1–T4 | ✅ Concluída |
 | P3 | T11 Quebrar páginas grandes (uma por vez) | Manutenibilidade | páginas | Alto | T9 | A fazer |
 | P3 | T12 Hooks de dados / React Query | Manutenibilidade | novos `hooks/` | Médio | T11 | A fazer |
 | P3 | T13 Limpar dependências não usadas | Peso do bundle | `package.json` | Baixo | — | A fazer |

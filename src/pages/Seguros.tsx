@@ -3,6 +3,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { reportDbError } from "@/lib/dbError";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -864,19 +865,21 @@ function ConferenciaTab() {
                       currentUrl={selectedConf?.arquivo_apolice_url || undefined}
                       onUpload={async (url) => {
                         if (!selectedConf) return;
-                        await supabase
+                        const { error } = await supabase
                           .from("conferencia_seguros")
                           .update({ arquivo_apolice_url: url })
                           .eq("id", selectedConf.id);
+                        if (reportDbError("anexar apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
                         queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
                         toast({ title: "Apólice anexada com sucesso!" });
                       }}
                       onRemove={async () => {
                         if (!selectedConf) return;
-                        await supabase
+                        const { error } = await supabase
                           .from("conferencia_seguros")
                           .update({ arquivo_apolice_url: null })
                           .eq("id", selectedConf.id);
+                        if (reportDbError("remover apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
                         queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
                       }}
                       folder="conferencia-seguros"

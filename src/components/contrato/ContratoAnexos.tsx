@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Trash2, Plus, Clock, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { reportDbError } from "@/lib/dbError";
 import { cn } from "@/lib/utils";
 import { openSignedFile } from "@/lib/storage";
 
@@ -59,17 +60,20 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
   const fetchTransportadoras = async () => {
     if (!isFromMotorista || !motorista_id) return;
 
-    const { data: vinculos } = await supabase
+    const { data: vinculos, error: vinculosError } = await supabase
       .from("transportador_motoristas")
       .select("transportador_id")
       .eq("motorista_id", motorista_id);
 
+    if (reportDbError("carregar transportadoras vinculadas", vinculosError, toast.error)) return;
+
     if (vinculos && vinculos.length > 0) {
       const ids = vinculos.map((v) => v.transportador_id);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("transportadores")
         .select("id, razao_social, cpf_cnpj")
         .in("id", ids);
+      if (reportDbError("carregar transportadoras", error, toast.error)) return;
       setTransportadoras((data as Transportadora[]) || []);
     }
   };

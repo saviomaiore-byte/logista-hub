@@ -6,6 +6,7 @@ import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Users, FileText, AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { reportDbError } from "@/lib/dbError";
 
 export default function Index() {
   const [stats, setStats] = useState({
@@ -21,12 +22,12 @@ export default function Index() {
     const fetchStats = async () => {
       const hoje = new Date();
 
-      const { count: motoristasCount } = await supabase
+      const { count: motoristasCount, error: motoristasError } = await supabase
         .from("motoristas")
         .select("*", { count: "exact", head: true })
         .eq("status", "ativo");
 
-      const { count: contratosCount } = await supabase
+      const { count: contratosCount, error: contratosError } = await supabase
         .from("contratos")
         .select("*", { count: "exact", head: true })
         .in("status", ["assinado", "enviado"]);
@@ -34,9 +35,11 @@ export default function Index() {
 
 
 
-      const { data: motoristas } = await supabase
+      const { data: motoristas, error: docsError } = await supabase
         .from("motoristas")
         .select("id, nome, cnh_vencimento, mopp_vencimento, antt_vencimento");
+
+      reportDbError("carregar indicadores do painel", motoristasError || contratosError || docsError);
 
       let docsVencidos = 0;
       const alertsList: any[] = [];
@@ -73,7 +76,7 @@ export default function Index() {
         checkDoc("ANTT", m.antt_vencimento);
       });
 
-      const { count: certCount } = await supabase
+      const { count: certCount, error: certError } = await supabase
         .from("certificados")
         .select("*", { count: "exact", head: true });
 

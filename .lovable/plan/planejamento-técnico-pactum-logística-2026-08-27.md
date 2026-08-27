@@ -46,13 +46,14 @@ Qualquer tarefa abaixo que toque estes pontos exige teste de regressão explíci
 
 | P | Tarefa | Motivo | Arquivos | Risco | Dependências | Status |
 |---|---|---|---|---|---|---|
-| P0 | T1 Ligar `verify_jwt` em extract-apolice | Endpoint aberto no gateway | `supabase/config.toml`, `functions/extract-apolice/index.ts`, `hooks/usePdfExtraction.ts` | Médio | — | A fazer |
-| P1 | T2 Corrigir rota `/conferencia-seguros` | Rota aponta para componente errado | `src/App.tsx`, `pages/ConferenciaSeguros.tsx`, `Sidebar.tsx` | Baixo | — | A fazer |
-| P1 | T3 Metadados reais no `index.html` | Template default em produção | `index.html` | Baixo | — | A fazer |
-| P1 | T4 Auditoria das políticas RLS por tabela | Várias migrações sobrepostas | migration + linter | Médio | — | A fazer |
-| P2 | T5 Decidir `DocumentosEmpresa.tsx` (rota ou remoção) ⚠️ Requer validação do requisito | Código órfão | `pages/DocumentosEmpresa.tsx`, `App.tsx`, `Sidebar.tsx` | Baixo | T2 | Bloqueada |
-| P2 | T6 Remover tabelas fora de escopo (vazias) ⚠️ Requer validação | Escopo já excluiu esses módulos | migration | Baixo | Confirmação | Bloqueada |
-| P2 | T7 Definir `cavalos`/`reboques` ⚠️ Requer validação | Dados sem interface | migration ou nova tela | Médio | Confirmação | Bloqueada |
+| P0 | T1 Ligar `verify_jwt` em extract-apolice | Endpoint aberto no gateway | `supabase/config.toml`, `functions/extract-apolice/index.ts`, `hooks/usePdfExtraction.ts` | Médio | — | ✅ Concluída |
+| P1 | T2 Corrigir rota `/conferencia-seguros` | Rota aponta para componente errado | `src/App.tsx`, `pages/ConferenciaSeguros.tsx`, `Sidebar.tsx` | Baixo | — | ✅ Concluída |
+| P1 | T3 Metadados reais no `index.html` | Template default em produção | `index.html` | Baixo | — | ✅ Concluída |
+| P1 | T4 Auditoria das políticas RLS por tabela | Várias migrações sobrepostas | migration + linter | Médio | — | ✅ Concluída (sem migração necessária) |
+| P2 | T5 Decidir `DocumentosEmpresa.tsx` (publicar rota + completar, ou remover) ⚠️ Requer decisão de produto | Componente com insert/select funcionais, mas sem rota e sem menu; tabela com 0 registros | `pages/DocumentosEmpresa.tsx`, `App.tsx`, `Sidebar.tsx`, `lib/validationSchemas.ts`, migration | Baixo | Decisão do usuário | Bloqueada |
+| P2 | T6 Remover `boletos`, `pronampe`, `pins_confins` (zero uso, zero dados, zero FK) ⚠️ Requer confirmação | Escopo já excluiu esses módulos | migration + `lib/validationSchemas.ts` (`pronampeSchema`) | Baixo | Confirmação | Bloqueada |
+| — | ~~T7 Definir `cavalos`/`reboques`~~ | **Classificação incorreta.** CRUD completo já existe nas abas de `pages/Transportadores.tsx`, com FK para transportadores e dados reais (10 cavalos, 1 reboque) | — | — | — | ✅ Já implementada — removida do backlog |
+
 | P2 | T8 Padronizar tratamento de erro | Falhas silenciosas | páginas CRUD | Baixo | — | A fazer |
 | P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/`, `lib/*`, `Relatorios.tsx` | Baixo | — | A fazer |
 | P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/` | Nenhum | T1–T4 | A fazer |
@@ -151,9 +152,10 @@ As tarefas seguintes serão detalhadas no mesmo formato quando chegarem na fila.
 - **Automatizados (T9):** unitários de `masks`, `passwordPolicy`, `rateLimiter`, `validationSchemas` e das regras de aptidão; depois teste de componente do formulário de Motoristas.
 
 ## ⚠️ Requer validação do requisito
-- `DocumentosEmpresa.tsx`: manter e publicar rota, ou remover?
-- `boletos`, `pronampe`, `pins_confins`, `documentos_empresa`: remover as tabelas (estão vazias e fora do escopo declarado)?
-- `cavalos` e `reboques`: têm dados, mas nenhuma tela. Construir gestão de frota ou arquivar?
+- `DocumentosEmpresa.tsx`: publicar rota + menu e completar edição/exclusão, ou remover componente e tabela? (revalidado: o componente já faz select e insert reais, mas está inacessível; tabela com 0 registros e 0 eventos de auditoria)
+- `boletos`, `pronampe`, `pins_confins`: remover as tabelas? (revalidado: zero uso no frontend, zero registros, zero FK — remoção segura)
+- ~~`cavalos` e `reboques`~~: revalidado — CRUD completo já existe nas abas da página de Transportadores, com FK, RLS, auditoria e dados reais. **Não é pendência.**
+
 - Envio semanal do relatório: é agendado automaticamente ou apenas manual? Não foi possível determinar pelo código.
 
 ## 🚀 Primeiro passo

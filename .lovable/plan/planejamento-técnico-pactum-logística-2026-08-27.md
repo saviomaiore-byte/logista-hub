@@ -152,9 +152,10 @@ As tarefas seguintes serão detalhadas no mesmo formato quando chegarem na fila.
 - **Automatizados (T9):** unitários de `masks`, `passwordPolicy`, `rateLimiter`, `validationSchemas` e das regras de aptidão; depois teste de componente do formulário de Motoristas.
 
 ## ⚠️ Requer validação do requisito
-- `DocumentosEmpresa.tsx`: manter e publicar rota, ou remover?
-- `boletos`, `pronampe`, `pins_confins`, `documentos_empresa`: remover as tabelas (estão vazias e fora do escopo declarado)?
-- `cavalos` e `reboques`: têm dados, mas nenhuma tela. Construir gestão de frota ou arquivar?
+- `DocumentosEmpresa.tsx`: publicar rota + menu e completar edição/exclusão, ou remover componente e tabela? (revalidado: o componente já faz select e insert reais, mas está inacessível; tabela com 0 registros e 0 eventos de auditoria)
+- `boletos`, `pronampe`, `pins_confins`: remover as tabelas? (revalidado: zero uso no frontend, zero registros, zero FK — remoção segura)
+- ~~`cavalos` e `reboques`~~: revalidado — CRUD completo já existe nas abas da página de Transportadores, com FK, RLS, auditoria e dados reais. **Não é pendência.**
+
 - Envio semanal do relatório: é agendado automaticamente ou apenas manual? Não foi possível determinar pelo código.
 
 ## 🚀 Primeiro passo

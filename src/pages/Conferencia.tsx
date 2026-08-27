@@ -3,14 +3,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Search, 
-  AlertTriangle, 
-  CheckCircle,
-  Clock,
-  FileWarning,
-  Send
-} from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, FileWarning, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -51,7 +44,9 @@ export default function Conferencia() {
   const fetchDocumentos = async () => {
     const { data, error } = await supabase
       .from("motoristas")
-      .select("id, nome, telefone, cnh_numero, cnh_vencimento, mopp_numero, mopp_vencimento, antt_numero, antt_vencimento")
+      .select(
+        "id, nome, telefone, cnh_numero, cnh_vencimento, mopp_numero, mopp_vencimento, antt_numero, antt_vencimento",
+      )
       .order("nome");
 
     if (error) {
@@ -181,9 +176,7 @@ export default function Conferencia() {
       <div className="animate-fade-in">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Conferência de Documentos</h1>
-          <p className="text-muted-foreground mt-1">
-            Monitore vencimentos de CNH, MOPP e ANTT
-          </p>
+          <p className="text-muted-foreground mt-1">Monitore vencimentos de CNH, MOPP e ANTT</p>
         </div>
 
         <div className="mb-8 grid gap-4 md:grid-cols-3">
@@ -238,7 +231,10 @@ export default function Conferencia() {
                 variant={filterStatus === item.key ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilterStatus(item.key)}
-                className={cn("flex-1 sm:flex-none", filterStatus === item.key ? "bg-primary text-primary-foreground" : "")}
+                className={cn(
+                  "flex-1 sm:flex-none",
+                  filterStatus === item.key ? "bg-primary text-primary-foreground" : "",
+                )}
               >
                 {item.label}
               </Button>
@@ -264,14 +260,12 @@ export default function Conferencia() {
                 key={doc.id}
                 className={cn(
                   "bg-card rounded-xl border border-border p-4 space-y-3",
-                  doc.status === "vencido" && "border-destructive/30 bg-destructive/5"
+                  doc.status === "vencido" && "border-destructive/30 bg-destructive/5",
                 )}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    {doc.status === "vencido" && (
-                      <FileWarning className="h-4 w-4 text-destructive flex-shrink-0" />
-                    )}
+                    {doc.status === "vencido" && <FileWarning className="h-4 w-4 text-destructive flex-shrink-0" />}
                     <p className="font-semibold text-foreground">{doc.motorista}</p>
                   </div>
                   {getTipoBadge(doc.tipo)}
@@ -322,14 +316,12 @@ export default function Conferencia() {
                     key={doc.id}
                     className={cn(
                       "hover:bg-muted/30 transition-colors",
-                      doc.status === "vencido" && "bg-destructive/5"
+                      doc.status === "vencido" && "bg-destructive/5",
                     )}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {doc.status === "vencido" && (
-                          <FileWarning className="h-4 w-4 text-destructive" />
-                        )}
+                        {doc.status === "vencido" && <FileWarning className="h-4 w-4 text-destructive" />}
                         <p className="font-medium text-foreground">{doc.motorista}</p>
                       </div>
                     </td>

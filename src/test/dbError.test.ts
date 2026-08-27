@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { dbErrorMessage, reportDbError } from "@/lib/dbError";
 

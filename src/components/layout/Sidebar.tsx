@@ -28,6 +28,7 @@ const baseNavigation = [
   { name: "Motoristas", href: "/motoristas", icon: Users },
   { name: "Transportadores", href: "/transportadores", icon: Truck },
   { name: "Seguros", href: "/seguros", icon: Shield },
+  { name: "Conferência Seguros", href: "/conferencia-seguros", icon: ClipboardList },
   { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados Digitais", href: "/certificados", icon: Calendar },

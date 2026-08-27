@@ -9,6 +9,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Auth from "./pages/Auth";
 import Motoristas from "./pages/Motoristas";
 import Seguros from "./pages/Seguros";
+import ConferenciaSeguros from "./pages/ConferenciaSeguros";
 import Contratos from "./pages/Contratos";
 import Conferencia from "./pages/Conferencia";
 import Certificados from "./pages/Certificados";
@@ -62,7 +63,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/motoristas" element={<ProtectedRoute><Motoristas /></ProtectedRoute>} />
       <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
-      <Route path="/conferencia-seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
+      <Route path="/conferencia-seguros" element={<ProtectedRoute><ConferenciaSeguros /></ProtectedRoute>} />
       <Route path="/transportadores" element={<ProtectedRoute><Transportadores /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />

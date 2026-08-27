@@ -536,94 +536,30 @@ function ConferenciaTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-end">
-        <Dialog open={openNew} onOpenChange={setOpenNew}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nova Conferência
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Nova Conferência de Seguros</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Título *</label>
-                <Input placeholder="Ex: Apólice Mensal - Março/2026" value={newTitulo} onChange={(e) => setNewTitulo(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Período de Referência *</label>
-                <Input placeholder="Ex: 03/2026" value={newPeriodo} onChange={(e) => setNewPeriodo(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Apólice PDF (anexar)</label>
-                <FileUpload
-                  currentUrl={newArquivoUrl || undefined}
-                  onUpload={(url) => setNewArquivoUrl(url)}
-                  onRemove={() => setNewArquivoUrl("")}
-                  folder="conferencia-seguros"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  label="Anexar Apólice"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Observações</label>
-                <Textarea placeholder="Observações gerais..." value={newObs} onChange={(e) => setNewObs(e.target.value)} />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
-                <Button onClick={() => createMutation.mutate()} disabled={!newTitulo || !newPeriodo || createMutation.isPending}>
-                  Criar Conferência
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <NovaConferenciaDialog
+          open={openNew}
+          onOpenChange={setOpenNew}
+          titulo={newTitulo}
+          onTituloChange={setNewTitulo}
+          periodo={newPeriodo}
+          onPeriodoChange={setNewPeriodo}
+          arquivoUrl={newArquivoUrl}
+          onArquivoUrlChange={setNewArquivoUrl}
+          observacoes={newObs}
+          onObservacoesChange={setNewObs}
+          onCreate={() => createMutation.mutate()}
+          isPending={createMutation.isPending}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Lista */}
-        <div className="lg:col-span-1 space-y-3">
-          <h3 className="font-semibold text-foreground text-sm">Conferências</h3>
-          {loadingConferencias ? (
-            <p className="text-sm text-muted-foreground">Carregando...</p>
-          ) : conferencias?.length === 0 ? (
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <ClipboardCheck className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhuma conferência criada</p>
-            </div>
-          ) : (
-            conferencias?.map((conf) => (
-              <button
-                key={conf.id}
-                onClick={() => { setSelectedConferencia(conf.id); pdfExtraction.loadSavedExtraction(conf.id); }}
-                className={`w-full text-left bg-card rounded-xl border p-3 transition-colors hover:border-primary ${
-                  selectedConferencia === conf.id ? "border-primary bg-primary/5" : "border-border"
-                }`}
-              >
-                <p className="font-medium text-foreground text-sm truncate">{conf.titulo}</p>
-                <p className="text-xs text-muted-foreground">{conf.periodo_referencia}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {format(parseISO(conf.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  {conf.arquivo_apolice_url && (
-                    <Badge variant="outline" className="text-xs">
-                      <FileText className="h-3 w-3 mr-1" /> PDF
-                    </Badge>
-                  )}
-                  <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={(e) => {
-                    e.stopPropagation();
-                    deleteMutation.mutate(conf.id);
-                  }}>
-                    <Trash2 className="h-3 w-3 text-destructive" />
-                  </Button>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
+        <ConferenciasSidebar
+          items={conferencias}
+          selectedId={selectedConferencia}
+          isLoading={loadingConferencias}
+          onSelect={(id) => { setSelectedConferencia(id); pdfExtraction.loadSavedExtraction(id); }}
+          onDelete={(id) => deleteMutation.mutate(id)}
+        />
 
         {/* Detail */}
         <div className="lg:col-span-3">

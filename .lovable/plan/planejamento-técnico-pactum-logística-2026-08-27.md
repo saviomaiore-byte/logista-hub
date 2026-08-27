@@ -54,9 +54,11 @@ Qualquer tarefa abaixo que toque estes pontos exige teste de regressão explíci
 | P2 | T6 Remover `boletos`, `pronampe`, `pins_confins` (zero uso, zero dados, zero FK) ⚠️ Requer confirmação | Escopo já excluiu esses módulos | migration + `lib/validationSchemas.ts` (`pronampeSchema`) | Baixo | Confirmação | Bloqueada |
 | — | ~~T7 Definir `cavalos`/`reboques`~~ | **Classificação incorreta.** CRUD completo já existe nas abas de `pages/Transportadores.tsx`, com FK para transportadores e dados reais (10 cavalos, 1 reboque) | — | — | — | ✅ Já implementada — removida do backlog |
 
-| P2 | T8 Padronizar tratamento de erro | Falhas silenciosas | `lib/dbError.ts`, Index, Motoristas, Relatorios, Seguros, anexos | Baixo | — | ✅ Concluída |
-| P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/*`, `lib/aptidao.ts`, `vitest.config.ts` | Baixo | — | ✅ Concluída (20 testes verdes) |
-| P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/arquitetura.md` | Nenhum | T1–T4 | ✅ Concluída |
+| P2 | T8 Padronizar tratamento de erro | Falhas silenciosas | `lib/dbError.ts`, Index, Motoristas, Relatorios, Seguros, anexos | Baixo | — | ✅ Concluída e validada (auditoria 27/08) |
+| P2 | T8b Completar padronização de erros | Auditoria de T8: cobertura parcial | `pages/Index.tsx` (`certError` não reportado), `Transportadores.tsx`, `Contratos.tsx`, `Certificados.tsx`, `ConferenciaSeguros.tsx`, `Usuarios.tsx`, `DocumentosEmpresa.tsx` | Baixo | T8 | A fazer |
+| P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/*`, `lib/aptidao.ts`, `vitest.config.ts` | Baixo | — | ✅ Concluída e validada (20 testes verdes; lógica idêntica à anterior) |
+| P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/arquitetura.md` | Nenhum | T1–T4 | ✅ Concluída e validada |
+| P2 | T10b Limpeza de testes e documentação | Auditoria de T10 | remover `src/test/example.test.ts`; centralizar regra de "documento vencido" (hoje duplicada em `Index.tsx` e `Relatorios.tsx:290`) em `src/lib/`; README descreve o padrão de erro como universal, mas ainda é parcial | Baixo | T8b | A fazer |
 | P3 | T11 Quebrar páginas grandes (uma por vez) | Manutenibilidade | páginas | Alto | T9 | A fazer |
 | P3 | T12 Hooks de dados / React Query | Manutenibilidade | novos `hooks/` | Médio | T11 | A fazer |
 | P3 | T13 Limpar dependências não usadas | Peso do bundle | `package.json` | Baixo | — | A fazer |

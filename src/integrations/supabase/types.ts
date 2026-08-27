@@ -47,48 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      boletos: {
-        Row: {
-          cnpj: string | null
-          created_at: string
-          created_by: string | null
-          data_pagamento: string | null
-          empresa: string
-          id: string
-          referencia: string | null
-          status: string | null
-          updated_at: string
-          valor: number
-          vencimento: string
-        }
-        Insert: {
-          cnpj?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_pagamento?: string | null
-          empresa: string
-          id?: string
-          referencia?: string | null
-          status?: string | null
-          updated_at?: string
-          valor: number
-          vencimento: string
-        }
-        Update: {
-          cnpj?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_pagamento?: string | null
-          empresa?: string
-          id?: string
-          referencia?: string | null
-          status?: string | null
-          updated_at?: string
-          valor?: number
-          vencimento?: string
-        }
-        Relationships: []
-      }
       cavalos: {
         Row: {
           ano: string | null
@@ -549,48 +507,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pins_confins: {
-        Row: {
-          competencia: string
-          created_at: string
-          created_by: string | null
-          data_lancamento: string | null
-          empresa: string
-          id: string
-          observacoes: string | null
-          status: string | null
-          updated_at: string
-          valor_cofins: number | null
-          valor_pis: number | null
-        }
-        Insert: {
-          competencia: string
-          created_at?: string
-          created_by?: string | null
-          data_lancamento?: string | null
-          empresa: string
-          id?: string
-          observacoes?: string | null
-          status?: string | null
-          updated_at?: string
-          valor_cofins?: number | null
-          valor_pis?: number | null
-        }
-        Update: {
-          competencia?: string
-          created_at?: string
-          created_by?: string | null
-          data_lancamento?: string | null
-          empresa?: string
-          id?: string
-          observacoes?: string | null
-          status?: string | null
-          updated_at?: string
-          valor_cofins?: number | null
-          valor_pis?: number | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -615,45 +531,6 @@ export type Database = {
           nome?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      pronampe: {
-        Row: {
-          cnpj: string | null
-          created_at: string
-          created_by: string | null
-          data_compartilhamento: string | null
-          empresa: string
-          id: string
-          observacoes: string | null
-          status: string | null
-          updated_at: string
-          valor: number | null
-        }
-        Insert: {
-          cnpj?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_compartilhamento?: string | null
-          empresa: string
-          id?: string
-          observacoes?: string | null
-          status?: string | null
-          updated_at?: string
-          valor?: number | null
-        }
-        Update: {
-          cnpj?: string | null
-          created_at?: string
-          created_by?: string | null
-          data_compartilhamento?: string | null
-          empresa?: string
-          id?: string
-          observacoes?: string | null
-          status?: string | null
-          updated_at?: string
-          valor?: number | null
         }
         Relationships: []
       }

@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS public.boletos CASCADE;
+DROP TABLE IF EXISTS public.pronampe CASCADE;
+DROP TABLE IF EXISTS public.pins_confins CASCADE;

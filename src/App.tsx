@@ -13,6 +13,7 @@ import ConferenciaSeguros from "./pages/ConferenciaSeguros";
 import Contratos from "./pages/Contratos";
 import Conferencia from "./pages/Conferencia";
 import Certificados from "./pages/Certificados";
+import DocumentosEmpresa from "./pages/DocumentosEmpresa";
 import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
 import Seguranca from "./pages/Seguranca";
@@ -68,6 +69,7 @@ function AppRoutes() {
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />
       <Route path="/certificados" element={<ProtectedRoute><Certificados /></ProtectedRoute>} />
+      <Route path="/documentos-empresa" element={<ProtectedRoute><DocumentosEmpresa /></ProtectedRoute>} />
       <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
       <Route path="/seguranca" element={<ProtectedRoute><Seguranca /></ProtectedRoute>} />
       <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />

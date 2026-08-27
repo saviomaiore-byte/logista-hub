@@ -135,7 +135,7 @@
 
   .card-stat:hover {
     box-shadow: var(--shadow-card-hover);
-    transform: translateY(-0px);
+    transform: translateY(-2px);
   }
 
   .nav-item {

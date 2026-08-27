@@ -13,8 +13,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // jsdom tenta carregar o binding nativo de `canvas`, que não existe neste ambiente
-      canvas: path.resolve(__dirname, "./src/test/canvasStub.ts"),
     },
   },
 });

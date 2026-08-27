@@ -35,6 +35,8 @@ import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComp
 import { usePdfExtraction } from "@/hooks/usePdfExtraction";
 import { SegurosList } from "@/components/seguro/SegurosList";
 import { SeguroFormDialog } from "@/components/seguro/SeguroFormDialog";
+import { ConferenciasSidebar } from "@/components/seguro/ConferenciasSidebar";
+import { NovaConferenciaDialog } from "@/components/seguro/NovaConferenciaDialog";
 
 // ====== Types ======
 interface Seguro {

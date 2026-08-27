@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConferenciaComparativo } from "@/components/conferencia/ConferenciaComparativo";
 import { usePdfExtraction } from "@/hooks/usePdfExtraction";
 import { SegurosList } from "@/components/seguro/SegurosList";
+import { SeguroFormDialog } from "@/components/seguro/SeguroFormDialog";
 
 // ====== Types ======
 interface Seguro {
@@ -289,85 +290,16 @@ function SegurosTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="w-full gap-2 sm:w-auto">
-              <Plus className="h-4 w-4" />
-              Novo Seguro
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingSeguro ? "Editar Seguro" : "Novo Seguro"}</DialogTitle>
-            </DialogHeader>
-            <Formik
-              initialValues={formInitialValues}
-              validationSchema={seguroSchema}
-              onSubmit={handleSubmit}
-              enableReinitialize
-            >
-              {({ isSubmitting, setFieldValue, values }) => (
-                <Form className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormSelectWrapper name="motorista_id" label="Segurado (opcional)">
-                      <Select value={values.motorista_id} onValueChange={(v) => setFieldValue("motorista_id", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um segurado" /></SelectTrigger>
-                        <SelectContent>
-                          {motoristas?.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>{m.nome} - {m.cpf}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormSelectWrapper>
-                    <FormSelectWrapper name="tipo" label="Tipo de Seguro" required>
-                      <Select value={values.tipo} onValueChange={(v) => setFieldValue("tipo", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                        <SelectContent>
-                          {tiposSeguros.map((tipo) => (
-                            <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormSelectWrapper>
-                    <FormField name="seguradora" label="Seguradora" required />
-                    <FormField name="numero_apolice" label="Número da Apólice" />
-                    <FormField name="valor_premio" label="Valor do Prêmio (R$)" type="number" step="0.01" />
-                    <FormSelectWrapper name="status" label="Status">
-                      <Select value={values.status} onValueChange={(v) => setFieldValue("status", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ativo">Ativo</SelectItem>
-                          <SelectItem value="vencido">Vencido</SelectItem>
-                          <SelectItem value="cancelado">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormSelectWrapper>
-                    <FormField name="vigencia_inicio" label="Vigência Início" type="date" />
-                    <FormField name="vigencia_fim" label="Vigência Fim" type="date" />
-                  </div>
-                  <FormField name="observacoes" label="Observações" as="textarea" />
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Anexar Apólice (PDF)</label>
-                    <FileUpload
-                      currentUrl={values.arquivo_url || undefined}
-                      onUpload={(url) => setFieldValue("arquivo_url", url)}
-                      onRemove={() => setFieldValue("arquivo_url", "")}
-                      folder="seguros"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      label="Anexar Apólice"
-                    />
-                  </div>
-                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>Cancelar</Button>
-                    <Button type="submit" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
-                      {editingSeguro ? "Salvar" : "Cadastrar"}
-                    </Button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </DialogContent>
-        </Dialog>
+        <SeguroFormDialog
+          open={open}
+          onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}
+          editingSeguro={editingSeguro}
+          formInitialValues={formInitialValues}
+          motoristas={motoristas}
+          onSubmit={handleSubmit}
+          onCancel={() => { setOpen(false); resetForm(); }}
+          isPending={createMutation.isPending || updateMutation.isPending}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

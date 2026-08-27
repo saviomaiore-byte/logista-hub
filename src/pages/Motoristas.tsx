@@ -49,6 +49,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { reportDbError } from "@/lib/dbError";
 import { motoristaSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 
@@ -127,12 +128,14 @@ export default function Motoristas() {
   const isMobile = useIsMobile();
 
   const fetchTransportadoras = async () => {
-    const { data } = await supabase.from("transportadores").select("id, razao_social, cpf_cnpj").order("razao_social");
+    const { data, error } = await supabase.from("transportadores").select("id, razao_social, cpf_cnpj").order("razao_social");
+    if (reportDbError("carregar transportadoras", error, toast.error)) return;
     setTransportadoras(data || []);
   };
 
   const fetchMotoristaTransportadoraLinks = async () => {
-    const { data } = await supabase.from("transportador_motoristas").select("motorista_id, transportador_id");
+    const { data, error } = await supabase.from("transportador_motoristas").select("motorista_id, transportador_id");
+    if (reportDbError("carregar vínculos de transportadoras", error, toast.error)) return;
     const map: Record<string, string[]> = {};
     (data || []).forEach((link) => {
       if (!map[link.motorista_id]) map[link.motorista_id] = [];
@@ -163,25 +166,29 @@ export default function Motoristas() {
 
   const syncTransportadoraLinks = async (motoristaId: string, newTransportadoraIds: string[]) => {
     // Get current links
-    const { data: current } = await supabase
+    const { data: current, error: currentError } = await supabase
       .from("transportador_motoristas")
       .select("id, transportador_id")
       .eq("motorista_id", motoristaId);
+
+    if (reportDbError("carregar vínculos do motorista", currentError, toast.error)) return;
     
     const currentIds = (current || []).map((c) => c.transportador_id);
     
     // Delete removed
     const toRemove = (current || []).filter((c) => !newTransportadoraIds.includes(c.transportador_id));
     for (const r of toRemove) {
-      await supabase.from("transportador_motoristas").delete().eq("id", r.id);
+      const { error: removeError } = await supabase.from("transportador_motoristas").delete().eq("id", r.id);
+      if (reportDbError("remover vínculo de transportadora", removeError, toast.error)) return;
     }
     
     // Insert new
     const toAdd = newTransportadoraIds.filter((id) => !currentIds.includes(id));
     if (toAdd.length > 0) {
-      await supabase.from("transportador_motoristas").insert(
+      const { error: addError } = await supabase.from("transportador_motoristas").insert(
         toAdd.map((transportador_id) => ({ transportador_id, motorista_id: motoristaId }))
       );
+      if (reportDbError("vincular transportadora", addError, toast.error)) return;
     }
   };
 

@@ -34,6 +34,8 @@ import {
   Paperclip,
 } from "lucide-react";
 import { format, isPast, parseISO } from "date-fns";
+import { checkMotoristaAptidao } from "@/lib/aptidao";
+import { reportDbError } from "@/lib/dbError";
 import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -93,20 +95,6 @@ const DIAS_SEMANA = [
   { value: "domingo", label: "Domingo" },
 ];
 
-function checkMotoristaAptidao(m: any, temContrato: boolean, transportadora: any): { apto: boolean; motivos: string[] } {
-  const motivos: string[] = [];
-
-  if (!temContrato) motivos.push("Sem contrato assinado");
-  if (!transportadora.antt_numero) motivos.push("Transportadora sem ANTT");
-  if (!transportadora.alvara_numero) motivos.push("Transportadora sem Alvará");
-  if (!transportadora.certificado_numero) motivos.push("Transportadora sem Certificado");
-  if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");
-  if (!m.mopp_vitalicio && m.mopp_vencimento && isPast(parseISO(m.mopp_vencimento))) motivos.push("MOPP vencido");
-  if (m.status === "inativo") motivos.push("Motorista inativo");
-
-  return { apto: motivos.length === 0, motivos };
-}
-
 export default function Relatorios() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -143,11 +131,13 @@ export default function Relatorios() {
   }, [pdfPreviewUrl]);
 
   async function fetchConfig() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("relatorio_config")
       .select("*")
       .limit(1)
       .maybeSingle();
+
+    if (reportDbError("carregar configurações do relatório", error, (m) => toast({ title: m, variant: "destructive" }))) return;
 
     if (data) {
       setConfigId(data.id);
@@ -179,9 +169,11 @@ export default function Relatorios() {
     };
 
     if (configId) {
-      await supabase.from("relatorio_config").update(configData).eq("id", configId);
+      const { error } = await supabase.from("relatorio_config").update(configData).eq("id", configId);
+      if (reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }))) return;
     } else {
-      const { data } = await supabase.from("relatorio_config").insert(configData).select().single();
+      const { data, error } = await supabase.from("relatorio_config").insert(configData).select().single();
+      if (reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }))) return;
       if (data) setConfigId(data.id);
     }
     toast({ title: "Configurações salvas com sucesso!" });
@@ -190,23 +182,29 @@ export default function Relatorios() {
   async function fetchDados() {
     setLoading(true);
     try {
-      const { data: transportadores } = await supabase
+      const { data: transportadores, error: transportadoresError } = await supabase
         .from("transportadores")
         .select("id, razao_social, cpf_cnpj, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo");
 
-      const { data: links } = await supabase
+      const { data: links, error: linksError } = await supabase
         .from("transportador_motoristas")
         .select("transportador_id, motorista_id");
 
-      const { data: motoristas } = await supabase
+      const { data: motoristas, error: motoristasError } = await supabase
         .from("motoristas")
         .select("*");
 
-      const { data: contratos } = await supabase
+      const { data: contratos, error: contratosError } = await supabase
         .from("contratos")
         .select("motorista_id, status")
         .eq("status", "assinado");
+
+      const primeiroErro = transportadoresError || linksError || motoristasError || contratosError;
+      if (reportDbError("carregar dados do relatório", primeiroErro, (m) => toast({ title: m, variant: "destructive" }))) {
+        setLoading(false);
+        return;
+      }
 
       const contratosSet = new Set((contratos || []).map((c) => c.motorista_id));
 

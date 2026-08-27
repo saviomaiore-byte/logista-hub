@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Plus, Shield, Search, Pencil, Trash2, AlertTriangle, Download,
+  Plus, Shield, Search, Trash2, AlertTriangle, Download,
   ClipboardCheck, FileText, Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

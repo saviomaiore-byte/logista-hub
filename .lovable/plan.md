@@ -1,87 +1,47 @@
+# Plano de trabalho — assumir o projeto Pactum Logística
 
+Nenhuma alteração de código foi feita. Abaixo está o plano sugerido, em etapas, após a análise.
 
-# Plano P1 — Restrição de DELETE a Admins + Tabela de Auditoria
+## Etapa 1 — Entender (sem alterar nada)
+Ordem de estudo recomendada:
+1. `src/main.tsx` → `src/App.tsx` (rotas e proteção de rotas)
+2. `src/contexts/AuthContext.tsx` + `src/pages/Auth.tsx` (login/cadastro/sessão)
+3. `src/hooks/useAdmin.ts` + `src/components/layout/Sidebar.tsx` (permissões e menu)
+4. `src/pages/Motoristas.tsx` e `src/pages/Transportadores.tsx` (padrão CRUD do projeto)
+5. `src/lib/validationSchemas.ts`, `src/lib/masks.ts`, `src/components/form/FormField.tsx`
+6. `src/pages/Relatorios.tsx` + `supabase/functions/send-report-email/index.ts`
+7. `src/integrations/supabase/types.ts` e as migrations em `supabase/migrations/`
 
-## O que será feito
+## Etapa 2 — Corrigir problemas críticos
+- `supabase/config.toml`: `verify_jwt = false` na função `extract-apolice`. A validação de token existe dentro do código, mas o gateway está aberto — revisar e ligar `verify_jwt = true`.
+- `index.html`: título/descrição ainda são "Lovable App" / "Lovable Generated Project", com TODOs. Definir metadados reais.
+- Revisar políticas de RLS de escrita (INSERT/UPDATE/DELETE) tabela por tabela e confirmar que DELETE é só admin em todas as 21 tabelas.
 
-### 1. Restrição de DELETE a administradores
-As políticas de DELETE em todas as tabelas de negócio serão alteradas para permitir exclusão apenas por usuários com role `admin`, usando a função `has_role()` já existente.
+## Etapa 3 — Finalizar/limpar funcionalidades pendentes
+- Decidir o destino de `src/pages/ConferenciaSeguros.tsx` (548 linhas) e `src/pages/DocumentosEmpresa.tsx` (253 linhas): não estão em nenhuma rota. Ligar ou remover.
+- Decidir o destino das tabelas vazias e fora de escopo: `boletos`, `pronampe`, `pins_confins`, `documentos_empresa` (0 registros cada). Remover por migration se confirmado que estão fora de escopo.
+- Rever `cavalos` e `reboques` (10 e 1 registros): não há tela dedicada identificada.
 
-**Tabelas afetadas (12):**
-motoristas, transportadores, contratos, seguros, certificados, documentos_empresa, boletos, pronampe, pins_confins, cavalos, reboques, motorista_arquivos, transportador_arquivos, transportador_motoristas, conferencia_seguros, conferencia_seguros_itens, conferencia_seguros_extraidos
+## Etapa 4 — Melhorar o código
+- Extrair um hook/serviço de dados por entidade (ex.: `useMotoristas`) para tirar as chamadas `supabase.from(...)` de dentro das páginas.
+- Quebrar as páginas grandes (Seguros 1021, Relatorios 978, Transportadores 946, Motoristas 939 linhas) em: tabela, formulário/modal, filtros.
+- Padronizar tratamento de erro (hoje várias operações não checam `error`) e substituir os `any` restantes por tipos de `src/integrations/supabase/types.ts`.
+- Usar React Query (já instalado) no lugar de `useEffect` + `useState` para busca de dados.
+- Remover dependências não utilizadas após confirmação (`zod`, `react-hook-form`, `@hookform/resolvers` convivem com Formik+Yup; `next-themes`, `embla-carousel-react`, `vaul` provavelmente não usados).
 
-### 2. Tabela de auditoria (`audit_log`)
-Criação de uma tabela para registrar todas as operações de INSERT, UPDATE e DELETE nas tabelas de negócio, com:
-- `id`, `table_name`, `record_id`, `action` (INSERT/UPDATE/DELETE)
-- `old_data` (JSONB — dados antes da alteração)
-- `new_data` (JSONB — dados após a alteração)
-- `user_id` (quem fez a alteração, via `auth.uid()`)
-- `created_at`
+## Etapa 5 — Testar
+- Hoje só existe `src/test/example.test.ts` (teste vazio de exemplo).
+- Começar por testes unitários de `src/lib/masks.ts`, `src/lib/passwordPolicy.ts`, `src/lib/rateLimiter.ts`, `src/lib/validationSchemas.ts` e das regras de aptidão em `Relatorios.tsx`.
+- Depois, testes de componente com Testing Library (já instalado) para o formulário de Motoristas.
 
-Um trigger genérico `audit_trigger_func()` será criado como SECURITY DEFINER e anexado a todas as tabelas de negócio.
+## Etapa 6 — Documentar
+- Reescrever o `README.md` (hoje é o template padrão do Lovable).
+- Documentar: o que é o sistema, regras de negócio (aptidão, conferência, relatório semanal), variáveis de ambiente, segredos das edge functions (SMTP_*), como rodar e como publicar.
 
-## Detalhes Técnicos
+## Etapa 7 — Preparar para produção
+- Revisar CSP do `index.html` (hoje permite `unsafe-inline`/`unsafe-eval`).
+- Conferir logs das edge functions e rotina de envio semanal do relatório.
+- Rodar o scanner de segurança e o de dependências novamente antes de publicar.
 
-### Migration SQL
-
-```sql
--- 1. DROP + RECREATE DELETE policies (admin-only)
--- Para cada tabela:
-DROP POLICY IF EXISTS "Authenticated users can delete <tabela>" ON public.<tabela>;
-CREATE POLICY "Only admins can delete <tabela>" ON public.<tabela>
-FOR DELETE TO authenticated
-USING (public.has_role(auth.uid(), 'admin'));
-
--- 2. Audit log table
-CREATE TABLE public.audit_log (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  table_name text NOT NULL,
-  record_id text,
-  action text NOT NULL,
-  old_data jsonb,
-  new_data jsonb,
-  user_id uuid DEFAULT auth.uid(),
-  created_at timestamptz DEFAULT now()
-);
-
-ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
-
--- Somente admins podem ver os logs
-CREATE POLICY "Admins can view audit_log" ON public.audit_log
-FOR SELECT TO authenticated
-USING (public.has_role(auth.uid(), 'admin'));
-
--- Qualquer autenticado pode inserir (via trigger)
-CREATE POLICY "System can insert audit_log" ON public.audit_log
-FOR INSERT TO authenticated
-WITH CHECK (true);
-
--- 3. Trigger function
-CREATE OR REPLACE FUNCTION public.audit_trigger_func()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
-BEGIN
-  IF TG_OP = 'DELETE' THEN
-    INSERT INTO audit_log(table_name, record_id, action, old_data, user_id)
-    VALUES (TG_TABLE_NAME, OLD.id::text, 'DELETE', to_jsonb(OLD), auth.uid());
-    RETURN OLD;
-  ELSIF TG_OP = 'UPDATE' THEN
-    INSERT INTO audit_log(table_name, record_id, action, old_data, new_data, user_id)
-    VALUES (TG_TABLE_NAME, NEW.id::text, 'UPDATE', to_jsonb(OLD), to_jsonb(NEW), auth.uid());
-    RETURN NEW;
-  ELSIF TG_OP = 'INSERT' THEN
-    INSERT INTO audit_log(table_name, record_id, action, new_data, user_id)
-    VALUES (TG_TABLE_NAME, NEW.id::text, 'INSERT', to_jsonb(NEW), auth.uid());
-    RETURN NEW;
-  END IF;
-END;
-$$;
-
--- 4. Attach trigger to all business tables
--- CREATE TRIGGER audit_<tabela> AFTER INSERT OR UPDATE OR DELETE
--- ON public.<tabela> FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
-```
-
-### Código Front-end
-Nenhuma alteração de código necessária — as restrições são aplicadas no banco. Usuários não-admin que tentarem deletar receberão erro RLS, que já é tratado com `toast.error`.
-
+## Observações
+- Itens que não foi possível determinar pelo código: se o envio semanal do relatório é agendado automaticamente ou apenas manual; a intenção original por trás de `ConferenciaSeguros.tsx`, `DocumentosEmpresa.tsx`, `cavalos` e `reboques`.

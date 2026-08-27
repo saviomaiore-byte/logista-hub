@@ -59,7 +59,7 @@ Qualquer tarefa abaixo que toque estes pontos exige teste de regressão explíci
 | P2 | T9 Testes das libs e regras de aptidão | Só existe teste de exemplo | `src/test/*`, `lib/aptidao.ts`, `vitest.config.ts` | Baixo | — | ✅ Concluída e validada (20 testes verdes; lógica idêntica à anterior) |
 | P2 | T10 README + doc técnica | Template padrão | `README.md`, `docs/arquitetura.md` | Nenhum | T1–T4 | ✅ Concluída e validada |
 | P2 | T10b Limpeza de testes e documentação | Auditoria de T10 | remover `src/test/example.test.ts`; centralizar regra de "documento vencido" (hoje duplicada em `Index.tsx` e `Relatorios.tsx:290`) em `src/lib/`; README descreve o padrão de erro como universal, mas ainda é parcial | Baixo | T8b | A fazer |
-| P3 | T11 Quebrar páginas grandes (uma por vez) | Manutenibilidade | páginas | Alto | T9 | A fazer |
+| P3 | T11 Quebrar páginas grandes (uma por vez) | Manutenibilidade | páginas | Alto | T9 | 🔄 Em andamento — `Transportadores.tsx` concluída (946 → ~330 linhas, 9 componentes em `components/transportador/`); faltam Motoristas, Seguros e Relatórios |
 | P3 | T12 Hooks de dados / React Query | Manutenibilidade | novos `hooks/` | Médio | T11 | A fazer |
 | P3 | T13 Limpar dependências não usadas | Peso do bundle | `package.json` | Baixo | — | A fazer |
 | P3 | T14 Endurecer CSP | Defesa em profundidade | `index.html` | Médio | — | A fazer |

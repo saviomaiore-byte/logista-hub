@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/FileUpload";
 import { Input } from "@/components/ui/input";
@@ -7,34 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Trash2, Plus, Clock, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { reportDbError } from "@/lib/dbError";
 import { cn } from "@/lib/utils";
 import { openSignedFile } from "@/lib/storage";
-
-interface Contrato {
-  id: string;
-  tipo: string;
-  modelo: string | null;
-  empresa: string;
-  cnpj: string | null;
-  status: string | null;
-  arquivo_url: string | null;
-  data_envio: string | null;
-  observacoes: string | null;
-  transportador_id: string | null;
-}
-
-interface Transportadora {
-  id: string;
-  razao_social: string;
-  cpf_cnpj: string;
-}
+import {
+  useContratosVinculados,
+  useTransportadorasVinculadas,
+  useCriarContratoVinculado,
+  useExcluirContrato,
+} from "@/hooks/useContratos";
 
 interface ContratoAnexosProps {
   motorista_id?: string;
   transportador_id?: string;
   nome: string;
 }
+
 
 const tipoLabels: Record<string, string> = {
   contrato: "Contrato",
@@ -44,59 +30,32 @@ const tipoLabels: Record<string, string> = {
 };
 
 export function ContratoAnexos({ motorista_id, transportador_id, nome }: ContratoAnexosProps) {
-  const [contratos, setContratos] = useState<Contrato[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
   const [modelo, setModelo] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [arquivoUrl, setArquivoUrl] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [transportadoras, setTransportadoras] = useState<Transportadora[]>([]);
   const [selectedTransportadorId, setSelectedTransportadorId] = useState("");
 
   const isFromMotorista = !!motorista_id && !transportador_id;
 
-  const fetchTransportadoras = async () => {
-    if (!isFromMotorista || !motorista_id) return;
+  // `isFetching` (e não `isLoading`) para preservar o comportamento anterior:
+  // o texto "Carregando contratos..." também aparecia nos recarregamentos
+  // disparados após adicionar/excluir um contrato.
+  const { data: contratos = [], isFetching: loading } = useContratosVinculados(
+    motorista_id,
+    transportador_id,
+  );
 
-    const { data: vinculos, error: vinculosError } = await supabase
-      .from("transportador_motoristas")
-      .select("transportador_id")
-      .eq("motorista_id", motorista_id);
+  const { data: transportadoras = [] } = useTransportadorasVinculadas(
+    motorista_id,
+    isFromMotorista,
+  );
 
-    if (reportDbError("carregar transportadoras vinculadas", vinculosError, toast.error)) return;
+  const criarContratoVinculado = useCriarContratoVinculado();
+  const excluirContrato = useExcluirContrato();
 
-    if (vinculos && vinculos.length > 0) {
-      const ids = vinculos.map((v) => v.transportador_id);
-      const { data, error } = await supabase
-        .from("transportadores")
-        .select("id, razao_social, cpf_cnpj")
-        .in("id", ids);
-      if (reportDbError("carregar transportadoras", error, toast.error)) return;
-      setTransportadoras((data as Transportadora[]) || []);
-    }
-  };
-
-  const fetchContratos = async () => {
-    setLoading(true);
-    let query = supabase.from("contratos").select("*").order("created_at", { ascending: false });
-    if (motorista_id) query = query.eq("motorista_id", motorista_id);
-    if (transportador_id) query = query.eq("transportador_id", transportador_id);
-
-    const { data, error } = await query;
-    if (error) {
-      toast.error("Erro ao carregar contratos");
-    } else {
-      setContratos((data as Contrato[]) || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchContratos();
-    fetchTransportadoras();
-  }, [motorista_id, transportador_id]);
+  const saving = criarContratoVinculado.isPending;
 
   const resetForm = () => {
     setTipo("");
@@ -121,37 +80,35 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     const selectedTransp = transportadoras.find((t) => t.id === selectedTransportadorId);
     const empresaNome = isFromMotorista ? selectedTransp?.razao_social || nome : nome;
 
-    setSaving(true);
-    const { error } = await supabase.from("contratos").insert({
-      tipo,
-      modelo: (!isFromMotorista && modelo) ? modelo : null,
-      empresa: empresaNome,
-      observacoes: observacoes || null,
-      arquivo_url: arquivoUrl || null,
-      status: "pendente",
-      motorista_id: motorista_id || null,
-      transportador_id: isFromMotorista ? selectedTransportadorId : transportador_id || null,
-    });
-
-    if (error) {
-      toast.error("Erro ao salvar contrato");
-    } else {
-      toast.success("Contrato adicionado!");
-      resetForm();
-      fetchContratos();
+    try {
+      await criarContratoVinculado.mutateAsync({
+        tipo,
+        modelo: (!isFromMotorista && modelo) ? modelo : null,
+        empresa: empresaNome,
+        observacoes: observacoes || null,
+        arquivo_url: arquivoUrl || null,
+        status: "pendente",
+        motorista_id: motorista_id || null,
+        transportador_id: isFromMotorista ? selectedTransportadorId : transportador_id || null,
+      });
+    } catch {
+      return;
     }
-    setSaving(false);
+
+    toast.success("Contrato adicionado!");
+    resetForm();
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("contratos").delete().eq("id", id);
-    if (error) {
-      toast.error("Erro ao excluir contrato");
-    } else {
-      toast.success("Contrato excluído!");
-      fetchContratos();
+    try {
+      await excluirContrato.mutateAsync(id);
+    } catch {
+      return;
     }
+
+    toast.success("Contrato excluído!");
   };
+
 
   const getStatusBadge = (status: string | null) => {
     const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {

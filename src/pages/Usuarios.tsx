@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  useUsuariosPerfis,
+  useUsuariosRoles,
+  useTornarAdmin,
+  useRemoverAdmin,
+  useRemoverPerfil,
+  type Profile,
+} from "@/hooks/useUsuarios";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Navigate } from "react-router-dom";
 import { Users, Shield, ShieldOff, Trash2, Search } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

@@ -197,9 +197,9 @@ export default function Transportadores() {
               isMobile={isMobile}
               getMotoristasByTransp={getMotoristasByTransp}
               onEdit={(t) => { setEditingTransp(t); setShowTranspDialog(true); }}
-              onDelete={(id) => deleteTransp.mutate(id)}
+              onDelete={handleDeleteTransp}
               onVincular={(id) => { setVinculoTranspId(id); setShowVinculoDialog(true); }}
-              onRemoveVinculo={(id) => removeVinculo.mutate(id)}
+              onRemoveVinculo={handleRemoveVinculo}
               onVerDocs={(t) => { setDocsTransp(t); setDocsTab("anexos"); }}
               onVerContratos={(t) => { setDocsTransp(t); setDocsTab("contratos"); }}
             />
@@ -216,7 +216,7 @@ export default function Transportadores() {
               items={filteredCavalos}
               isMobile={isMobile}
               onEdit={(c) => { setEditingCavalo(c); setShowCavaloDialog(true); }}
-              onDelete={(id) => deleteCavalo.mutate(id)}
+              onDelete={handleDeleteCavalo}
             />
           </TabsContent>
 
@@ -231,7 +231,7 @@ export default function Transportadores() {
               items={filteredReboques}
               isMobile={isMobile}
               onEdit={(r) => { setEditingReboque(r); setShowReboqueDialog(true); }}
-              onDelete={(id) => deleteReboque.mutate(id)}
+              onDelete={handleDeleteReboque}
             />
           </TabsContent>
         </Tabs>
@@ -241,7 +241,7 @@ export default function Transportadores() {
         open={showTranspDialog}
         onOpenChange={setShowTranspDialog}
         editing={editingTransp}
-        onSubmit={(values) => saveTransp.mutate(values)}
+        onSubmit={handleSaveTransp}
       />
 
       <VincularMotoristaDialog
@@ -249,7 +249,7 @@ export default function Transportadores() {
         onOpenChange={setShowVinculoDialog}
         transportadorId={vinculoTranspId}
         motoristasDisponiveis={vinculoTranspId ? getAvailableMotoristas(vinculoTranspId) : []}
-        onVincular={(transportador_id, motorista_id) => addVinculo.mutate({ transportador_id, motorista_id })}
+        onVincular={handleAddVinculo}
       />
 
       <VeiculoFormDialog
@@ -261,7 +261,7 @@ export default function Transportadores() {
         validationSchema={cavaloSchema}
         folder="cavalos"
         uploadLabel="Anexar documento do cavalo"
-        onSubmit={(values) => saveCavalo.mutate(values)}
+        onSubmit={handleSaveCavalo}
       />
 
       <VeiculoFormDialog
@@ -273,7 +273,7 @@ export default function Transportadores() {
         validationSchema={reboqueSchema}
         folder="reboques"
         uploadLabel="Anexar documento do reboque"
-        onSubmit={(values) => saveReboque.mutate(values)}
+        onSubmit={handleSaveReboque}
       />
 
       <TransportadorDocsDialog

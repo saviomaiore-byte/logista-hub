@@ -46,6 +46,7 @@ import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCard
 import { RelatorioDadosTab } from "@/components/relatorio/RelatorioDadosTab";
 import { PdfPreviewTab } from "@/components/relatorio/PdfPreviewTab";
 import { ExcelPreviewTab } from "@/components/relatorio/ExcelPreviewTab";
+import { ConfiguracoesTab } from "@/components/relatorio/ConfiguracoesTab";
 
 
 export default function Relatorios() {

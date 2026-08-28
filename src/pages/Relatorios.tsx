@@ -43,6 +43,7 @@ import * as XLSX from "xlsx";
 import { SITUACAO_LABELS, SITUACAO_ICONS, DIAS_SEMANA, formatDate, docStatus, type TransportadorComMotoristas, type MotoristaRelatorio } from "@/components/relatorio/types";
 import { RelatoriosHeader } from "@/components/relatorio/RelatoriosHeader";
 import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCards";
+import { RelatorioDadosTab } from "@/components/relatorio/RelatorioDadosTab";
 
 
 export default function Relatorios() {

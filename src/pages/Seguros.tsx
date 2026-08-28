@@ -21,13 +21,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Plus, Shield, Search, Trash2, AlertTriangle, Download,
+  Plus, Shield, Search, Trash2, AlertTriangle,
   ClipboardCheck, FileText, Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { FileUpload } from "@/components/FileUpload";
+
 import { seguroSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +37,7 @@ import { SegurosList } from "@/components/seguro/SegurosList";
 import { SeguroFormDialog } from "@/components/seguro/SeguroFormDialog";
 import { ConferenciasSidebar } from "@/components/seguro/ConferenciasSidebar";
 import { NovaConferenciaDialog } from "@/components/seguro/NovaConferenciaDialog";
+import { ConferenciaHeaderCard } from "@/components/seguro/ConferenciaHeaderCard";
 
 // ====== Types ======
 interface Seguro {
@@ -572,49 +573,28 @@ function ConferenciaTab() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-card rounded-xl border border-border p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-foreground">{selectedConf?.titulo}</h2>
-                    <p className="text-sm text-muted-foreground">Período: {selectedConf?.periodo_referencia}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {selectedConf?.arquivo_apolice_url ? (
-                      <a href={selectedConf.arquivo_apolice_url} target="_blank" rel="noopener noreferrer" download>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          Ver Apólice
-                        </Button>
-                      </a>
-                    ) : null}
-                    <FileUpload
-                      currentUrl={selectedConf?.arquivo_apolice_url || undefined}
-                      onUpload={async (url) => {
-                        if (!selectedConf) return;
-                        const { error } = await supabase
-                          .from("conferencia_seguros")
-                          .update({ arquivo_apolice_url: url })
-                          .eq("id", selectedConf.id);
-                        if (reportDbError("anexar apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-                        queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-                        toast({ title: "Apólice anexada com sucesso!" });
-                      }}
-                      onRemove={async () => {
-                        if (!selectedConf) return;
-                        const { error } = await supabase
-                          .from("conferencia_seguros")
-                          .update({ arquivo_apolice_url: null })
-                          .eq("id", selectedConf.id);
-                        if (reportDbError("remover apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-                        queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-                      }}
-                      folder="conferencia-seguros"
-                      accept=".pdf"
-                      label="Anexar Apólice PDF"
-                    />
-                  </div>
-                </div>
-              </div>
+              <ConferenciaHeaderCard
+                conferencia={selectedConf}
+                onUploadApolice={async (url) => {
+                  if (!selectedConf) return;
+                  const { error } = await supabase
+                    .from("conferencia_seguros")
+                    .update({ arquivo_apolice_url: url })
+                    .eq("id", selectedConf.id);
+                  if (reportDbError("anexar apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
+                  queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
+                  toast({ title: "Apólice anexada com sucesso!" });
+                }}
+                onRemoveApolice={async () => {
+                  if (!selectedConf) return;
+                  const { error } = await supabase
+                    .from("conferencia_seguros")
+                    .update({ arquivo_apolice_url: null })
+                    .eq("id", selectedConf.id);
+                  if (reportDbError("remover apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
+                  queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
+                }}
+              />
 
               <Tabs value={confTab} onValueChange={setConfTab}>
                 <TabsList className="w-full">

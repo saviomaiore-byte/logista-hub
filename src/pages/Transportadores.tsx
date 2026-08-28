@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +12,21 @@ import {
   type Reboque,
   type Transportador,
 } from "@/components/transportador/types";
+import { useMotoristas } from "@/hooks/useMotoristas";
+import {
+  useTransportadores,
+  useTransportadorVinculos,
+  useCavalos,
+  useReboques,
+  useSalvarTransportador,
+  useExcluirTransportador,
+  useVincularMotorista,
+  useDesvincularMotorista,
+  useSalvarCavalo,
+  useExcluirCavalo,
+  useSalvarReboque,
+  useExcluirReboque,
+} from "@/hooks/useTransportadores";
 import { TransportadoresHeader } from "@/components/transportador/TransportadoresHeader";
 import { TransportadoresSearch } from "@/components/transportador/TransportadoresSearch";
 import { TransportadoresList } from "@/components/transportador/TransportadoresList";
@@ -26,7 +39,6 @@ import { TransportadorDocsDialog } from "@/components/transportador/Transportado
 
 export default function Transportadores() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("transportadores");
   const [search, setSearch] = useState("");
   const isMobile = useIsMobile();
@@ -42,188 +54,98 @@ export default function Transportadores() {
   const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
   const [docsTab, setDocsTab] = useState("anexos");
 
-  const { data: transportadores = [] } = useQuery({
-    queryKey: ["transportadores"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("transportadores").select("*").order("razao_social");
-      if (error) throw error;
-      return data as Transportador[];
-    },
-  });
+  const { data: transportadores = [] } = useTransportadores();
+  // Reutiliza a listagem central de motoristas (mesma queryKey ["motoristas"]).
+  const { data: motoristas = [] } = useMotoristas();
+  const { data: vinculos = [] } = useTransportadorVinculos();
+  const { data: cavalos = [] } = useCavalos();
+  const { data: reboques = [] } = useReboques();
 
-  const { data: motoristas = [] } = useQuery({
-    queryKey: ["motoristas"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("motoristas").select("id, nome, cpf").order("nome");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const errorToast = (e: any) =>
+    toast({ title: "Erro", description: e?.message, variant: "destructive" });
 
-  const { data: vinculos = [] } = useQuery({
-    queryKey: ["transportador_motoristas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transportador_motoristas")
-        .select("*, motoristas(id, nome, cpf)");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const saveTransp = useSalvarTransportador();
+  const deleteTransp = useExcluirTransportador();
+  const addVinculo = useVincularMotorista();
+  const removeVinculo = useDesvincularMotorista();
+  const saveCavalo = useSalvarCavalo();
+  const deleteCavalo = useExcluirCavalo();
+  const saveReboque = useSalvarReboque();
+  const deleteReboque = useExcluirReboque();
 
-  const { data: cavalos = [] } = useQuery({
-    queryKey: ["cavalos"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("cavalos").select("*, transportadores(razao_social)").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Cavalo[];
-    },
-  });
+  const handleSaveTransp = (values: any) => {
+    const editando = !!editingTransp;
+    saveTransp.mutate(
+      { id: editingTransp?.id, values },
+      {
+        onSuccess: () => {
+          setShowTranspDialog(false);
+          setEditingTransp(null);
+          toast({ title: editando ? "Transportador atualizado" : "Transportador cadastrado" });
+        },
+        onError: errorToast,
+      },
+    );
+  };
 
-  const { data: reboques = [] } = useQuery({
-    queryKey: ["reboques"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("reboques").select("*, transportadores(razao_social)").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Reboque[];
-    },
-  });
+  const handleDeleteTransp = (id: string) => {
+    deleteTransp.mutate(id, { onSuccess: () => toast({ title: "Transportador excluído" }) });
+  };
 
-  const saveTransp = useMutation({
-    mutationFn: async (values: any) => {
-      const payload = {
-        ...values,
-        inscricao_estadual: values.inscricao_estadual?.trim() || null,
-        contato: values.contato?.trim() || null,
-        endereco: values.endereco?.trim() || null,
-        data_nascimento: values.data_nascimento || null,
-        email: values.email?.trim() || null,
-        estado_civil: values.estado_civil?.trim() || null,
-        rg: values.rg?.trim() || null,
-        situacao_operacional: values.situacao_operacional || null,
-      };
+  const handleAddVinculo = (transportador_id: string, motorista_id: string) => {
+    addVinculo.mutate(
+      { transportador_id, motorista_id },
+      {
+        onSuccess: () => {
+          setShowVinculoDialog(false);
+          toast({ title: "Motorista vinculado" });
+        },
+        onError: errorToast,
+      },
+    );
+  };
 
-      if (editingTransp) {
-        const { error } = await supabase.from("transportadores").update(payload).eq("id", editingTransp.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("transportadores").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transportadores"] });
-      setShowTranspDialog(false);
-      setEditingTransp(null);
-      toast({ title: editingTransp ? "Transportador atualizado" : "Transportador cadastrado" });
-    },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
+  const handleRemoveVinculo = (id: string) => {
+    removeVinculo.mutate(id, { onSuccess: () => toast({ title: "Motorista desvinculado" }) });
+  };
 
-  const deleteTransp = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("transportadores").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transportadores"] });
-      toast({ title: "Transportador excluído" });
-    },
-  });
+  const handleSaveCavalo = (values: any) => {
+    const editando = !!editingCavalo;
+    saveCavalo.mutate(
+      { id: editingCavalo?.id, values },
+      {
+        onSuccess: () => {
+          setShowCavaloDialog(false);
+          setEditingCavalo(null);
+          toast({ title: editando ? "Cavalo atualizado" : "Cavalo cadastrado" });
+        },
+        onError: errorToast,
+      },
+    );
+  };
 
-  const addVinculo = useMutation({
-    mutationFn: async ({ transportador_id, motorista_id }: { transportador_id: string; motorista_id: string }) => {
-      const { error } = await supabase.from("transportador_motoristas").insert({ transportador_id, motorista_id });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transportador_motoristas"] });
-      setShowVinculoDialog(false);
-      toast({ title: "Motorista vinculado" });
-    },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
+  const handleDeleteCavalo = (id: string) => {
+    deleteCavalo.mutate(id, { onSuccess: () => toast({ title: "Cavalo excluído" }) });
+  };
 
-  const removeVinculo = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("transportador_motoristas").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transportador_motoristas"] });
-      toast({ title: "Motorista desvinculado" });
-    },
-  });
+  const handleSaveReboque = (values: any) => {
+    const editando = !!editingReboque;
+    saveReboque.mutate(
+      { id: editingReboque?.id, values },
+      {
+        onSuccess: () => {
+          setShowReboqueDialog(false);
+          setEditingReboque(null);
+          toast({ title: editando ? "Reboque atualizado" : "Reboque cadastrado" });
+        },
+        onError: errorToast,
+      },
+    );
+  };
 
-  const saveCavalo = useMutation({
-    mutationFn: async (values: { transportador_id: string; arquivo_url?: string | null }) => {
-      const payload = {
-        transportador_id: values.transportador_id,
-        arquivo_url: values.arquivo_url?.trim() || null,
-      };
-
-      if (editingCavalo) {
-        const { error } = await supabase.from("cavalos").update(payload).eq("id", editingCavalo.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("cavalos").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cavalos"] });
-      setShowCavaloDialog(false);
-      setEditingCavalo(null);
-      toast({ title: editingCavalo ? "Cavalo atualizado" : "Cavalo cadastrado" });
-    },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  const deleteCavalo = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("cavalos").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cavalos"] });
-      toast({ title: "Cavalo excluído" });
-    },
-  });
-
-  const saveReboque = useMutation({
-    mutationFn: async (values: { transportador_id: string; arquivo_url?: string | null }) => {
-      const payload = {
-        transportador_id: values.transportador_id,
-        arquivo_url: values.arquivo_url?.trim() || null,
-      };
-
-      if (editingReboque) {
-        const { error } = await supabase.from("reboques").update(payload).eq("id", editingReboque.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("reboques").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reboques"] });
-      setShowReboqueDialog(false);
-      setEditingReboque(null);
-      toast({ title: editingReboque ? "Reboque atualizado" : "Reboque cadastrado" });
-    },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  const deleteReboque = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reboques").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reboques"] });
-      toast({ title: "Reboque excluído" });
-    },
-  });
+  const handleDeleteReboque = (id: string) => {
+    deleteReboque.mutate(id, { onSuccess: () => toast({ title: "Reboque excluído" }) });
+  };
 
   const filteredTransp = transportadores.filter(
     (t) =>
@@ -244,7 +166,9 @@ export default function Transportadores() {
 
   const getAvailableMotoristas = (transpId: string) => {
     const vinculados = vinculos.filter((v: any) => v.transportador_id === transpId).map((v: any) => v.motorista_id);
-    return motoristas.filter((m) => !vinculados.includes(m.id));
+    return motoristas
+      .filter((m) => !vinculados.includes(m.id))
+      .map((m) => ({ id: m.id, nome: m.nome, cpf: m.cpf }));
   };
 
   return (
@@ -273,9 +197,9 @@ export default function Transportadores() {
               isMobile={isMobile}
               getMotoristasByTransp={getMotoristasByTransp}
               onEdit={(t) => { setEditingTransp(t); setShowTranspDialog(true); }}
-              onDelete={(id) => deleteTransp.mutate(id)}
+              onDelete={handleDeleteTransp}
               onVincular={(id) => { setVinculoTranspId(id); setShowVinculoDialog(true); }}
-              onRemoveVinculo={(id) => removeVinculo.mutate(id)}
+              onRemoveVinculo={handleRemoveVinculo}
               onVerDocs={(t) => { setDocsTransp(t); setDocsTab("anexos"); }}
               onVerContratos={(t) => { setDocsTransp(t); setDocsTab("contratos"); }}
             />
@@ -292,7 +216,7 @@ export default function Transportadores() {
               items={filteredCavalos}
               isMobile={isMobile}
               onEdit={(c) => { setEditingCavalo(c); setShowCavaloDialog(true); }}
-              onDelete={(id) => deleteCavalo.mutate(id)}
+              onDelete={handleDeleteCavalo}
             />
           </TabsContent>
 
@@ -307,7 +231,7 @@ export default function Transportadores() {
               items={filteredReboques}
               isMobile={isMobile}
               onEdit={(r) => { setEditingReboque(r); setShowReboqueDialog(true); }}
-              onDelete={(id) => deleteReboque.mutate(id)}
+              onDelete={handleDeleteReboque}
             />
           </TabsContent>
         </Tabs>
@@ -317,7 +241,7 @@ export default function Transportadores() {
         open={showTranspDialog}
         onOpenChange={setShowTranspDialog}
         editing={editingTransp}
-        onSubmit={(values) => saveTransp.mutate(values)}
+        onSubmit={handleSaveTransp}
       />
 
       <VincularMotoristaDialog
@@ -325,7 +249,7 @@ export default function Transportadores() {
         onOpenChange={setShowVinculoDialog}
         transportadorId={vinculoTranspId}
         motoristasDisponiveis={vinculoTranspId ? getAvailableMotoristas(vinculoTranspId) : []}
-        onVincular={(transportador_id, motorista_id) => addVinculo.mutate({ transportador_id, motorista_id })}
+        onVincular={handleAddVinculo}
       />
 
       <VeiculoFormDialog
@@ -337,7 +261,7 @@ export default function Transportadores() {
         validationSchema={cavaloSchema}
         folder="cavalos"
         uploadLabel="Anexar documento do cavalo"
-        onSubmit={(values) => saveCavalo.mutate(values)}
+        onSubmit={handleSaveCavalo}
       />
 
       <VeiculoFormDialog
@@ -349,7 +273,7 @@ export default function Transportadores() {
         validationSchema={reboqueSchema}
         folder="reboques"
         uploadLabel="Anexar documento do reboque"
-        onSubmit={(values) => saveReboque.mutate(values)}
+        onSubmit={handleSaveReboque}
       />
 
       <TransportadorDocsDialog

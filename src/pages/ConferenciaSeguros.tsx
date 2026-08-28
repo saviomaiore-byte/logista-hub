@@ -1,6 +1,14 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  useConferencias,
+  useConferenciaItens,
+  useMotoristasAtivos,
+  useCriarConferencia,
+  useAtualizarItemCoberto,
+  useAtualizarItemObservacoes,
+  useExcluirConferencia,
+} from "@/hooks/useConferenciaSeguros";
+
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,144 +70,52 @@ export default function ConferenciaSeguros() {
   const [activeTab, setActiveTab] = useState("manual");
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();
 
-  // Fetch all conferências
-  const { data: conferencias, isLoading: loadingConferencias } = useQuery({
-    queryKey: ["conferencia_seguros"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("conferencia_seguros")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Conferencia[];
-    },
-  });
+  const { data: conferencias, isLoading: loadingConferencias } = useConferencias();
+  const { data: itens, isLoading: loadingItens } = useConferenciaItens(selectedConferencia);
+  const { data: motoristas } = useMotoristasAtivos();
 
-  // Fetch items for selected conferência
-  const { data: itens, isLoading: loadingItens } = useQuery({
-    queryKey: ["conferencia_seguros_itens", selectedConferencia],
-    queryFn: async () => {
-      if (!selectedConferencia) return [];
-      const { data, error } = await supabase
-        .from("conferencia_seguros_itens")
-        .select("*, motoristas(nome, cpf, status)")
-        .eq("conferencia_id", selectedConferencia)
-        .order("created_at");
-      if (error) throw error;
-      return data as ConferenciaItem[];
-    },
-    enabled: !!selectedConferencia,
-  });
+  const createMutation = useCriarConferencia();
+  const toggleCobertoMutation = useAtualizarItemCoberto(selectedConferencia);
+  const updateItemObsMutation = useAtualizarItemObservacoes(selectedConferencia);
+  const deleteMutation = useExcluirConferencia();
 
-  // Fetch active motoristas
-  const { data: motoristas } = useQuery({
-    queryKey: ["motoristas_ativos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("motoristas")
-        .select("id, nome, cpf, status")
-        .eq("status", "ativo")
-        .order("nome");
-      if (error) throw error;
-      return data as Motorista[];
-    },
-  });
+  const handleCreateConferencia = () => {
+    createMutation.mutate(
+      {
+        titulo: newTitulo,
+        periodo_referencia: newPeriodo,
+        arquivo_apolice_url: newArquivoUrl,
+        observacoes: newObs,
+        motoristas,
+      },
+      {
+        onSuccess: (conf) => {
+          toast({ title: "Conferência criada com sucesso!" });
+          setOpenNew(false);
+          setNewTitulo("");
+          setNewPeriodo("");
+          setNewArquivoUrl("");
+          setNewObs("");
+          setSelectedConferencia(conf.id);
+        },
+        onError: (error: any) =>
+          toast({ title: "Erro ao criar conferência", description: error?.message, variant: "destructive" }),
+      },
+    );
+  };
 
-  // Create conferência + items for all active motoristas
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const { data: conf, error: confError } = await supabase
-        .from("conferencia_seguros")
-        .insert({
-          titulo: newTitulo,
-          periodo_referencia: newPeriodo,
-          arquivo_apolice_url: newArquivoUrl || null,
-          observacoes: newObs || null,
-        })
-        .select()
-        .single();
-      if (confError) throw confError;
-
-      // Create items for all active motoristas
-      if (motoristas && motoristas.length > 0) {
-        const items = motoristas.map((m) => ({
-          conferencia_id: conf.id,
-          motorista_id: m.id,
-          coberto: false,
-        }));
-        const { error: itemsError } = await supabase
-          .from("conferencia_seguros_itens")
-          .insert(items);
-        if (itemsError) throw itemsError;
-      }
-
-      return conf;
-    },
-    onSuccess: (conf) => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens"] });
-      toast({ title: "Conferência criada com sucesso!" });
-      setOpenNew(false);
-      setNewTitulo("");
-      setNewPeriodo("");
-      setNewArquivoUrl("");
-      setNewObs("");
-      setSelectedConferencia(conf.id);
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao criar conferência", description: error.message, variant: "destructive" });
-    },
-  });
-
-  // Toggle coberto
-  const toggleCobertoMutation = useMutation({
-    mutationFn: async ({ itemId, coberto }: { itemId: string; coberto: boolean }) => {
-      const { error } = await supabase
-        .from("conferencia_seguros_itens")
-        .update({ coberto })
-        .eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens", selectedConferencia] });
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-    },
-  });
-
-  // Delete conferência
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("conferencia_seguros").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-      if (selectedConferencia) setSelectedConferencia(null);
-      toast({ title: "Conferência excluída!" });
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-    },
-  });
-
-  // Update item observação
-  const updateItemObsMutation = useMutation({
-    mutationFn: async ({ itemId, observacoes }: { itemId: string; observacoes: string }) => {
-      const { error } = await supabase
-        .from("conferencia_seguros_itens")
-        .update({ observacoes: observacoes || null })
-        .eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens", selectedConferencia] });
-    },
-  });
+  const handleDeleteConferencia = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        if (selectedConferencia) setSelectedConferencia(null);
+        toast({ title: "Conferência excluída!" });
+      },
+      onError: (error: any) =>
+        toast({ title: "Erro ao excluir", description: error?.message, variant: "destructive" }),
+    });
+  };
 
   const selectedConf = conferencias?.find((c) => c.id === selectedConferencia);
 
@@ -282,7 +198,7 @@ export default function ConferenciaSeguros() {
                     Cancelar
                   </Button>
                   <Button
-                    onClick={() => createMutation.mutate()}
+                    onClick={handleCreateConferencia}
                     disabled={!newTitulo || !newPeriodo || createMutation.isPending}
                   >
                     Criar Conferência
@@ -333,7 +249,7 @@ export default function ConferenciaSeguros() {
                       className="h-6 w-6 ml-auto"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteMutation.mutate(conf.id);
+                        handleDeleteConferencia(conf.id);
                       }}
                     >
                       <Trash2 className="h-3 w-3 text-destructive" />

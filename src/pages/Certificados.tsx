@@ -38,22 +38,6 @@ import {
 } from "@/hooks/useCertificados";
 
 
-interface Certificado {
-  id: string;
-  empresa: string;
-  tipo: string;
-  vencimento: string;
-  data_renovacao_agendada: string | null;
-  status: string;
-  observacoes: string | null;
-  arquivo_url: string | null;
-}
-
-interface Transportadora {
-  id: string;
-  razao_social: string;
-}
-
 const initialValues = {
   empresa: "",
   tipo: "",
@@ -64,77 +48,38 @@ const initialValues = {
 };
 
 export default function Certificados() {
-  const [certificados, setCertificados] = useState<Certificado[]>([]);
-  const [transportadoras, setTransportadoras] = useState<Transportadora[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const fetchPageData = async () => {
-    const [{ data: certificadosData, error: certificadosError }, { data: transportadorasData, error: transportadorasError }] = await Promise.all([
-      supabase.from("certificados").select("*").order("vencimento", { ascending: true }),
-      supabase.from("transportadores").select("id, razao_social").order("razao_social", { ascending: true }),
-    ]);
+  const { data: certificados = [], isLoading: loadingCertificados } = useCertificados();
+  const { data: transportadoras = [], isLoading: loadingTransportadoras } = useTransportadorasResumo();
+  const criarCertificado = useCriarCertificado();
+  const agendarRenovacaoMutation = useAgendarRenovacao();
 
-    if (certificadosError) {
-      toast.error("Erro ao carregar certificados");
-    } else {
-      setCertificados(certificadosData || []);
-    }
-
-    if (transportadorasError) {
-      toast.error("Erro ao carregar transportadoras");
-    } else {
-      setTransportadoras(transportadorasData || []);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchPageData();
-  }, []);
+  const loading = loadingCertificados || loadingTransportadoras;
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
-    const { error } = await supabase.from("certificados").insert({
-      empresa: values.empresa,
-      tipo: values.tipo,
-      vencimento: values.vencimento,
-      data_renovacao_agendada: values.data_renovacao_agendada || null,
-      observacoes: values.observacoes || null,
-      arquivo_url: values.arquivo_url || null,
-      status: values.data_renovacao_agendada ? "renovacao_agendada" : "ativo",
-    });
-
-    if (error) {
-      toast.error("Erro ao salvar certificado");
-    } else {
-      toast.success("Certificado adicionado!");
-      setOpen(false);
-      resetForm();
-      fetchPageData();
+    try {
+      await criarCertificado.mutateAsync(values);
+    } catch {
+      return;
     }
+
+    toast.success("Certificado adicionado!");
+    setOpen(false);
+    resetForm();
   };
 
   const agendarRenovacao = async (id: string) => {
-    const dataRenovacao = new Date();
-    dataRenovacao.setDate(dataRenovacao.getDate() + 7);
-
-    const { error } = await supabase
-      .from("certificados")
-      .update({
-        status: "renovacao_agendada",
-        data_renovacao_agendada: dataRenovacao.toISOString().split("T")[0],
-      })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Erro ao agendar renovação");
-    } else {
-      toast.success("Renovação agendada!");
-      fetchPageData();
+    try {
+      await agendarRenovacaoMutation.mutateAsync(id);
+    } catch {
+      return;
     }
+
+    toast.success("Renovação agendada!");
   };
+
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {

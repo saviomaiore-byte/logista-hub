@@ -41,11 +41,7 @@ export function useMotoristas() {
     queryFn: async () => {
       const { data, error } = await supabase.from("motoristas").select("*").order("nome");
 
-      if (error) {
-        console.error("[db] Falha ao carregar motoristas", error);
-        toast.error("Erro ao carregar motoristas");
-        throw error;
-      }
+      if (reportDbError("carregar motoristas", error, toast.error)) throw error;
       return (data as Motorista[]) || [];
     },
   });
@@ -128,7 +124,8 @@ export function useCriarMotorista() {
         .select()
         .single();
 
-      if (error) throw error;
+      // O toast é responsabilidade da página (mensagem específica de CPF duplicado).
+      if (reportDbError("salvar motorista", error)) throw error;
 
       if (inserted && transportadoras.length > 0) {
         await syncTransportadoraLinks(inserted.id, transportadoras);
@@ -161,7 +158,7 @@ export function useAtualizarMotorista() {
         .update(row as never)
         .eq("id", id);
 
-      if (error) throw error;
+      if (reportDbError("atualizar motorista", error)) throw error;
 
       await syncTransportadoraLinks(id, transportadoras);
     },
@@ -179,7 +176,7 @@ export function useExcluirMotorista() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("motoristas").delete().eq("id", id);
-      if (error) throw error;
+      if (reportDbError("excluir motorista", error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: motoristasKey });
@@ -199,11 +196,7 @@ export function useMotoristaArquivos(motoristaId: string) {
         .eq("motorista_id", motoristaId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("[db] Falha ao carregar arquivos", error);
-        toast.error("Erro ao carregar arquivos");
-        throw error;
-      }
+      if (reportDbError("carregar arquivos", error, toast.error)) throw error;
       return (data as MotoristaArquivo[]) || [];
     },
   });
@@ -226,7 +219,7 @@ export function useCriarMotoristaArquivo(motoristaId: string) {
       tamanho_bytes: number;
     }) => {
       const { error } = await supabase.from("motorista_arquivos").insert(row);
-      if (error) throw error;
+      if (reportDbError("enviar arquivo", error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: motoristaArquivosKey(motoristaId) });
@@ -241,7 +234,7 @@ export function useExcluirMotoristaArquivo(motoristaId: string) {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("motorista_arquivos").delete().eq("id", id);
-      if (error) throw error;
+      if (reportDbError("excluir arquivo", error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: motoristaArquivosKey(motoristaId) });

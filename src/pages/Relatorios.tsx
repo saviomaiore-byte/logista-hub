@@ -396,110 +396,17 @@ export default function Relatorios() {
 
           {/* PDF Preview tab */}
           <TabsContent value="preview-pdf" className="mt-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Pré-visualização do PDF
-                  </CardTitle>
-                  <Button variant="outline" size="sm" onClick={gerarPDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar PDF
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {pdfPreviewUrl ? (
-                  <iframe
-                    src={pdfPreviewUrl}
-                    className="w-full rounded-md border"
-                    style={{ height: "70vh" }}
-                    title="Pré-visualização PDF"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <FileText className="h-12 w-12 mb-3 opacity-40" />
-                    <p>Clique na aba para gerar a pré-visualização do PDF</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <PdfPreviewTab pdfPreviewUrl={pdfPreviewUrl} onDownload={gerarPDF} />
           </TabsContent>
 
           {/* Excel Preview tab */}
           <TabsContent value="preview-excel" className="mt-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Pré-visualização da Planilha
-                  </CardTitle>
-                  <Button variant="outline" size="sm" onClick={gerarExcel}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar Excel
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {excelPreviewData ? (
-                  <div className="space-y-4">
-                    {/* Sheet selector */}
-                    <div className="flex gap-2 flex-wrap">
-                      {Object.keys(excelPreviewData).map((sheetName) => (
-                        <Button
-                          key={sheetName}
-                          variant={activeExcelSheet === sheetName ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setActiveExcelSheet(sheetName)}
-                        >
-                          {sheetName}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Sheet data */}
-                    {activeExcelSheet && excelPreviewData[activeExcelSheet] && (
-                      <div className="overflow-x-auto border rounded-md">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {(excelPreviewData[activeExcelSheet][0] || []).map((cell: any, i: number) => (
-                                <TableHead key={i} className="whitespace-nowrap text-xs">
-                                  {cell ?? ""}
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {excelPreviewData[activeExcelSheet].slice(1).map((row, ri) => (
-                              <TableRow key={ri}>
-                                {(excelPreviewData[activeExcelSheet][0] || []).map((_: any, ci: number) => (
-                                  <TableCell key={ci} className="whitespace-nowrap text-xs">
-                                    {row[ci] ?? ""}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Paperclip className="h-3 w-3" />
-                      <span>Esta planilha será enviada como anexo no e-mail</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <FileSpreadsheet className="h-12 w-12 mb-3 opacity-40" />
-                    <p>Clique na aba para gerar a pré-visualização da planilha</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ExcelPreviewTab
+              excelPreviewData={excelPreviewData}
+              activeExcelSheet={activeExcelSheet}
+              onSelectSheet={setActiveExcelSheet}
+              onDownload={gerarExcel}
+            />
           </TabsContent>
 
           {/* Config tab */}

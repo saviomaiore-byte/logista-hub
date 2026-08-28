@@ -44,6 +44,8 @@ import { SITUACAO_LABELS, SITUACAO_ICONS, DIAS_SEMANA, formatDate, docStatus, ty
 import { RelatoriosHeader } from "@/components/relatorio/RelatoriosHeader";
 import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCards";
 import { RelatorioDadosTab } from "@/components/relatorio/RelatorioDadosTab";
+import { PdfPreviewTab } from "@/components/relatorio/PdfPreviewTab";
+import { ExcelPreviewTab } from "@/components/relatorio/ExcelPreviewTab";
 
 
 export default function Relatorios() {

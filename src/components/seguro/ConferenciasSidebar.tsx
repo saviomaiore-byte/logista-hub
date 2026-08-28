@@ -4,6 +4,7 @@ import { ClipboardCheck, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Conferencia } from "./types";
+import { usePermissoes } from "@/hooks/usePermissoes";
 
 interface ConferenciasSidebarProps {
   items?: Conferencia[];
@@ -20,6 +21,7 @@ export function ConferenciasSidebar({
   onSelect,
   onDelete,
 }: ConferenciasSidebarProps) {
+  const { isAdmin } = usePermissoes();
   return (
     <div className="lg:col-span-1 space-y-3">
       <h3 className="font-semibold text-foreground text-sm">Conferências</h3>
@@ -50,12 +52,14 @@ export function ConferenciasSidebar({
                   <FileText className="h-3 w-3 mr-1" /> PDF
                 </Badge>
               )}
-              <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={(e) => {
-                e.stopPropagation();
-                onDelete(conf.id);
-              }}>
-                <Trash2 className="h-3 w-3 text-destructive" />
-              </Button>
+              {isAdmin && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(conf.id);
+                }}>
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              )}
             </div>
           </button>
         ))

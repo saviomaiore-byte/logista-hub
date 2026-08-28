@@ -17,6 +17,7 @@ import { reportDbError } from "@/lib/dbError";
 /** Contrato da listagem central, com os joins de motorista/transportador. */
 export interface ContratoComVinculos {
   id: string;
+  created_by?: string | null;
   tipo: string;
   modelo: string | null;
   empresa: string;

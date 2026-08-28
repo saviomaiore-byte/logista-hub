@@ -6,6 +6,7 @@ export interface Transportadora {
 
 export interface Motorista {
   id: string;
+  created_by?: string | null;
   nome: string;
   cpf: string;
   telefone: string | null;

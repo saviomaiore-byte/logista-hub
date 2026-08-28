@@ -3,6 +3,7 @@ import { ptBR } from "date-fns/locale";
 
 export interface Seguro {
   id: string;
+  created_by?: string | null;
   motorista_id: string | null;
   tipo: string;
   seguradora: string;
@@ -25,6 +26,7 @@ export interface Motorista {
 
 export interface Conferencia {
   id: string;
+  created_by?: string | null;
   titulo: string;
   periodo_referencia: string;
   arquivo_apolice_url: string | null;

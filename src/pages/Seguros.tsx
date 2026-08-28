@@ -21,13 +21,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Plus, Shield, Search, Trash2, AlertTriangle, Download,
+  Plus, Shield, Search, Trash2, AlertTriangle,
   ClipboardCheck, FileText, Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { FileUpload } from "@/components/FileUpload";
+
 import { seguroSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +37,7 @@ import { SegurosList } from "@/components/seguro/SegurosList";
 import { SeguroFormDialog } from "@/components/seguro/SeguroFormDialog";
 import { ConferenciasSidebar } from "@/components/seguro/ConferenciasSidebar";
 import { NovaConferenciaDialog } from "@/components/seguro/NovaConferenciaDialog";
+import { ConferenciaHeaderCard } from "@/components/seguro/ConferenciaHeaderCard";
 
 // ====== Types ======
 interface Seguro {

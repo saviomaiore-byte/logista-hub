@@ -164,12 +164,13 @@ export function useExcluirConferencia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+mutationFn: async (id: string) => {
       const { error } = await supabase.from("conferencia_seguros").delete().eq("id", id);
       if (reportDbError("excluir conferência", error)) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: conferenciasKey });
+      queryClient.invalidateQueries({ queryKey: conferenciaItensKey(id) });
     },
   });
 }

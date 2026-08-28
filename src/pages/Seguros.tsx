@@ -38,6 +38,8 @@ import { SeguroFormDialog } from "@/components/seguro/SeguroFormDialog";
 import { ConferenciasSidebar } from "@/components/seguro/ConferenciasSidebar";
 import { NovaConferenciaDialog } from "@/components/seguro/NovaConferenciaDialog";
 import { ConferenciaHeaderCard } from "@/components/seguro/ConferenciaHeaderCard";
+import { ConferenciaChecklist } from "@/components/seguro/ConferenciaChecklist";
+
 
 // ====== Types ======
 interface Seguro {

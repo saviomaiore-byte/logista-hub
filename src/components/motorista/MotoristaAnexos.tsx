@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Eye, Loader2, File, Image } from "lucide-react";
@@ -12,15 +12,13 @@ import { toast } from "sonner";
 import { reportDbError } from "@/lib/dbError";
 import { cn } from "@/lib/utils";
 import { getSignedFileUrl, extractStoragePath } from "@/lib/storage";
+import {
+  useMotoristaArquivos,
+  useCriarMotoristaArquivo,
+  useExcluirMotoristaArquivo,
+  type MotoristaArquivo as Arquivo,
+} from "@/hooks/useMotoristas";
 
-interface Arquivo {
-  id: string;
-  nome_arquivo: string;
-  arquivo_url: string;
-  tipo_arquivo: string | null;
-  tamanho_bytes: number | null;
-  created_at: string;
-}
 
 interface MotoristaAnexosProps {
   motoristaId: string;
@@ -28,32 +26,15 @@ interface MotoristaAnexosProps {
 }
 
 export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosProps) {
-  const [arquivos, setArquivos] = useState<Arquivo[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchArquivos = async () => {
-    const { data, error } = await supabase
-      .from("motorista_arquivos")
-      .select("*")
-      .eq("motorista_id", motoristaId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Erro ao carregar arquivos");
-    } else {
-      setArquivos(data || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchArquivos();
-  }, [motoristaId]);
+  const { data: arquivos = [], isLoading: loading } = useMotoristaArquivos(motoristaId);
+  const criarArquivo = useCriarMotoristaArquivo(motoristaId);
+  const excluirArquivo = useExcluirMotoristaArquivo(motoristaId);
 
   const processFiles = async (files: FileList | File[]) => {
     setUploading(true);
@@ -77,17 +58,13 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
 
         if (uploadError) throw uploadError;
 
-        const { error: insertError } = await supabase
-          .from("motorista_arquivos")
-          .insert({
-            motorista_id: motoristaId,
-            nome_arquivo: file.name,
-            arquivo_url: storagePath,
-            tipo_arquivo: file.type || null,
-            tamanho_bytes: file.size,
-          });
-
-        if (insertError) throw insertError;
+        await criarArquivo.mutateAsync({
+          motorista_id: motoristaId,
+          nome_arquivo: file.name,
+          arquivo_url: storagePath,
+          tipo_arquivo: file.type || null,
+          tamanho_bytes: file.size,
+        });
       } catch (err: any) {
         toast.error(`Erro ao enviar ${file.name}`);
         console.error(err);
@@ -95,7 +72,6 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
     }
 
     toast.success("Arquivo(s) enviado(s)!");
-    fetchArquivos();
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -136,14 +112,13 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
 
     const { error: storageError } = await supabase.storage.from("documentos").remove([storagePath]);
     reportDbError("remover arquivo do armazenamento", storageError);
-    const { error } = await supabase.from("motorista_arquivos").delete().eq("id", arquivo.id);
-
-    if (error) {
+    try {
+      await excluirArquivo.mutateAsync(arquivo.id);
+    } catch {
       toast.error("Erro ao excluir arquivo");
-    } else {
-      toast.success("Arquivo excluído!");
-      fetchArquivos();
+      return;
     }
+    toast.success("Arquivo excluído!");
   };
 
   const canPreview = (tipo: string | null, nome: string) => {

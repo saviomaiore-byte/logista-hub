@@ -88,6 +88,7 @@ export default function Relatorios() {
     const { data, error } = await supabase
       .from("relatorio_config")
       .select("*")
+      .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -122,14 +123,63 @@ export default function Relatorios() {
       envio_automatico: envioAutomatico,
     };
 
+    const atualizar = async (id: string) => {
+      const { error } = await supabase.from("relatorio_config").update(configData).eq("id", id);
+      if (reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }))) return false;
+      setConfigId(id);
+      return true;
+    };
+
     if (configId) {
-      const { error } = await supabase.from("relatorio_config").update(configData).eq("id", configId);
-      if (reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-    } else {
-      const { data, error } = await supabase.from("relatorio_config").insert(configData).select().single();
-      if (reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-      if (data) setConfigId(data.id);
+      if (!(await atualizar(configId))) return;
+      toast({ title: "Configurações salvas com sucesso!" });
+      return;
     }
+
+    // configId vazio: pode ser primeira configuração OU falha transitória de leitura.
+    // Reconsulta antes de inserir para nunca duplicar a configuração semanal.
+    const { data: existente, error: erroBusca } = await supabase
+      .from("relatorio_config")
+      .select("id")
+      .eq("tipo", "semanal")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (reportDbError("salvar configurações", erroBusca, (m) => toast({ title: m, variant: "destructive" }))) return;
+
+    if (existente?.id) {
+      if (!(await atualizar(existente.id))) return;
+      toast({ title: "Configurações salvas com sucesso!" });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("relatorio_config")
+      .insert({ ...configData, tipo: "semanal" })
+      .select()
+      .single();
+
+    if (error) {
+      // Corrida: outra sessão criou a configuração entre a leitura e o insert.
+      if ((error as any).code === "23505") {
+        const { data: criada } = await supabase
+          .from("relatorio_config")
+          .select("id")
+          .eq("tipo", "semanal")
+          .limit(1)
+          .maybeSingle();
+        if (criada?.id) {
+          if (!(await atualizar(criada.id))) return;
+          toast({ title: "Configurações salvas com sucesso!" });
+          return;
+        }
+      }
+      reportDbError("salvar configurações", error, (m) => toast({ title: m, variant: "destructive" }));
+      return;
+    }
+
+    if (data) setConfigId(data.id);
     toast({ title: "Configurações salvas com sucesso!" });
   }
 

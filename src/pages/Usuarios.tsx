@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  useUsuariosPerfis,
+  useUsuariosRoles,
+  useTornarAdmin,
+  useRemoverAdmin,
+  useRemoverPerfil,
+  type Profile,
+} from "@/hooks/useUsuarios";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Navigate } from "react-router-dom";
 import { Users, Shield, ShieldOff, Trash2, Search } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -31,25 +39,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface Profile {
-  id: string;
-  user_id: string;
-  nome: string;
-  email: string | null;
-  created_at: string;
-}
-
-interface UserRole {
-  user_id: string;
-  role: string;
-}
-
 export default function Usuarios() {
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { user: currentUser } = useAuth();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [roles, setRoles] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: profilesData, isLoading: loadingProfiles } = useUsuariosPerfis(isAdmin);
+  const { data: rolesData, isLoading: loadingRoles } = useUsuariosRoles(isAdmin);
+  const profiles = profilesData || [];
+  const roles = rolesData || [];
+  const loading = loadingProfiles || loadingRoles;
   const [search, setSearch] = useState("");
   const isMobile = useIsMobile();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; profile: Profile | null }>({
@@ -57,71 +54,41 @@ export default function Usuarios() {
     profile: null,
   });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [profilesRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id, role"),
-    ]);
-
-    if (profilesRes.data) setProfiles(profilesRes.data);
-    if (rolesRes.data) setRoles(rolesRes.data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (isAdmin) fetchData();
-  }, [isAdmin]);
+  const tornarAdmin = useTornarAdmin();
+  const removerAdmin = useRemoverAdmin();
+  const removerPerfil = useRemoverPerfil();
 
   const getUserRole = (userId: string) => {
     return roles.find((r) => r.user_id === userId)?.role || "user";
   };
 
-  const toggleAdmin = async (profile: Profile) => {
+  const toggleAdmin = (profile: Profile) => {
     const currentRole = getUserRole(profile.user_id);
     if (currentRole === "admin") {
       // Remove admin role
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", profile.user_id)
-        .eq("role", "admin");
-      if (error) {
-        toast.error("Erro ao remover permissão de admin.");
-      } else {
-        toast.success(`${profile.nome} não é mais admin.`);
-        fetchData();
-      }
+      removerAdmin.mutate(profile.user_id, {
+        onSuccess: () => toast.success(`${profile.nome} não é mais admin.`),
+        onError: () => toast.error("Erro ao remover permissão de admin."),
+      });
     } else {
       // Add admin role
-      const { error } = await supabase
-        .from("user_roles")
-        .insert({ user_id: profile.user_id, role: "admin" } as any);
-      if (error) {
-        toast.error("Erro ao adicionar permissão de admin.");
-      } else {
-        toast.success(`${profile.nome} agora é admin.`);
-        fetchData();
-      }
+      tornarAdmin.mutate(profile.user_id, {
+        onSuccess: () => toast.success(`${profile.nome} agora é admin.`),
+        onError: () => toast.error("Erro ao adicionar permissão de admin."),
+      });
     }
   };
 
-  const deleteUser = async () => {
+  const deleteUser = () => {
     if (!deleteDialog.profile) return;
     // We can't delete auth.users from client, but we can remove the profile
-    const { error } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("user_id", deleteDialog.profile.user_id);
-    
-    if (error) {
-      toast.error("Erro ao remover usuário. Verifique as permissões.");
-    } else {
-      toast.success("Perfil do usuário removido.");
-      fetchData();
-    }
+    removerPerfil.mutate(deleteDialog.profile.user_id, {
+      onSuccess: () => toast.success("Perfil do usuário removido."),
+      onError: () => toast.error("Erro ao remover usuário. Verifique as permissões."),
+    });
     setDeleteDialog({ open: false, profile: null });
   };
+
 
   if (adminLoading) {
     return (

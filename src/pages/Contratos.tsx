@@ -74,6 +74,7 @@ const modeloOptions = [
 ];
 
 export default function Contratos() {
+  const { isAdmin, podeEditar } = usePermissoes();
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [formInitialValues, setFormInitialValues] = useState(initialValues);

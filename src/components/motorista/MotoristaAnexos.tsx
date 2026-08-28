@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Eye, Loader2, File, Image } from "lucide-react";
@@ -26,6 +27,7 @@ interface MotoristaAnexosProps {
 }
 
 export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosProps) {
+  const { isAdmin } = usePermissoes();
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

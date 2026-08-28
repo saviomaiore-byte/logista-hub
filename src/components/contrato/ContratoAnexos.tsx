@@ -1,3 +1,4 @@
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/FileUpload";
@@ -30,6 +31,7 @@ const tipoLabels: Record<string, string> = {
 };
 
 export function ContratoAnexos({ motorista_id, transportador_id, nome }: ContratoAnexosProps) {
+  const { isAdmin } = usePermissoes();
   const [showForm, setShowForm] = useState(false);
   const [tipo, setTipo] = useState("");
   const [modelo, setModelo] = useState("");

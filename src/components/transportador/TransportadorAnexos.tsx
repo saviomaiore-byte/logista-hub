@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Eye, Loader2, File, Image } from "lucide-react";
@@ -27,6 +28,7 @@ interface TransportadorAnexosProps {
 }
 
 export function TransportadorAnexos({ transportadorId, transportadorNome }: TransportadorAnexosProps) {
+  const { isAdmin } = usePermissoes();
   const { data: arquivos = [], isLoading: loading } = useTransportadorArquivos(transportadorId);
   const criarArquivo = useCriarTransportadorArquivo(transportadorId);
   const excluirArquivo = useExcluirTransportadorArquivo(transportadorId);

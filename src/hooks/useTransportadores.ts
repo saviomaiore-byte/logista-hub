@@ -1,0 +1,358 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { reportDbError } from "@/lib/dbError";
+import { motoristaVinculosKey } from "@/hooks/useMotoristas";
+import type { Cavalo, Reboque, Transportador } from "@/components/transportador/types";
+
+/**
+ * Entidade Transportadores.
+ *
+ * Cobre a listagem central (`transportadores`), os vínculos N:N com motoristas
+ * (`transportador_motoristas`, com join de motorista para exibição), a frota
+ * (`cavalos` e `reboques`, ambas com join de `transportadores(razao_social)`)
+ * e os anexos do transportador (`transportador_arquivos` + storage `documentos`).
+ *
+ * O seletor de transportadores do formulário de contrato continua em
+ * `useContratos.useTransportadoresOpcoes()` — não é duplicado aqui.
+ */
+
+/** Prefixo de cache da entidade. */
+export const transportadoresKey = ["transportadores"] as const;
+
+/** Vínculos transportador ↔ motorista, com o motorista embutido. */
+export const transportadorVinculosKey = ["transportadores", "vinculos"] as const;
+
+export const cavalosKey = ["cavalos"] as const;
+export const reboquesKey = ["reboques"] as const;
+
+/** Anexos de um transportador específico. */
+export const transportadorArquivosKey = (transportadorId: string) =>
+  ["transportadores", "arquivos", transportadorId] as const;
+
+export interface TransportadorVinculo {
+  id: string;
+  transportador_id: string;
+  motorista_id: string;
+  motoristas?: { id: string; nome: string; cpf: string } | null;
+}
+
+export interface TransportadorArquivo {
+  id: string;
+  nome_arquivo: string;
+  arquivo_url: string;
+  tipo_arquivo: string | null;
+  tamanho_bytes: number | null;
+  created_at: string;
+}
+
+/** Listagem central de transportadores, ordenada por razão social. */
+export function useTransportadores() {
+  return useQuery({
+    queryKey: transportadoresKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transportadores")
+        .select("*")
+        .order("razao_social");
+
+      if (reportDbError("carregar transportadores", error, toast.error)) throw error;
+      return (data as Transportador[]) || [];
+    },
+  });
+}
+
+/** Vínculos existentes (join com motorista para exibir nome/CPF na lista). */
+export function useTransportadorVinculos() {
+  return useQuery({
+    queryKey: transportadorVinculosKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transportador_motoristas")
+        .select("*, motoristas(id, nome, cpf)");
+
+      if (reportDbError("carregar vínculos de motoristas", error, toast.error)) throw error;
+      return (data as unknown as TransportadorVinculo[]) || [];
+    },
+  });
+}
+
+/** Cavalos com a razão social do transportador. */
+export function useCavalos() {
+  return useQuery({
+    queryKey: cavalosKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cavalos")
+        .select("*, transportadores(razao_social)")
+        .order("created_at", { ascending: false });
+
+      if (reportDbError("carregar cavalos", error, toast.error)) throw error;
+      return (data as unknown as Cavalo[]) || [];
+    },
+  });
+}
+
+/** Reboques com a razão social do transportador. */
+export function useReboques() {
+  return useQuery({
+    queryKey: reboquesKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reboques")
+        .select("*, transportadores(razao_social)")
+        .order("created_at", { ascending: false });
+
+      if (reportDbError("carregar reboques", error, toast.error)) throw error;
+      return (data as unknown as Reboque[]) || [];
+    },
+  });
+}
+
+type TransportadorFormValues = Record<string, unknown> & {
+  inscricao_estadual?: string | null;
+  contato?: string | null;
+  endereco?: string | null;
+  data_nascimento?: string | null;
+  email?: string | null;
+  estado_civil?: string | null;
+  rg?: string | null;
+  situacao_operacional?: string | null;
+};
+
+/**
+ * Criação/atualização de transportador.
+ * O payload (trim + null nos opcionais) é idêntico ao anterior; o toast de
+ * sucesso/erro continua na página, por isso aqui só registramos e relançamos.
+ */
+export function useSalvarTransportador() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id?: string; values: TransportadorFormValues }) => {
+      const payload = {
+        ...values,
+        inscricao_estadual: values.inscricao_estadual?.trim() || null,
+        contato: values.contato?.trim() || null,
+        endereco: values.endereco?.trim() || null,
+        data_nascimento: values.data_nascimento || null,
+        email: values.email?.trim() || null,
+        estado_civil: values.estado_civil?.trim() || null,
+        rg: values.rg?.trim() || null,
+        situacao_operacional: values.situacao_operacional || null,
+      };
+
+      if (id) {
+        const { error } = await supabase
+          .from("transportadores")
+          .update(payload as never)
+          .eq("id", id);
+        if (reportDbError("atualizar transportador", error)) throw error;
+      } else {
+        const { error } = await supabase.from("transportadores").insert(payload as never);
+        if (reportDbError("salvar transportador", error)) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadoresKey });
+    },
+  });
+}
+
+/** Exclusão de transportador. */
+export function useExcluirTransportador() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("transportadores").delete().eq("id", id);
+      if (reportDbError("excluir transportador", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadoresKey });
+    },
+  });
+}
+
+/** Vincula um motorista ao transportador (tabela de junção). */
+export function useVincularMotorista() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      transportador_id,
+      motorista_id,
+    }: {
+      transportador_id: string;
+      motorista_id: string;
+    }) => {
+      const { error } = await supabase
+        .from("transportador_motoristas")
+        .insert({ transportador_id, motorista_id });
+      if (reportDbError("vincular motorista", error)) throw error;
+    },
+    onSuccess: () => {
+      // A junção alimenta esta tela e também o mapa usado na tela de Motoristas.
+      queryClient.invalidateQueries({ queryKey: transportadorVinculosKey });
+      queryClient.invalidateQueries({ queryKey: motoristaVinculosKey });
+    },
+  });
+}
+
+/** Remove o vínculo motorista ↔ transportador. */
+export function useDesvincularMotorista() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("transportador_motoristas").delete().eq("id", id);
+      if (reportDbError("desvincular motorista", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadorVinculosKey });
+      queryClient.invalidateQueries({ queryKey: motoristaVinculosKey });
+    },
+  });
+}
+
+interface VeiculoPayload {
+  transportador_id: string;
+  arquivo_url?: string | null;
+}
+
+/** Criação/atualização de cavalo — payload idêntico ao anterior. */
+export function useSalvarCavalo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id?: string; values: VeiculoPayload }) => {
+      const payload = {
+        transportador_id: values.transportador_id,
+        arquivo_url: values.arquivo_url?.trim() || null,
+      };
+
+      if (id) {
+        const { error } = await supabase.from("cavalos").update(payload).eq("id", id);
+        if (reportDbError("atualizar cavalo", error)) throw error;
+      } else {
+        const { error } = await supabase.from("cavalos").insert(payload);
+        if (reportDbError("salvar cavalo", error)) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cavalosKey });
+    },
+  });
+}
+
+/** Exclusão de cavalo. */
+export function useExcluirCavalo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cavalos").delete().eq("id", id);
+      if (reportDbError("excluir cavalo", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cavalosKey });
+    },
+  });
+}
+
+/** Criação/atualização de reboque — payload idêntico ao anterior. */
+export function useSalvarReboque() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id?: string; values: VeiculoPayload }) => {
+      const payload = {
+        transportador_id: values.transportador_id,
+        arquivo_url: values.arquivo_url?.trim() || null,
+      };
+
+      if (id) {
+        const { error } = await supabase.from("reboques").update(payload).eq("id", id);
+        if (reportDbError("atualizar reboque", error)) throw error;
+      } else {
+        const { error } = await supabase.from("reboques").insert(payload);
+        if (reportDbError("salvar reboque", error)) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reboquesKey });
+    },
+  });
+}
+
+/** Exclusão de reboque. */
+export function useExcluirReboque() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("reboques").delete().eq("id", id);
+      if (reportDbError("excluir reboque", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reboquesKey });
+    },
+  });
+}
+
+/** Anexos de um transportador (tabela `transportador_arquivos`). */
+export function useTransportadorArquivos(transportadorId: string) {
+  return useQuery({
+    queryKey: transportadorArquivosKey(transportadorId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transportador_arquivos")
+        .select("*")
+        .eq("transportador_id", transportadorId)
+        .order("created_at", { ascending: false });
+
+      if (reportDbError("carregar arquivos", error, toast.error)) throw error;
+      return (data as TransportadorArquivo[]) || [];
+    },
+  });
+}
+
+/**
+ * Registro do metadado do anexo após o upload no storage.
+ * O upload em si (bucket `documentos`, path `${userId}/transportadores/...`)
+ * permanece no componente, sem qualquer alteração.
+ */
+export function useCriarTransportadorArquivo(transportadorId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (row: {
+      transportador_id: string;
+      nome_arquivo: string;
+      arquivo_url: string;
+      tipo_arquivo: string | null;
+      tamanho_bytes: number;
+    }) => {
+      const { error } = await supabase.from("transportador_arquivos").insert(row);
+      if (reportDbError("enviar arquivo", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadorArquivosKey(transportadorId) });
+    },
+  });
+}
+
+/** Exclusão do registro do anexo (a remoção no storage segue no componente). */
+export function useExcluirTransportadorArquivo(transportadorId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("transportador_arquivos").delete().eq("id", id);
+      if (reportDbError("excluir arquivo", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadorArquivosKey(transportadorId) });
+    },
+  });
+}

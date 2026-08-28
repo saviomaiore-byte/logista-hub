@@ -40,60 +40,10 @@ import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { SITUACAO_LABELS, SITUACAO_ICONS, DIAS_SEMANA, formatDate, docStatus, type TransportadorComMotoristas, type MotoristaRelatorio } from "@/components/relatorio/types";
+import { RelatoriosHeader } from "@/components/relatorio/RelatoriosHeader";
+import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCards";
 
-// Types
-interface TransportadorComMotoristas {
-  id: string;
-  razao_social: string;
-  cpf_cnpj: string;
-  status: string;
-  situacao_operacional: string | null;
-  antt_numero: string | null;
-  alvara_numero: string | null;
-  certificado_numero: string | null;
-  motoristas: MotoristaRelatorio[];
-}
-
-interface MotoristaRelatorio {
-  id: string;
-  nome: string;
-  cpf: string;
-  status: string | null;
-  cnh_numero: string | null;
-  cnh_vencimento: string | null;
-  mopp_numero: string | null;
-  mopp_vencimento: string | null;
-  mopp_vitalicio: boolean;
-  tem_contrato: boolean;
-  motivos_inaptidao: string[];
-  apto: boolean;
-}
-
-const SITUACAO_LABELS: Record<string, string> = {
-  em_praca_apto: "Em Praça - Apto",
-  em_viagem_apto: "Em Viagem - Apto",
-  inapto: "Inapto",
-  em_praca: "Em Praça - Apto",
-  em_viagem: "Em Viagem - Apto",
-};
-
-const SITUACAO_ICONS: Record<string, typeof MapPin> = {
-  em_praca_apto: MapPin,
-  em_viagem_apto: Navigation,
-  inapto: Clock,
-  em_praca: MapPin,
-  em_viagem: Navigation,
-};
-
-const DIAS_SEMANA = [
-  { value: "segunda", label: "Segunda-feira" },
-  { value: "terca", label: "Terça-feira" },
-  { value: "quarta", label: "Quarta-feira" },
-  { value: "quinta", label: "Quinta-feira" },
-  { value: "sexta", label: "Sexta-feira" },
-  { value: "sabado", label: "Sábado" },
-  { value: "domingo", label: "Domingo" },
-];
 
 export default function Relatorios() {
   const { toast } = useToast();
@@ -274,22 +224,6 @@ export default function Relatorios() {
 
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
-
-  function formatDate(d: string | null) {
-    if (!d) return "—";
-    try {
-      return format(parseISO(d), "dd/MM/yyyy");
-    } catch {
-      return "—";
-    }
-  }
-
-  function docStatus(vencimento: string | null, numero: string | null) {
-    if (!numero && !vencimento) return { label: "Não cadastrado", variant: "secondary" as const };
-    if (!vencimento) return { label: "Sem validade", variant: "secondary" as const };
-    if (isPast(parseISO(vencimento))) return { label: "Vencido", variant: "destructive" as const };
-    return { label: "Regular", variant: "default" as const };
-  }
 
   // ─── PDF generation (returns jsPDF doc) ───
   function buildPdfDoc(): jsPDF {
@@ -551,91 +485,18 @@ export default function Relatorios() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Relatório Semanal</h1>
-            <p className="text-muted-foreground mt-1">
-              Geração, visualização e envio do relatório de motoristas
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={fetchDados} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
-            <Button variant="outline" size="sm" onClick={gerarExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Excel
-            </Button>
-            <Button variant="outline" size="sm" onClick={gerarPDF}>
-              <FileText className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-            <Button size="sm" onClick={enviarRelatorio} disabled={sending || (destinatarios.length === 0 && !novoEmail.trim())}>
-              <Send className={`h-4 w-4 mr-2 ${sending ? "animate-spin" : ""}`} />
-              Enviar
-            </Button>
-          </div>
-        </div>
+        <RelatoriosHeader
+          loading={loading}
+          sending={sending}
+          sendDisabled={sending || (destinatarios.length === 0 && !novoEmail.trim())}
+          onRefresh={fetchDados}
+          onExcel={gerarExcel}
+          onPdf={gerarPDF}
+          onEnviar={enviarRelatorio}
+        />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Transportadoras</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{resumo.totalTransportadoras}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Motoristas</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{resumo.totalMotoristas}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs text-muted-foreground">Aptos</span>
-              </div>
-              <p className="text-2xl font-bold mt-1 text-emerald-600">{resumo.aptos}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-destructive" />
-                <span className="text-xs text-muted-foreground">Inaptos</span>
-              </div>
-              <p className="text-2xl font-bold mt-1 text-destructive">{resumo.inaptos}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-blue-500" />
-                <span className="text-xs text-muted-foreground">Em Praça</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{resumo.emPraca}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2">
-                <Navigation className="h-4 w-4 text-amber-500" />
-                <span className="text-xs text-muted-foreground">Em Viagem</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{resumo.emViagem}</p>
-            </CardContent>
-          </Card>
-        </div>
+        <RelatorioResumoCards resumo={resumo} />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>

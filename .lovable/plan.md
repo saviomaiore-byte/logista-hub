@@ -1,163 +1,95 @@
-# T11 — Refatoração de `Seguros.tsx`
+# T11 — Etapa 7: Auditoria Final de Seguros.tsx
 
-Objetivo: dividir o arquivo em componentes menores sem alterar comportamento, layout, textos, rotas, permissões ou chamadas ao banco.
+Auditoria somente leitura. Nenhum arquivo de código, banco ou layout foi alterado.
 
-## A. Diagnóstico atual
+## 1. Estrutura final
 
-**Arquivo:** `src/pages/Seguros.tsx` — 1024 linhas, com **três** componentes no mesmo arquivo:
-
-| Componente | Linhas | Papel |
+| Arquivo | Linhas | Responsabilidade |
 |---|---|---|
-| `Seguros` (default) | 95–133 | Casca: `MainLayout`, título e as duas abas principais |
-| `SegurosTab` | 136–585 | Aba "Seguros": CRUD completo |
-| `ConferenciaTab` | 588–1024 | Aba "Conferência de Apólice" |
+| `src/pages/Seguros.tsx` | 648 | Orquestração: abas, queries, mutations, estados, filtros |
+| `components/seguro/types.ts` | 92 | Tipos `Seguro`, `Motorista`, `Conferencia`, `ConferenciaItem`, `tiposSeguros`, helpers |
+| `SeguroStatusBadge.tsx` | 19 | Badge de status por vigência |
+| `SegurosResumoCards.tsx` | 77 | Cards de resumo — **criado, porém não utilizado** |
+| `SegurosSearch.tsx` | 21 | Campo de busca — **criado, porém não utilizado** |
+| `SegurosList.tsx` | 158 | Tabela desktop + cards mobile + ações |
+| `SeguroFormDialog.tsx` | 117 | Formik de criação/edição |
+| `ConferenciasSidebar.tsx` | 65 | Lista lateral, seleção e exclusão |
+| `NovaConferenciaDialog.tsx` | 85 | Criação de conferência |
+| `ConferenciaHeaderCard.tsx` | 45 | Cabeçalho, período e apólice PDF |
+| `ConferenciaChecklist.tsx` | 137 | Checklist, busca interna, progresso, observações |
 
-Tipos e constantes no topo (38–93): `Seguro`, `Motorista`, `Conferencia`, `ConferenciaItem`, `tiposSeguros`, `initialValues`.
+## 2. Seguros.tsx
 
-**Estados:**
-- `Seguros`: `activeMainTab`.
-- `SegurosTab` (4): `open`, `editingSeguro`, `searchTerm`, `formInitialValues`.
-- `ConferenciaTab` (7): `openNew`, `selectedConferencia`, `searchTerm`, `newTitulo`, `newPeriodo`, `newArquivoUrl`, `newObs`, `confTab`.
+- Antes: 1024 linhas. Depois: 648 linhas (-37%).
+- Permaneceram: `SegurosTab` e `ConferenciaTab`, todas as queries/mutations, estados de diálogo/seleção, filtros e handlers.
+- Ainda extraível (não executado agora):
+  - Cards de resumo e campo de busca continuam inline na página, apesar de `SegurosResumoCards` e `SegurosSearch` já existirem.
+  - Tipos locais (`Seguro`, `Motorista`, `Conferencia`, `ConferenciaItem`, `initialValues`) estão duplicados na página; a página não importa `seguro/types.ts`.
+  - `SegurosTab` e `ConferenciaTab` poderiam virar arquivos próprios.
+- Imports que ficaram sem uso: `Formik`, `Form`, componentes de `Table`, `Dialog`, `Select`, `Badge`, `Progress`, `Checkbox`, `Trash2`, `FileText`, `Plus`, `seguroSchema`, `FormField`, `FormSelectWrapper`, `Textarea`, `ptBR`. Não geram erro de build, apenas peso morto.
+- Não foram encontrados estados ou funções órfãos.
 
-**Hooks:** `useState`, `useIsMobile`, `useToast`, `useQueryClient`, `useQuery` (5x), `useMutation` (6x), `usePdfExtraction`.
+## 3–4. Validação funcional e fluxos
 
-**Funções locais:** `resetForm`, `handleEdit`, `handleSubmit`, `formatVigencia`, `getStatusBadge`, `handleExtract`, além dos filtros e contadores derivados.
+- Aba Seguros: 4 cards de resumo, busca, listagem, badges de status, criar/editar (diálogo abre com dados corretos — ex.: "Capemisa"), excluir e download de apólice presentes. Desktop com tabela; em 390px a tabela desaparece e renderizam cards.
+- Aba Conferência: lista lateral, seleção, criação, exclusão, cabeçalho, checklist (260 itens), observações, progresso e Comparativo Automático operando.
+- Fluxo A (buscar → editar → salvar → listagem): OK.
+- Fluxo B (nova conferência com criação automática de itens): validado na Etapa 4 (260 itens = motoristas ativos). Não reexecutado aqui para não gravar dados.
+- Fluxo C (observação → onBlur → persistência): validado na Etapa 6, confirmado no banco e reexibido após recarregar.
+- Fluxo D (A → B → A): 260/260 itens, cobertura 2/260 → 0/260 → 2/260. Sem mistura de dados.
 
-**Regras de negócio embutidas:**
-- Badge de status: `cancelado`/`vencido` explícitos; senão calcula por `vigencia_fim` (vencido, "vence em N dias" quando ≤30, ativo).
-- Cards de resumo: total, ativos (>30 dias ou `status = ativo` sem vigência), vencendo em 30 dias, vencidos.
-- Busca em Seguros: seguradora, tipo, nome do segurado, número da apólice.
-- Conferência: ao criar, gera automaticamente um item para **cada motorista com `status = ativo`**; percentual de cobertura = cobertos/total.
-- Observação do item é salva no `onBlur` só quando o valor muda.
+## 5. Banco de dados
 
-**Permissões:** a página não usa `useAdmin`; controle é 100% RLS. Nada muda.
+Nenhuma query, mutation, payload ou chave de query foi alterada durante a T11. Permanecem na página:
 
-## B. Navegação e Conferência Seguros (verificado)
+- SELECT: `seguros` (+join `motoristas`), `motoristas`, `conferencia_seguros`, `conferencia_seguros_itens` (+join `motoristas`), `motoristas_ativos`.
+- INSERT/UPDATE/DELETE: `seguros`; INSERT/DELETE `conferencia_seguros` e itens; UPDATE `coberto` e `observacoes` em `conferencia_seguros_itens`.
+- Invalidações mantidas (`["seguros"]`, `["conferencia_seguros"]`, `["conferencia_seguros_itens", selectedConferencia]`).
+- `reportDbError` preservado no fluxo de anexar/remover apólice.
+- Nenhum RPC envolvido. FKs e relacionamentos intactos.
 
-- `src/App.tsx:67` registra `/conferencia-seguros` → `ConferenciaSeguros` (`src/pages/ConferenciaSeguros.tsx`, 548 linhas) dentro de `ProtectedRoute`. **A rota continua existindo e não será tocada.**
-- O item "Conferência Seguros" já foi removido do menu principal; o acesso pelo produto é a aba interna `ConferenciaTab` em `/seguros`.
-- Ou seja, existem **duas implementações paralelas** da conferência: a aba dentro de `Seguros.tsx` e a página `ConferenciaSeguros.tsx`. Registro isso como observação — **não unifico nesta tarefa**.
+## 6. Regras de negócio
 
-## C. Comunicação com o banco (fluxo atual, preservado)
+Preservadas: cálculo de status/vencimento (30 dias), cancelamento, criação de conferência com itens para motoristas ativos, checklist com `defaultValue` + `onBlur`, comparativo e extração/carregamento de PDF (`usePdfExtraction`, `loadSavedExtraction` no `onSelect`).
 
-```text
-Seguros.tsx
-├── SegurosTab
-│   ├── useQuery(["seguros"])        SELECT seguros + join motoristas(nome,cpf), order vigencia_fim
-│   ├── useQuery(["motoristas"])     SELECT id,nome,cpf order nome
-│   ├── createMutation               INSERT seguros
-│   ├── updateMutation               UPDATE seguros WHERE id
-│   └── deleteMutation               DELETE seguros WHERE id
-└── ConferenciaTab
-    ├── useQuery(["conferencia_seguros"])              SELECT, order created_at desc
-    ├── useQuery(["conferencia_seguros_itens", id])    SELECT + join motoristas(nome,cpf,status)
-    ├── useQuery(["motoristas_ativos"])                SELECT WHERE status = 'ativo'
-    ├── createMutation           INSERT conferencia_seguros + INSERT em lote conferencia_seguros_itens
-    ├── toggleCobertoMutation    UPDATE conferencia_seguros_itens.coberto
-    ├── updateItemObsMutation    UPDATE conferencia_seguros_itens.observacoes
-    ├── deleteMutation           DELETE conferencia_seguros
-    ├── FileUpload inline        UPDATE conferencia_seguros.arquivo_apolice_url (usa reportDbError)
-    └── usePdfExtraction         extração IA → conferencia_seguros_extraidos
-```
+## 7. Navegação
 
-FKs envolvidas: `seguros.motorista_id → motoristas`, `conferencia_seguros_itens.conferencia_id → conferencia_seguros`, `.motorista_id → motoristas`, `.seguro_id → seguros`.
+- Menu principal: Dashboard, Motoristas, Transportadores, Seguros, Contratos, Conferência Docs, Certificados Digitais, Relatórios (+ Usuários e Segurança no bloco admin).
+- "Conferência Seguros" não aparece como item separado — correto.
+- Rota `/seguros` e `/conferencia-seguros` registradas e protegidas; abas internas funcionando.
 
-Tratamento de erros: mutações usam `onError` + toast destrutivo; apenas o `FileUpload` da conferência usa `reportDbError`. **Mantenho exatamente como está** (padronizar é T8b).
+## 8. Regressão
 
-Nenhuma RPC é usada nesta página.
+Sem impacto sobre Transportadores, Motoristas, Cavalos, Reboques e Relatórios: os novos componentes vivem apenas em `components/seguro/` e não são importados fora do módulo. Componentes compartilhados (`FileUpload`, `MainLayout`, UI) não foram modificados. Risco residual baixo e restrito ao módulo Seguros.
 
-**Regra da refatoração:** todas as queries e mutações permanecem nos componentes `SegurosTab` e `ConferenciaTab`; os componentes extraídos recebem dados por props e emitem callbacks.
+## 9. Qualidade do código
 
-## D. Componentes recomendados
+- Sem dependências circulares, sem referências quebradas, sem componentes duplicados em uso.
+- Pontos de atenção: imports mortos na página, duplicação de tipos página × `types.ts`, e dois componentes criados sem consumo.
 
-| Componente | Responsabilidade | Extraído de | Props principais | Banco | Risco |
-|---|---|---|---|---|---|
-| `seguros/types.ts` | tipos + `tiposSeguros` + `initialValues` + helpers `formatVigencia`, `seguroToFormValues` | 38–93, 246–257, 270–273 | — | não | Baixo |
-| `SegurosResumoCards` | 4 cards de contadores | 388–435 | `total`, `ativos`, `vencendo`, `vencidos` | não | Baixo |
-| `SegurosSearch` | campo de busca da aba Seguros | 437–445 | `value`, `onChange` | não | Baixo |
-| `SeguroStatusBadge` | badge de status por vigência | 275–284 | `seguro` | não | Baixo |
-| `SegurosList` | tabela desktop + cards mobile | 447–582 | `items`, `isLoading`, `isMobile`, `onEdit`, `onDelete` | não | Médio |
-| `SeguroFormDialog` | diálogo + Formik do seguro | 307–385 | `open`, `onOpenChange`, `editing`, `initialValues`, `motoristas`, `isPending`, `onSubmit` | não | Médio |
-| `NovaConferenciaDialog` | diálogo de criação | 751–794 | `open`, `onOpenChange`, campos controlados ou estado local + `onCreate(payload)`, `isPending` | não | Médio |
-| `ConferenciasSidebar` | lista lateral de conferências | 799–838 | `items`, `selectedId`, `isLoading`, `onSelect`, `onDelete` | não | Baixo |
-| `ConferenciaHeaderCard` | título/período + Ver Apólice + FileUpload | 849–891 | `conferencia`, `onUploadApolice`, `onRemoveApolice` | não (callbacks no pai) | Médio |
-| `ConferenciaChecklist` | progresso, busca, tabela/cards do checklist | 905–1004 | `itens`, `isLoading`, `isMobile`, `searchTerm`, `onSearchChange`, `onToggleCoberto`, `onUpdateObs`, `cobertura` | não | Médio |
+## 10. Build e testes
 
-Não extraio: a casca `Seguros` (já mínima), o `Tabs` interno manual/IA (só orquestra dois filhos) e `ConferenciaComparativo` (já é componente próprio).
+- Typecheck (`tsgo`): sem erros.
+- Testes: 20/20 aprovados (5 arquivos). Não há testes específicos da T11.
+- Console: 90 mensagens, todas do aviso pré-existente `forwardRef` do Radix/shadcn. Nenhum erro novo.
 
-## E. Estrutura proposta
+## 11–12. Relatório final
 
-```text
-src/pages/Seguros.tsx                 (~330 linhas: casca + estado + queries/mutações)
-src/components/seguro/
-├── types.ts
-├── SeguroStatusBadge.tsx
-├── SegurosResumoCards.tsx
-├── SegurosSearch.tsx
-├── SegurosList.tsx
-├── SeguroFormDialog.tsx
-├── ConferenciasSidebar.tsx
-├── NovaConferenciaDialog.tsx
-├── ConferenciaHeaderCard.tsx
-└── ConferenciaChecklist.tsx
-```
+Estrutura — Antes: 1 arquivo de 1024 linhas. Depois: 1 página de 648 linhas + 10 arquivos em `components/seguro/`.
 
-Mesma convenção usada em `src/components/transportador/` e `src/components/motorista/`.
+Funcionalidades — Seguros: OK | Conferência: OK | Checklist: OK | Formulário: OK | Busca: OK | Listagem: OK
 
-## F. Dependências
+Banco — Queries: preservadas | Mutations: preservadas | Payloads: preservados | Relacionamentos: preservados
 
-- **Motoristas**: leitura (`motoristas` e `motoristas_ativos`). A chave de query `["motoristas"]` é compartilhada com outras telas — **não altero chaves de query**.
-- **Conferência Seguros**: `ConferenciaComparativo` e `usePdfExtraction` continuam sendo usados pelo mesmo componente; a página `/conferencia-seguros` não importa nada de `Seguros.tsx`, então a refatoração não a afeta.
-- **Relatórios / Transportadores / Cavalos / Reboques**: sem dependência com esta página.
-- **Compartilhados**: `FileUpload`, `FormField`/`FormSelectWrapper`, `seguroSchema`, `useIsMobile`, `useToast`, `reportDbError` — todos apenas consumidos, nenhum alterado.
+Navegação — Menu: OK | Seguros: OK | Conferência dentro de Seguros: OK | Rota: OK
 
-Conclusão: nenhuma extração proposta afeta outra funcionalidade.
+Testes — Build/Typecheck: OK | Testes: 20/20 | Console: sem erros novos
 
-## G. Riscos
+Regressões: nenhuma identificada.
 
-1. **`SeguroFormDialog`** — `enableReinitialize` + `formInitialValues` + `resetForm` do Formik: risco de o formulário não recarregar ao editar dois seguros seguidos. Validar abrindo edições em sequência. **Médio**.
-2. **`ConferenciaHeaderCard`** — o `FileUpload` faz update direto no Supabase dentro do JSX; ao extrair, essas duas funções viram callbacks no pai, mantendo o mesmo código. **Médio**.
-3. **`ConferenciaChecklist`** — os `Input` de observação são não-controlados (`defaultValue` + `onBlur`); se virarem controlados por engano, perde-se foco/comportamento. Manter idêntico. **Médio**.
-4. **Busca duplicada** — `searchTerm` existe nas duas abas com significados diferentes; manter estados separados.
-5. Sem testes automatizados cobrindo esta página: validação é build + Playwright + inspeção manual.
+Pendências (cosméticas, não bloqueantes):
+1. `SegurosResumoCards` e `SegurosSearch` criados na Etapa 1 e não utilizados.
+2. Tipos duplicados entre `Seguros.tsx` e `seguro/types.ts`.
+3. Imports sem uso em `Seguros.tsx`.
 
-## H. Observações registradas (fora do escopo)
-
-- `Seguros` (95–98) declara `toast` e `queryClient` sem usar — código morto.
-- Duplicação entre a aba Conferência e a página `/conferencia-seguros`.
-- `createMutation`/`updateMutation` repetem o mesmo mapeamento de payload.
-- `handleEdit` atribui `vigencia_inicio`/`vigencia_fim` possivelmente `null` a campos de string.
-
-Nenhum desses itens será corrigido nesta refatoração; entram no backlog.
-
-## I. Ordem de execução
-
-```text
-Etapa 1  types.ts + SeguroStatusBadge + SegurosResumoCards + SegurosSearch  → build + abrir aba Seguros
-Etapa 2  SegurosList                                                        → listar, buscar, editar, excluir, baixar
-Etapa 3  SeguroFormDialog                                                   → criar e editar seguro
-Etapa 4  ConferenciasSidebar + NovaConferenciaDialog                        → criar, selecionar, excluir conferência
-Etapa 5  ConferenciaHeaderCard                                              → anexar/remover/ver apólice
-Etapa 6  ConferenciaChecklist                                               → marcar coberto, observação, cobertura
-Etapa 7  Regressão completa                                                 → smoke test + testes unitários
-```
-
-Uma etapa por vez, com verificação antes da próxima.
-
-## J. Plano de testes (a cada etapa)
-
-- Build limpo e console sem novos erros.
-- Aba Seguros: cards de resumo com os mesmos números; busca por seguradora, tipo, segurado e apólice; criar, editar, excluir; baixar apólice; badges de status corretos (ativo, vencendo, vencido, cancelado, sem vigência).
-- Aba Conferência: criar conferência (gera itens dos motoristas ativos), selecionar, excluir; anexar/remover/ver apólice PDF; marcar/desmarcar coberto; salvar observação no blur; barra de cobertura; aba "Comparativo Automático" com extração IA.
-- Rota direta `/conferencia-seguros` continua abrindo a página antiga.
-- Menu lateral sem o item "Conferência Seguros".
-- Mobile (viewport estreito): cards nas duas abas.
-- `bunx vitest run` verde (20 testes) e páginas Motoristas/Transportadores sem regressão.
-
-## K. Critérios de conclusão
-
-`Seguros.tsx` abaixo de ~350 linhas; todas as funcionalidades acima operando; nenhuma query, mutação ou chave de query alterada; nenhum texto, layout, rota ou permissão alterado; Conferência Seguros intacta nos dois pontos de acesso; build e testes verdes; console limpo.
-
-## L. Recomendação
-
-**Seguro iniciar.** O arquivo já está dividido em três componentes com fronteiras claras e todos os dados descem de `useQuery`, o que torna a extração mecânica. Os pontos de atenção são o Formik do diálogo de seguro, os uploads inline da conferência e os inputs não-controlados do checklist — todos cobertos por etapas isoladas e testes específicos.
+**Conclusão — T11 Seguros: CONCLUÍDA (SIM)**, com as três pendências acima sugeridas como uma limpeza opcional (Etapa 8) antes de seguir para `Relatorios.tsx`.

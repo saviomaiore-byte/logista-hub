@@ -226,145 +226,14 @@ export default function Relatorios() {
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
 
-  // ─── PDF generation (returns jsPDF doc) ───
-  function buildPdfDoc(): jsPDF {
-    const doc = new jsPDF({ orientation: "landscape" });
-    const dataAtual = format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR });
-
-    doc.setFontSize(16);
-    doc.text("Relatório Semanal de Motoristas", 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${dataAtual}`, 14, 28);
-
-    let startY = 35;
-
-    dados.forEach((t) => {
-      if (startY > doc.internal.pageSize.getHeight() - 40) {
-        doc.addPage();
-        startY = 20;
-      }
-
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`${t.razao_social} — CNPJ: ${t.cpf_cnpj}`, 14, startY);
-      startY += 6;
-
-      if (t.motoristas.length === 0) {
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text("Nenhum motorista vinculado.", 14, startY);
-        startY += 10;
-        return;
-      }
-
-      const tableData = t.motoristas.map((m) => [
-        m.nome,
-        m.cpf,
-        m.apto ? "APTO" : "INAPTO",
-        m.status === "ativo" ? "Ativo" : "Inativo",
-        SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"] || "Em Praça",
-        m.tem_contrato ? "Sim" : "Não",
-        t.antt_numero ? "Sim" : "Não",
-        t.certificado_numero ? "Sim" : "Não",
-        t.alvara_numero ? "Sim" : "Não",
-        m.apto ? "" : m.motivos_inaptidao.join("; "),
-      ]);
-
-      autoTable(doc, {
-        startY,
-        head: [["Nome", "CPF", "Aptidão", "Status", "Situação", "Contrato", "ANTT", "Certificado", "Alvará", "Motivos Inaptidão"]],
-        body: tableData,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [34, 49, 74], textColor: 255, fontSize: 8 },
-        columnStyles: {
-          2: { fontStyle: "bold" },
-          9: { cellWidth: 50 },
-        },
-        didParseCell: (data) => {
-          if (data.column.index === 2 && data.section === "body") {
-            if (data.cell.raw === "INAPTO") {
-              data.cell.styles.textColor = [220, 38, 38];
-            } else {
-              data.cell.styles.textColor = [22, 163, 74];
-            }
-          }
-        },
-        margin: { left: 14, right: 14 },
-      });
-
-      startY = (doc as any).lastAutoTable.finalY + 12;
-    });
-
-    // Summary page
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.text("Resumo", 14, 20);
-
-    autoTable(doc, {
-      startY: 30,
-      head: [["Indicador", "Quantidade"]],
-      body: [
-        ["Total de Transportadoras", resumo.totalTransportadoras.toString()],
-        ["Total de Motoristas", resumo.totalMotoristas.toString()],
-        ["Motoristas Aptos", resumo.aptos.toString()],
-        ["Motoristas Inaptos", resumo.inaptos.toString()],
-        ["Em Praça", resumo.emPraca.toString()],
-        ["Em Viagem", resumo.emViagem.toString()],
-      ],
-      headStyles: { fillColor: [34, 49, 74] },
-      styles: { fontSize: 11 },
-    });
-
-    return doc;
-  }
-
-  // ─── Excel generation (returns workbook) ───
-  function buildExcelWorkbook(): XLSX.WorkBook {
-    const wb = XLSX.utils.book_new();
-
-    dados.forEach((t) => {
-      const sheetData = t.motoristas.map((m) => ({
-        Nome: m.nome,
-        CPF: m.cpf,
-        Aptidão: m.apto ? "APTO" : "INAPTO",
-        Status: m.status === "ativo" ? "Ativo" : "Inativo",
-        "Situação Operacional": SITUACAO_LABELS[t.situacao_operacional || "em_praca_apto"] || "Em Praça",
-        "Contrato Assinado": m.tem_contrato ? "Sim" : "Não",
-        "ANTT (Transportadora)": t.antt_numero ? "Sim" : "Não",
-        "Certificado (Transportadora)": t.certificado_numero ? "Sim" : "Não",
-        "Alvará (Transportadora)": t.alvara_numero ? "Sim" : "Não",
-        "CNH Nº": m.cnh_numero || "",
-        "CNH Vencimento": formatDate(m.cnh_vencimento),
-        "Motivos Inaptidão": m.motivos_inaptidao.join("; "),
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(sheetData);
-      const sheetName = t.razao_social.substring(0, 31).replace(/[\\\/\?\*\[\]]/g, "");
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    });
-
-    const summaryData = [
-      { Indicador: "Total de Transportadoras", Quantidade: resumo.totalTransportadoras },
-      { Indicador: "Total de Motoristas", Quantidade: resumo.totalMotoristas },
-      { Indicador: "Motoristas Aptos", Quantidade: resumo.aptos },
-      { Indicador: "Motoristas Inaptos", Quantidade: resumo.inaptos },
-      { Indicador: "Em Praça", Quantidade: resumo.emPraca },
-      { Indicador: "Em Viagem", Quantidade: resumo.emViagem },
-    ];
-    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo");
-
-    return wb;
-  }
-
   function gerarPDF() {
-    const doc = buildPdfDoc();
+    const doc = buildPdfDoc(dados, resumo);
     doc.save(`relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     toast({ title: "PDF gerado com sucesso!" });
   }
 
   function gerarExcel() {
-    const wb = buildExcelWorkbook();
+    const wb = buildExcelWorkbook(dados, resumo);
     XLSX.writeFile(wb, `relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
     toast({ title: "Excel gerado com sucesso!" });
   }
@@ -372,7 +241,7 @@ export default function Relatorios() {
   // ─── Preview functions ───
   function gerarPreviewPDF() {
     if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-    const doc = buildPdfDoc();
+    const doc = buildPdfDoc(dados, resumo);
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     setPdfPreviewUrl(url);
@@ -380,7 +249,7 @@ export default function Relatorios() {
   }
 
   function gerarPreviewExcel() {
-    const wb = buildExcelWorkbook();
+    const wb = buildExcelWorkbook(dados, resumo);
     const sheetsData: Record<string, any[][]> = {};
     wb.SheetNames.forEach((name) => {
       const ws = wb.Sheets[name];
@@ -393,12 +262,12 @@ export default function Relatorios() {
 
   // ─── Get base64 for sending ───
   function getPdfBase64(): string {
-    const doc = buildPdfDoc();
+    const doc = buildPdfDoc(dados, resumo);
     return doc.output("datauristring").split(",")[1];
   }
 
   function getExcelBase64(): string {
-    const wb = buildExcelWorkbook();
+    const wb = buildExcelWorkbook(dados, resumo);
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "base64" });
     return wbout;
   }

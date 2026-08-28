@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -26,10 +26,11 @@ import {
   Send
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { documentoEmpresaSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
+import { useDocumentosEmpresa, useCriarDocumentoEmpresa } from "@/hooks/useDocumentosEmpresa";
+
 
 interface DocumentoEmpresa {
   id: string;

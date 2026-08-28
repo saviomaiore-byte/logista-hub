@@ -1,184 +1,128 @@
-# Auditoria Final / Pós-Backlog — Pactum Logística
+# Ciclo de correções pré-produção — diagnóstico e plano (5 itens)
 
-Diagnóstico apenas. Nenhum arquivo, migração, policy ou registro foi alterado.
+Diagnóstico concluído. Nenhum arquivo, dado, policy ou RLS foi alterado nesta fase.
 
-## Escopo real desta auditoria
+## Etapa 1 — `created_by` nulo
 
-Verificado nesta rodada: código-fonte (estático), estrutura, hooks React Query, tratamento de erros, `package.json`, banco (contagens, policies, defaults, órfãos), build/typecheck/testes.
+### O que foi medido agora
 
-Não re-executado nesta rodada: passagem interativa tela a tela no navegador (Fluxos 1–6, previews de PDF/Excel, upload/download). Essa validação foi feita na regressão final da T12 e passou; se quiser, executo agora como etapa separada de verificação em runtime.
-
-## 1. Arquitetura
-
-Estrutura está coerente: `pages/` finas, `components/<entidade>/`, `hooks/` por entidade, `lib/` com regras puras (`aptidao`, `masks`, `dbError`, `passwordPolicy`, `storage`). T11 e T12 cumpriram o objetivo na maior parte do sistema.
-
-| # | Achado | Sev |
+| Tabela | Nulos | Total |
 |---|---|---|
-| A1 | `Relatorios.tsx` (440 linhas) ficou fora da T12: consulta `relatorio_config`, `transportadores`, `transportador_motoristas`, `motoristas` e `contratos` direto pelo cliente, sem React Query, sem hook e sem cache compartilhado | 🟠 |
-| A2 | `MotoristaAnexos.tsx` (265) e `TransportadorAnexos.tsx` (262) são praticamente o mesmo componente duplicado, mais `FileUpload.tsx` com terceira variação de upload | 🟡 |
-| A3 | Páginas ainda grandes: `Contratos.tsx` 535, `Seguros.tsx` 515, `ConferenciaSeguros.tsx` 464, `ConferenciaComparativo.tsx` 416, `Conferencia.tsx` 356 | 🟡 |
-| A4 | `tsconfig` com `strictNullChecks: false`, `noImplicitAny: false`, `noUnusedLocals: false` — typecheck não detecta null nem imports mortos | 🟡 |
-| A5 | 44 ocorrências de `as any`, concentradas em `Relatorios.tsx` (9), `Seguros.tsx` (7), `Transportadores.tsx` (6) — os tipos gerados existem e não estão sendo usados | 🟡 |
-| A6 | Sem ciclos de dependência detectados; sem código morto relevante fora do já conhecido (`DocumentosEmpresa` mantida propositalmente oculta) | 🟢 |
+| motoristas | 249 | 305 |
+| transportadores | 126 | 137 |
+| contratos | 26 | 910 |
+| cavalos | 7 | 10 |
+| reboques | 1 | 1 |
+| seguros | 1 | 1 |
+| certificados / documentos_empresa / conferencia_seguros / relatorio_config | 0 | — |
 
-## 2. React Query
+**O número real é 410, não 375.** A auditoria anterior contou apenas motoristas e transportadores; contratos, cavalos, reboques e seguros também têm registros legados.
 
-Chaves estáveis, exportadas como constantes por hook; nenhum conflito de cache identificado.
+### Policies que dependem de `created_by`
 
-- Invalidação cruzada correta em `useTransportadores`: vínculos invalidam `transportadorVinculosKey` **e** `motoristaVinculosKey`.
-- `useUsuarios` usa `enabled: isAdmin` corretamente.
-- 🟠 **Lacuna real:** `Relatorios.tsx` lê motoristas/transportadores/contratos por fora do cache. Qualquer mutation nessas entidades não reflete no relatório sem recarregar a página.
-- 🟡 `useConferenciaSeguros`: exclusão de conferência invalida `conferenciasKey`, mas não remove/invalida `conferenciaItensKey(id)` — cache órfão de itens permanece até o GC.
-- Consultas diretas restantes fora dos hooks e sua justificativa:
+Padrão idêntico nas 10 tabelas: SELECT `true` · INSERT `with_check (created_by = auth.uid())` · UPDATE `created_by = auth.uid() OR has_role(auth.uid(),'admin')` · DELETE `has_role(...,'admin')`.
 
-| Local | Chamada | Justificada? |
-|---|---|---|
-| `Relatorios.tsx` 88–160 | `relatorio_config`, 4 tabelas de negócio | ❌ Não — pendência da T12 |
-| `MotoristaAnexos` / `TransportadorAnexos` / `FileUpload` | `supabase.storage` | ✅ Sim — Storage não é PostgREST |
-| `Relatorios.tsx` 315 | `functions.invoke("send-report-email")` | ✅ Sim — Edge Function |
-| `usePdfExtraction` | `functions.invoke("extract-apolice")` + tabela de extraídos | ✅ Sim, mas fora do padrão React Query |
-| `AuthContext`, `Auth`, `Seguranca`, `MfaEnroll/Verify`, `useAdmin` | `supabase.auth` | ✅ Sim |
+`created_by` tem `DEFAULT auth.uid()` em todas elas — nenhum código do frontend envia o campo, o banco preenche. Inserções novas estão corretas; só o legado importado por SQL em lote ficou nulo.
 
-## 3. reportDbError
+### Contexto que muda a urgência
 
-Presente em todos os 8 hooks de entidade e em `Index.tsx`/`Relatorios.tsx`.
+Os 3 usuários cadastrados hoje (`enzo.castro`, `atendimento`, `savio.paula`) são **todos admin**. Ou seja, hoje ninguém é bloqueado — o problema é latente e só aparece no primeiro usuário comum.
 
-- 🟡 Fluxos de Storage (upload/remove) não passam por tratamento centralizado — usam `toast` ad-hoc com textos próprios.
-- 🟡 `usePdfExtraction` usa `console.error` + `catch` genérico e engole o erro no `loadSavedExtraction` (retorna `false` sem avisar o usuário).
-- 🟡 Mensagens inconsistentes: parte do sistema usa `sonner` (`toast.error`), parte usa `useToast` (`variant: "destructive"`) — dois sistemas de toast ativos ao mesmo tempo.
+### Alternativas
 
-## 4. Banco
+**A) Backfill** — atribuir os 410 registros a um admin.
+- Segurança: neutra. Passa a existir "dono" nominal que não criou o registro.
+- RLS: nenhuma mudança.
+- Rollback: exige registrar previamente os IDs afetados (todos já identificáveis por `created_by IS NULL`); depois do backfill não há mais como distinguir legado de real sem esse snapshot.
+- Risco: baixo, mas é alteração de dados em 410 linhas e dispara os triggers de auditoria (410 linhas novas em `audit_log`).
 
-Contagens atuais: 137 transportadores, 305 motoristas, 910 contratos, 1 seguro, 1 `relatorio_config`, 5.716 linhas em `audit_log`. Nenhum vínculo órfão em `transportador_motoristas`; nenhum seguro sem motorista.
+**B) Ajustar policy de UPDATE** — aceitar também `created_by IS NULL`.
+- Segurança: qualquer autenticado passa a poder editar registros legados. DELETE continua só admin.
+- RLS: 6 policies alteradas (uma por tabela com legado).
+- Rollback: trivial — recriar a policy anterior.
+- Risco: baixo estruturalmente, mas amplia permissão de escrita sobre 410 registros.
 
-- 🔴 **`created_by` nulo em massa:** 249 de 305 motoristas e 126 de 137 transportadores têm `created_by IS NULL` (importação SQL em lote). Consequência direta na seção 5.
-- 🟠 `relatorio_config` continua com `.limit(1)` **sem `.order(...)`** em `Relatorios.tsx:88-91`. Hoje só existe 1 linha, então não há bug visível — mas nada no schema impede uma segunda linha (sem unique/constraint), e `saveConfig` insere nova linha sempre que `configId` estiver vazio. Se surgir uma segunda linha, a configuração exibida passa a ser não determinística.
-- 🟢 `created_by` tem default `auth.uid()` em todas as 10 tabelas relevantes — inserts novos ficam corretos.
-- 🟢 `audit_log` cresce sem política de retenção nem consumo no frontend.
+### Recomendação
 
-## 5. RLS / Segurança
+**Alternativa A (backfill)**, restrita às 6 tabelas com nulos, atribuindo a `enzo.castro@maiore.com.br` (admin que conduziu a importação). Motivos: não enfraquece nenhuma policy, mantém o modelo de autorização com uma regra só, corrige a causa em vez do sintoma e deixa o dado consistente para auditoria. Antes de executar, apresento a lista de IDs afetados por tabela para rollback.
 
-Padrão aplicado consistentemente nas tabelas verificadas (`motoristas`, `transportadores`, `contratos`, `cavalos`, `relatorio_config`, `conferencia_seguros_itens`):
-SELECT `true` para autenticados · INSERT `created_by = auth.uid()` · UPDATE criador ou admin · DELETE somente admin.
+## Etapa 2 — UI x permissões
 
-- 🔴 **Divergência frontend × banco:** a UI mostra "Editar" para todo usuário autenticado, mas o banco recusa UPDATE em 249 motoristas e 126 transportadores importados (`created_by NULL`). Um usuário comum recebe erro de permissão ao editar quase todo o cadastro legado. Só o admin consegue.
-- 🟠 Mesma divergência no DELETE: botão de excluir é exibido a não-admins, e a policy só permite admin.
-- 🟢 `conferencia_seguros_itens` valida propriedade via `EXISTS` na conferência-pai — correto.
-- 🟢 Bucket `documentos` privado, acesso via URL assinada em `lib/storage.ts` (expiração de 1h).
-- ⚪ `extract-apolice` com `verify_jwt = true` e validação de claims — ok.
+`useAdmin` hoje é usado em apenas 3 lugares: `Sidebar` (itens de menu admin), `Usuarios` (bloqueia a página) e `Seguranca` (redireciona). Nenhuma lista de CRUD consulta permissão.
 
-## 6. Autenticação
+Ações de editar/excluir renderizadas incondicionalmente em: `MotoristasList`, `TransportadoresList`, `CavalosList`, `ReboquesList`, `SegurosList`, `ConferenciasSidebar`, `Contratos`, `Certificados`, `Seguros`, `ContratoAnexos`, `MotoristaAnexos`, `TransportadorAnexos`.
 
-`ProtectedRoute`/`PublicRoute` cobrem todas as rotas de negócio; `/reset-password` é pública por design. MFA TOTP, política de senha e rate limiting no login presentes. Restrição `@maiore.com.br` aplicada no trigger `handle_new_user`.
+Divergência real: **DELETE é exclusivo de admin no banco em todas as tabelas**, e a UI mostra o botão para todos. UPDATE é permitido a criador ou admin — depois da Etapa 1, o não-admin edita o que criou e é bloqueado no resto.
 
-- 🟡 `/documentos-empresa` continua protegida e funcional, apenas oculta no menu — acessível por URL direta a qualquer autenticado (decisão de produto já registrada).
-- 🟡 Não há verificação de expiração de sessão além do refresh automático do SDK.
+Abordagem proposta (mínima, sem componentes novos):
+- Expor `isAdmin` já existente nas listas via prop.
+- Ocultar a ação de excluir quando `!isAdmin`.
+- Manter a edição visível: com a Etapa 1 aplicada, o não-admin ainda não poderá editar registro de terceiros, mas isso é caso legítimo de erro de permissão, com mensagem já tratada por `reportDbError`.
+- Nenhuma RLS enfraquecida; RLS permanece a camada definitiva.
 
-## 7–10. Telas, fluxos, PDF/Excel, Storage
+Teste: admin (tudo visível), usuário comum (sem excluir), registro próprio, registro legado pós-backfill, tentativa bloqueada.
 
-Estado conforme a regressão da T12 (aprovada): todas as rotas carregam, buscas funcionam, conferência persiste itens e toggles, relatórios geram e pré-visualizam PDF e Excel, destinatário `savio.paula@maiore.com.br` persistido, upload/download de anexos com URL assinada. Não re-testado interativamente nesta rodada.
+## Etapa 3 — `relatorio_config`
 
-- 🟡 Exclusão de anexo remove o arquivo do Storage e depois a linha; se a segunda etapa falhar, sobra registro apontando para arquivo inexistente (sem transação).
-- 🟡 Não há rotina de detecção de arquivos órfãos no bucket.
+Estado atual: **1 única linha**, `created_by` preenchido, destinatário `savio.paula@maiore.com.br`, `envio_automatico = true`. Nada duplicado, nada a apagar.
 
-## 11. CSP
+Problemas confirmados no código (`src/pages/Relatorios.tsx`):
+- Linha 88-91: `.select("*").limit(1).maybeSingle()` sem `.order(...)` → leitura não determinística se surgir uma segunda linha.
+- Linha 129: `insert` sempre que `configId` estiver vazio → é o que pode criar a segunda linha (ex.: falha transitória no `fetchConfig`).
 
-Produção (via plugin `production-csp` no `vite.config.ts`): sem `unsafe-eval`, sem `unsafe-inline` em `script-src`, `worker-src 'self' blob:`, `frame-src 'self' blob: https://*.supabase.co`.
+Solução proposta (duas partes, ambas mínimas):
+1. Adicionar `.order("updated_at", { ascending: false })` antes do `.limit(1)` — leitura determinística.
+2. Índice único parcial garantindo linha única na tabela (migração), impedindo a criação de uma segunda configuração na origem.
 
-- ⚪ `frame-ancestors` entregue por `<meta>` é ignorado pelo navegador — proteção real depende de header HTTP no hosting. Observação, não correção.
-- 🟡 `style-src` mantém `unsafe-inline` (necessário para Tailwind/Radix).
+Nenhum campo alterado, nenhum registro apagado; a linha existente é preservada integralmente.
 
-## 12. Dependências
+## Etapa 4 — invalidação da Conferência
 
-- 🟢 Candidatas novas: `zod` (nenhum import em `src/`, incluindo `ui/`) e `@tailwindcss/typography` (não referenciado). Apenas registrado.
-- ⚪ `react-hook-form`, `recharts`, `vaul`, `cmdk`, `input-otp`, `next-themes`, `embla-carousel-react`, `react-resizable-panels`, `react-day-picker` são usados exclusivamente por componentes `src/components/ui/*` — manter.
-- ⚪ Dois sistemas de toast (`sonner` + `ui/toaster`) coexistem por decisão histórica.
+Investigado o código real:
 
-## 13. Performance
+```
+conferenciasKey       = ["conferencia-seguros"]
+conferenciaItensKey(id) = ["conferencia-seguros", "itens", id]
+```
 
-- 🟡 `Relatorios.tsx` carrega 305 motoristas + 137 transportadores + 910 contratos sem paginação a cada abertura, e sem cache.
-- 🟡 Listas de Motoristas (305) e Contratos (910) renderizam sem virtualização.
-- 🟡 Criação de conferência insere ~260 itens em lote — aceitável, mas é o ponto mais pesado do app.
-- ⚪ Sem code-splitting por rota; `pdfjs-dist`, `jspdf` e `xlsx` entram no bundle inicial.
+Como a chave dos itens é **prefixada** pela chave da lista, o `invalidateQueries({ queryKey: conferenciasKey })` já existente em `useExcluirConferencia` **já invalida também os itens**, por prefix matching do React Query. Ou seja, o item do backlog estava superestimado: não há risco de "aparecer itens antigos ao abrir outra conferência" — cada conferência tem chave própria e a lista inteira é invalidada.
 
-## 14. Acessibilidade
+O que de fato sobra: o cache da conferência excluída permanece em memória até o garbage collector. Correção proposta, de uma linha:
 
-- 🟡 `Badge` sem `forwardRef` recebendo ref em `TransportadoresList` — warning real no console.
-- 🟡 `<button>` dentro de `<button>` em `ConferenciasSidebar.tsx:53` (botão de excluir dentro do item clicável da lista) — HTML inválido, confirmado.
-- 🟡 Vários inputs sem `label` associado por `htmlFor`/`id` nos diálogos de formulário.
+```ts
+queryClient.removeQueries({ queryKey: conferenciaItensKey(id) });
+```
 
-## 15. Console
+Sem alterar payload, mutation, regra de negócio ou qualquer outra chave.
 
-Apenas 2 famílias de warnings, ambas pré-existentes e de origem identificada: `forwardRef` no `Badge` e aninhamento de botões na sidebar de conferências. Zero erros de runtime. As mensagens `Unknown message type: lovable-preview-auth:result` vêm do ambiente de preview, não da aplicação.
+## Etapa 5 — `frame-ancestors` como header HTTP
 
-## 16. Testes
+Verificado: o projeto **não possui** nenhum arquivo de configuração de hosting (`vercel.json`, `netlify.toml`, `_headers`, `nginx.conf`, `staticwebapp.config.json`) e `public/` contém apenas `favicon.ico`, `placeholder.svg` e `robots.txt`. O build é servido pela hospedagem da plataforma, que não é controlada por arquivos do repositório.
 
-`vitest run`: **20/20 passando** (5 arquivos). Typecheck limpo. Build ok.
+Conclusão: **não há forma segura de aplicar o header pelo código do projeto.** Criar um `_headers` ou `vercel.json` seria configuração inventada para um servidor que o projeto não controla — inerte e enganosa.
 
-- 🟠 Cobertura restrita a `lib/` puro (`masks`, `passwordPolicy`, `dbError`, `aptidao`). Zero testes para hooks React Query, geração de PDF/Excel, regras de relatório e componentes.
+Observação adicional relevante: aplicar `frame-ancestors 'self'` como header real **quebraria o preview do Lovable**, que carrega a aplicação em iframe de outra origem. Se um dia for aplicado no hosting, o valor deve contemplar a origem do preview.
 
-## 18. Classificação final
+Ação proposta para esta etapa: **nenhuma alteração de código**. Apenas registrar em `docs/arquitetura.md` que a proteção contra clickjacking depende de header HTTP no hosting e que `frame-ancestors` na meta é declarativo. Se preferir, deixo também esta etapa como "somente registro" sem tocar na documentação.
 
-| Problema | Arquivo | Sev | Impacto | Recomendação |
+## Ordem de execução e verificação
+
+1. Etapa 1 — backfill de `created_by` (migração de dados, com lista de IDs para rollback apresentada antes)
+2. Etapa 2 — UI x permissões (esconder excluir para não-admin)
+3. Etapa 3 — `.order()` + índice único em `relatorio_config`
+4. Etapa 4 — `removeQueries` na exclusão de conferência
+5. Etapa 5 — registro documental do `frame-ancestors`
+
+Após cada etapa: build, typecheck, Vitest (baseline 20/20), console sem erros novos, validação funcional específica, e relatório de arquivos alterados / banco alterado ou não / RLS alterada ou não / payloads alterados ou não / regressões. Parada obrigatória para aprovação entre etapas.
+
+## Resumo de impacto por etapa
+
+| Etapa | Código | Banco (dados) | RLS/Policies | Payloads |
 |---|---|---|---|---|
-| 375 registros com `created_by` nulo bloqueiam UPDATE de não-admins | banco (`motoristas`, `transportadores`) | 🔴 | Usuário comum não edita o cadastro legado | Atribuir `created_by` ao admin ou flexibilizar a policy |
-| UI oferece Editar/Excluir que o banco recusa | listas de todas as entidades | 🔴 | Erro de permissão como experiência padrão | Ocultar/desabilitar ações conforme `useAdmin` + autoria |
-| Relatórios fora do React Query | `src/pages/Relatorios.tsx` | 🟠 | Dados desatualizados, sem cache | Criar `useRelatorios` + `useRelatorioConfig` |
-| `.limit(1)` sem `.order()` em `relatorio_config` | `Relatorios.tsx:88` | 🟠 | Config não determinística se surgir 2ª linha | `.order("updated_at", { ascending: false })` + unique |
-| `conferenciaItensKey` não invalidada ao excluir conferência | `useConferenciaSeguros.ts:172` | 🟡 | Cache órfão | Adicionar `removeQueries` |
-| Componentes de anexo duplicados | `MotoristaAnexos` / `TransportadorAnexos` | 🟡 | Manutenção dobrada | Extrair `useAnexos` genérico |
-| Storage sem `reportDbError` | 3 componentes | 🟡 | Mensagens inconsistentes | Padronizar |
-| `strictNullChecks` desligado + 44 `as any` | `tsconfig`, páginas | 🟡 | Bugs de null passam no typecheck | Ativar gradualmente |
-| Sem testes de hooks/relatórios | `src/test/` | 🟠 | Refatorações futuras sem rede de segurança | Testar hooks e builders |
-| `<button>` dentro de `<button>` | `ConferenciasSidebar.tsx:53` | 🟡 | HTML inválido, a11y | Trocar item por `div` + `role` |
-| `Badge` sem `forwardRef` | `ui/badge.tsx` | 🟡 | Warning | `React.forwardRef` |
-| Anexo órfão em falha parcial | anexos | 🟡 | Registro sem arquivo | Reordenar operações |
-| `audit_log` sem retenção nem UI | banco | 🟢 | Crescimento indefinido | Política de expurgo |
-| `zod` e `@tailwindcss/typography` sem uso | `package.json` | 🟢 | Bundle/ruído | Avaliar remoção |
-| Sem code-splitting; bundle inicial pesado | build | 🟢 | Carga inicial | Lazy nas rotas pesadas |
-| `frame-ancestors` inerte em `<meta>` | `index.html` | ⚪ | Sem clickjacking protection real | Header no hosting |
+| 1 | Não | Sim — 410 linhas | Não | Não |
+| 2 | Sim — listas/props | Não | Não | Não |
+| 3 | Sim — 1 linha em `Relatorios.tsx` | Não (só índice) | Não | Não |
+| 4 | Sim — 1 linha em `useConferenciaSeguros.ts` | Não | Não | Não |
+| 5 | Só documentação | Não | Não | Não |
 
-Agrupamento: 🔴 2 · 🟠 4 · 🟡 8 · 🟢 3 · ⚪ 1.
-
-## 19. Veredito
-
-**🟡 PRONTO COM PENDÊNCIAS.**
-
-O projeto está tecnicamente saudável e sustentável: arquitetura clara, erros centralizados, RLS coerente, CSP endurecida, build e testes verdes. O que impede o 🟢 é um problema **de dados, não de código**: a importação em massa deixou 375 registros sem `created_by`, e a policy de UPDATE exige criador ou admin — na prática, apenas o admin consegue editar o cadastro legado, enquanto a interface segue oferecendo essas ações a todos.
-
-- Arquiteturalmente saudável? **Sim**, com `Relatorios.tsx` como exceção.
-- React Query consistente? **Quase** — falta Relatórios e uma invalidação de itens de conferência.
-- Erros centralizados? **Sim** no banco; **não** no Storage e na extração de PDF.
-- Riscos no banco? **Sim** — `created_by` nulo e ausência de unique em `relatorio_config`.
-- Segurança adequada? **Sim** (RLS, bucket privado, JWT na Edge Function, MFA, política de senha).
-- CSP adequada? **Sim**, com `frame-ancestors` dependente de header no hosting.
-- Bugs funcionais conhecidos? **Sim** — edição negada a não-admins nos registros importados.
-- Performance relevante? **Moderada** — Relatórios e listas grandes sem paginação.
-- Acessibilidade relevante? **Sim, leve** — botão aninhado e labels.
-- Alteração obrigatória antes de produção? **Sim**: resolver o `created_by` nulo **ou** alinhar a UI às permissões reais. Todo o resto é evolutivo.
-
-## 20. Backlog pós-auditoria
-
-**P1 — Crítico**
-1. `created_by` nulo em 375 registros — banco (`motoristas`, `transportadores`). Risco: usuário comum não edita cadastro legado. Solução: backfill com o usuário admin ou policy que também aceite `created_by IS NULL`. Sem dependências. Complexidade: baixa.
-2. UI x permissões — listas e diálogos de todas as entidades. Risco: erro de permissão como comportamento normal. Solução: derivar visibilidade de Editar/Excluir de `useAdmin` + autoria. Depende do item 1. Complexidade: média.
-
-**P2 — Alto**
-3. `useRelatorios` / `useRelatorioConfig` — `src/pages/Relatorios.tsx`. Risco: dados obsoletos. Complexidade: média.
-4. `.limit(1)` sem `.order()` + ausência de unique em `relatorio_config`. Complexidade: baixa.
-5. Testes de hooks React Query e dos builders de PDF/Excel. Complexidade: média.
-
-**P3 — Médio**
-6. `useAnexos` unificado (Motorista/Transportador/FileUpload). Complexidade: média.
-7. Padronizar erros de Storage via `reportDbError` e unificar o sistema de toast. Complexidade: baixa.
-8. Invalidar `conferenciaItensKey` na exclusão de conferência. Complexidade: trivial.
-9. Ativar `strictNullChecks` e eliminar `as any` gradualmente. Complexidade: alta.
-
-**P4 — Baixo**
-10. Corrigir `<button>` aninhado e `forwardRef` do `Badge`. Complexidade: trivial.
-11. Retenção/expurgo de `audit_log`. Complexidade: baixa.
-12. Avaliar remoção de `zod` e `@tailwindcss/typography`. Complexidade: trivial.
-13. Code-splitting das rotas pesadas (PDF/Excel). Complexidade: média.
-14. `frame-ancestors` como header HTTP no hosting. Complexidade: baixa.
-
-Nenhuma alteração foi aplicada. Aguardando sua decisão sobre o que entra no próximo ciclo.
+Nada foi implementado. Aguardando aprovação para iniciar a Etapa 1.

@@ -9,6 +9,7 @@ import {
 import { Building2, Edit, FileText, Mail, MapPin, MoreHorizontal, Phone, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Motorista, Transportadora } from "./types";
+import { usePermissoes } from "@/hooks/usePermissoes";
 
 type Props = {
   loading: boolean;
@@ -47,6 +48,7 @@ export function MotoristasList({
   onDocs,
   onDelete,
 }: Props) {
+  const { isAdmin, podeEditar } = usePermissoes();
   const renderVinculos = (motoristaId: string) =>
     vinculos[motoristaId]?.length > 0 ? (
       <div className="flex flex-wrap gap-1 mt-1">
@@ -96,15 +98,19 @@ export function MotoristasList({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(motorista)}>
-                      <Edit className="h-4 w-4 mr-2" /> Editar
-                    </DropdownMenuItem>
+                    {podeEditar(motorista) && (
+                      <DropdownMenuItem onClick={() => onEdit(motorista)}>
+                        <Edit className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => onDocs(motorista)}>
                       <FileText className="h-4 w-4 mr-2" /> Documentos
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(motorista.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                    </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(motorista.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -197,12 +203,16 @@ export function MotoristasList({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(motorista)}>
-                      <Edit className="h-4 w-4 mr-2" /> Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(motorista.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                    </DropdownMenuItem>
+                    {podeEditar(motorista) && (
+                      <DropdownMenuItem onClick={() => onEdit(motorista)}>
+                        <Edit className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                    )}
+                    {isAdmin && (
+                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(motorista.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </td>

@@ -6,6 +6,7 @@ import {
 import { Download, Pencil, Shield, Trash2 } from "lucide-react";
 import { SeguroStatusBadge } from "./SeguroStatusBadge";
 import { formatVigencia, type Seguro } from "./types";
+import { usePermissoes } from "@/hooks/usePermissoes";
 
 interface SegurosListProps {
   seguros: Seguro[] | undefined;
@@ -16,6 +17,7 @@ interface SegurosListProps {
 }
 
 export function SegurosList({ seguros, isLoading, isMobile, onEdit, onDelete }: SegurosListProps) {
+  const { isAdmin, podeEditar } = usePermissoes();
   if (isMobile) {
     return (
       <div className="space-y-3">
@@ -62,12 +64,16 @@ export function SegurosList({ seguros, isLoading, isMobile, onEdit, onDelete }: 
                     <Button variant="ghost" size="sm"><Download className="h-4 w-4 mr-1" /> Baixar</Button>
                   </a>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => onEdit(seguro)}>
-                  <Pencil className="h-4 w-4 mr-1" /> Editar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => onDelete(seguro.id)}>
-                  <Trash2 className="h-4 w-4 mr-1 text-destructive" />
-                </Button>
+                {podeEditar(seguro) && (
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(seguro)}>
+                    <Pencil className="h-4 w-4 mr-1" /> Editar
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(seguro.id)}>
+                    <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                  </Button>
+                )}
               </div>
             </div>
           ))
@@ -140,12 +146,16 @@ export function SegurosList({ seguros, isLoading, isMobile, onEdit, onDelete }: 
                         </Button>
                       </a>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(seguro)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDelete(seguro.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {podeEditar(seguro) && (
+                      <Button variant="ghost" size="icon" onClick={() => onEdit(seguro)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(seguro.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

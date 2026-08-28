@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Eye, Loader2, File, Image } from "lucide-react";
@@ -26,6 +27,7 @@ interface MotoristaAnexosProps {
 }
 
 export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosProps) {
+  const { isAdmin } = usePermissoes();
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -224,15 +226,17 @@ export function MotoristaAnexos({ motoristaId, motoristaNome }: MotoristaAnexosP
                     <Eye className="h-4 w-4" />
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(arq)}
-                  title="Excluir"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(arq)}
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           ))}

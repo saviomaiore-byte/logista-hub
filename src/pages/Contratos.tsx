@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { openSignedFile } from "@/lib/storage";
 import { FormSelectWrapper } from "@/components/form/FormField";
 import {
@@ -73,6 +74,7 @@ const modeloOptions = [
 ];
 
 export default function Contratos() {
+  const { isAdmin, podeEditar } = usePermissoes();
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
@@ -262,17 +264,21 @@ export default function Contratos() {
                   <Download className="mr-1 h-4 w-4" /> Baixar
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => handleEdit(contrato)}>
-                <Pencil className="mr-1 h-4 w-4" /> Editar
-              </Button>
+              {podeEditar(contrato) && (
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(contrato)}>
+                  <Pencil className="mr-1 h-4 w-4" /> Editar
+                </Button>
+              )}
               {contrato.status === "pendente" && (
                 <Button variant="ghost" size="sm" onClick={() => enviarContrato(contrato.id)}>
                   <Send className="mr-1 h-4 w-4" /> Enviar
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(contrato.id)}>
-                <Trash2 className="mr-1 h-4 w-4 text-destructive" />
-              </Button>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(contrato.id)}>
+                  <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+                </Button>
+              )}
             </div>
           </div>
         ))
@@ -341,17 +347,21 @@ export default function Contratos() {
                         <Download className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(contrato)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    {podeEditar(contrato) && (
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(contrato)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                     {contrato.status === "pendente" && (
                       <Button variant="ghost" size="icon" onClick={() => enviarContrato(contrato.id)} title="Enviar">
                         <Send className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(contrato.id)} title="Excluir">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(contrato.id)} title="Excluir">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash2, Link2, Unlink, FileText } from "lucide-react";
 import type { Transportador } from "./types";
+import { usePermissoes } from "@/hooks/usePermissoes";
 
 type Props = {
   items: Transportador[];
@@ -28,6 +29,7 @@ export function TransportadoresList({
   onVerDocs,
   onVerContratos,
 }: Props) {
+  const { isAdmin, podeEditar } = usePermissoes();
   if (isMobile) {
     return (
       <div className="space-y-3">
@@ -77,12 +79,16 @@ export function TransportadoresList({
                 <Button variant="ghost" size="sm" onClick={() => onVerContratos(t)}>
                   <FileText className="h-4 w-4 mr-1" /> Ver contratos
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => onEdit(t)}>
-                  <Pencil className="h-4 w-4 mr-1" /> Editar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) onDelete(t.id); }}>
-                  <Trash2 className="h-4 w-4 mr-1 text-destructive" />
-                </Button>
+                {podeEditar(t) && (
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(t)}>
+                    <Pencil className="h-4 w-4 mr-1" /> Editar
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) onDelete(t.id); }}>
+                    <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                  </Button>
+                )}
               </div>
             </div>
           );
@@ -154,12 +160,16 @@ export function TransportadoresList({
                       <Button variant="ghost" size="sm" onClick={() => onVerContratos(t)} title="Ver contratos">
                         <FileText className="h-4 w-4 mr-1" /> Ver contratos
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onEdit(t)}>
-                        <Pencil className="h-4 w-4 mr-1" /> Editar
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este transportador?")) onDelete(t.id); }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {podeEditar(t) && (
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(t)}>
+                          <Pencil className="h-4 w-4 mr-1" /> Editar
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir este transportador?")) onDelete(t.id); }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

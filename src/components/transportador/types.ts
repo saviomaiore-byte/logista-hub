@@ -2,6 +2,7 @@ import * as Yup from "yup";
 
 export type Transportador = {
   id: string;
+  created_by?: string | null;
   razao_social: string;
   cpf_cnpj: string;
   inscricao_estadual: string | null;
@@ -19,6 +20,7 @@ export type Transportador = {
 
 export type Cavalo = {
   id: string;
+  created_by?: string | null;
   transportador_id: string;
   placa: string | null;
   renavam: string | null;
@@ -32,6 +34,7 @@ export type Cavalo = {
 
 export type Reboque = {
   id: string;
+  created_by?: string | null;
   transportador_id: string;
   placa: string | null;
   renavam: string | null;

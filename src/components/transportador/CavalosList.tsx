@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pencil, Trash2, FileText } from "lucide-react";
 import { openSignedFile } from "@/lib/storage";
 import type { Cavalo } from "./types";
+import { usePermissoes } from "@/hooks/usePermissoes";
 
 type Props = {
   items: Cavalo[];
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
+  const { isAdmin, podeEditar } = usePermissoes();
   if (isMobile) {
     return (
       <div className="space-y-3">
@@ -35,12 +37,16 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
               )}
             </div>
             <div className="flex items-center gap-1 pt-1 border-t border-border">
-              <Button variant="ghost" size="sm" onClick={() => onEdit(c)}>
-                <Pencil className="h-4 w-4 mr-1" /> Editar
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) onDelete(c.id); }}>
-                <Trash2 className="h-4 w-4 mr-1 text-destructive" />
-              </Button>
+              {podeEditar(c) && (
+                <Button variant="ghost" size="sm" onClick={() => onEdit(c)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Editar
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => { if (confirm("Excluir?")) onDelete(c.id); }}>
+                  <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -74,12 +80,16 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) onDelete(c.id); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {podeEditar(c) && (
+                      <Button variant="ghost" size="icon" onClick={() => onEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Excluir?")) onDelete(c.id); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

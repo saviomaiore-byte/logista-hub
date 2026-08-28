@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { reportDbError } from "@/lib/dbError";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +36,18 @@ import { ConferenciasSidebar } from "@/components/seguro/ConferenciasSidebar";
 import { NovaConferenciaDialog } from "@/components/seguro/NovaConferenciaDialog";
 import { ConferenciaHeaderCard } from "@/components/seguro/ConferenciaHeaderCard";
 import { ConferenciaChecklist } from "@/components/seguro/ConferenciaChecklist";
+import { useSeguros, useCriarSeguro, useAtualizarSeguro, useExcluirSeguro } from "@/hooks/useSeguros";
+import { useMotoristas } from "@/hooks/useMotoristas";
+import {
+  useConferencias,
+  useConferenciaItens,
+  useMotoristasAtivos,
+  useCriarConferencia,
+  useAtualizarItemCoberto,
+  useAtualizarItemObservacoes,
+  useExcluirConferencia,
+  useAtualizarApoliceConferencia,
+} from "@/hooks/useConferenciaSeguros";
 
 
 // ====== Types ======
@@ -102,7 +111,6 @@ const initialValues = {
 export default function Seguros() {
   const [activeMainTab, setActiveMainTab] = useState("seguros");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   return (
     <MainLayout>
@@ -147,101 +155,15 @@ function SegurosTab() {
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: seguros, isLoading } = useQuery({
-    queryKey: ["seguros"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seguros")
-        .select("*, motoristas(nome, cpf)")
-        .order("vigencia_fim", { ascending: true });
-      if (error) throw error;
-      return data as Seguro[];
-    },
-  });
+  const { data: seguros, isLoading } = useSeguros();
+  // Reutiliza a listagem central de motoristas (mesma queryKey ["motoristas"]).
+  const { data: motoristas } = useMotoristas();
 
-  const { data: motoristas } = useQuery({
-    queryKey: ["motoristas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("motoristas")
-        .select("id, nome, cpf")
-        .order("nome");
-      if (error) throw error;
-      return data as { id: string; nome: string; cpf: string }[];
-    },
-  });
+  const createMutation = useCriarSeguro();
+  const updateMutation = useAtualizarSeguro();
+  const deleteMutation = useExcluirSeguro();
 
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof initialValues) => {
-      const insertData = {
-        motorista_id: data.motorista_id || null,
-        tipo: data.tipo,
-        seguradora: data.seguradora,
-        numero_apolice: data.numero_apolice || null,
-        valor_premio: data.valor_premio ? parseFloat(data.valor_premio) : null,
-        vigencia_inicio: data.vigencia_inicio || null,
-        vigencia_fim: data.vigencia_fim || null,
-        status: data.status,
-        observacoes: data.observacoes || null,
-        arquivo_url: data.arquivo_url || null,
-      };
-      const { error } = await supabase.from("seguros").insert(insertData);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["seguros"] });
-      toast({ title: "Seguro cadastrado com sucesso!" });
-      resetForm();
-      setOpen(false);
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao cadastrar seguro", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof initialValues }) => {
-      const updateData = {
-        motorista_id: data.motorista_id || null,
-        tipo: data.tipo,
-        seguradora: data.seguradora,
-        numero_apolice: data.numero_apolice || null,
-        valor_premio: data.valor_premio ? parseFloat(data.valor_premio) : null,
-        vigencia_inicio: data.vigencia_inicio || null,
-        vigencia_fim: data.vigencia_fim || null,
-        status: data.status,
-        observacoes: data.observacoes || null,
-        arquivo_url: data.arquivo_url || null,
-      };
-      const { error } = await supabase.from("seguros").update(updateData).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["seguros"] });
-      toast({ title: "Seguro atualizado com sucesso!" });
-      resetForm();
-      setOpen(false);
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao atualizar seguro", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("seguros").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["seguros"] });
-      toast({ title: "Seguro excluído com sucesso!" });
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao excluir seguro", description: error.message, variant: "destructive" });
-    },
-  });
 
   const resetForm = () => {
     setFormInitialValues(initialValues);
@@ -265,14 +187,33 @@ function SegurosTab() {
     setOpen(true);
   };
 
+  const onSaved = (title: string) => () => {
+    toast({ title });
+    resetForm();
+    setOpen(false);
+  };
+
+  const onSaveError = (title: string) => (error: any) =>
+    toast({ title, description: error?.message, variant: "destructive" });
+
   const handleSubmit = (values: typeof initialValues, { resetForm: formikReset }: any) => {
     if (editingSeguro) {
-      updateMutation.mutate({ id: editingSeguro.id, data: values });
+      updateMutation.mutate(
+        { id: editingSeguro.id, data: values },
+        {
+          onSuccess: onSaved("Seguro atualizado com sucesso!"),
+          onError: onSaveError("Erro ao atualizar seguro"),
+        },
+      );
     } else {
-      createMutation.mutate(values);
+      createMutation.mutate(values, {
+        onSuccess: onSaved("Seguro cadastrado com sucesso!"),
+        onError: onSaveError("Erro ao cadastrar seguro"),
+      });
     }
     formikReset();
   };
+
 
   const filteredSeguros = seguros?.filter(
     (s) =>
@@ -371,7 +312,14 @@ function SegurosTab() {
         isLoading={isLoading}
         isMobile={isMobile}
         onEdit={handleEdit}
-        onDelete={(id) => deleteMutation.mutate(id)}
+        onDelete={(id) =>
+          deleteMutation.mutate(id, {
+            onSuccess: () => toast({ title: "Seguro excluído com sucesso!" }),
+            onError: (error: any) =>
+              toast({ title: "Erro ao excluir seguro", description: error?.message, variant: "destructive" }),
+          })
+        }
+
       />
     </div>
   );
@@ -389,135 +337,54 @@ function ConferenciaTab() {
   const [confTab, setConfTab] = useState("manual");
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const pdfExtraction = usePdfExtraction();
 
-  const { data: conferencias, isLoading: loadingConferencias } = useQuery({
-    queryKey: ["conferencia_seguros"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("conferencia_seguros")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Conferencia[];
-    },
-  });
+  const { data: conferencias, isLoading: loadingConferencias } = useConferencias();
+  const { data: itens, isLoading: loadingItens } = useConferenciaItens(selectedConferencia);
+  const { data: motoristas } = useMotoristasAtivos();
 
-  const { data: itens, isLoading: loadingItens } = useQuery({
-    queryKey: ["conferencia_seguros_itens", selectedConferencia],
-    queryFn: async () => {
-      if (!selectedConferencia) return [];
-      const { data, error } = await supabase
-        .from("conferencia_seguros_itens")
-        .select("*, motoristas(nome, cpf, status)")
-        .eq("conferencia_id", selectedConferencia)
-        .order("created_at");
-      if (error) throw error;
-      return data as ConferenciaItem[];
-    },
-    enabled: !!selectedConferencia,
-  });
+  const createMutation = useCriarConferencia();
+  const toggleCobertoMutation = useAtualizarItemCoberto(selectedConferencia);
+  const deleteMutation = useExcluirConferencia();
+  const updateItemObsMutation = useAtualizarItemObservacoes(selectedConferencia);
+  const apoliceMutation = useAtualizarApoliceConferencia();
 
-  const { data: motoristas } = useQuery({
-    queryKey: ["motoristas_ativos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("motoristas")
-        .select("id, nome, cpf, status")
-        .eq("status", "ativo")
-        .order("nome");
-      if (error) throw error;
-      return data as Motorista[];
-    },
-  });
+  const handleCreateConferencia = () => {
+    createMutation.mutate(
+      {
+        titulo: newTitulo,
+        periodo_referencia: newPeriodo,
+        arquivo_apolice_url: newArquivoUrl,
+        observacoes: newObs,
+        motoristas,
+      },
+      {
+        onSuccess: (conf) => {
+          toast({ title: "Conferência criada com sucesso!" });
+          setOpenNew(false);
+          setNewTitulo("");
+          setNewPeriodo("");
+          setNewArquivoUrl("");
+          setNewObs("");
+          setSelectedConferencia(conf.id);
+        },
+        onError: (error: any) =>
+          toast({ title: "Erro ao criar conferência", description: error?.message, variant: "destructive" }),
+      },
+    );
+  };
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const { data: conf, error: confError } = await supabase
-        .from("conferencia_seguros")
-        .insert({
-          titulo: newTitulo,
-          periodo_referencia: newPeriodo,
-          arquivo_apolice_url: newArquivoUrl || null,
-          observacoes: newObs || null,
-        })
-        .select()
-        .single();
-      if (confError) throw confError;
+  const handleDeleteConferencia = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        if (selectedConferencia) setSelectedConferencia(null);
+        toast({ title: "Conferência excluída!" });
+      },
+      onError: (error: any) =>
+        toast({ title: "Erro ao excluir", description: error?.message, variant: "destructive" }),
+    });
+  };
 
-      if (motoristas && motoristas.length > 0) {
-        const items = motoristas.map((m) => ({
-          conferencia_id: conf.id,
-          motorista_id: m.id,
-          coberto: false,
-        }));
-        const { error: itemsError } = await supabase
-          .from("conferencia_seguros_itens")
-          .insert(items);
-        if (itemsError) throw itemsError;
-      }
-      return conf;
-    },
-    onSuccess: (conf) => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens"] });
-      toast({ title: "Conferência criada com sucesso!" });
-      setOpenNew(false);
-      setNewTitulo("");
-      setNewPeriodo("");
-      setNewArquivoUrl("");
-      setNewObs("");
-      setSelectedConferencia(conf.id);
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao criar conferência", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const toggleCobertoMutation = useMutation({
-    mutationFn: async ({ itemId, coberto }: { itemId: string; coberto: boolean }) => {
-      const { error } = await supabase
-        .from("conferencia_seguros_itens")
-        .update({ coberto })
-        .eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens", selectedConferencia] });
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("conferencia_seguros").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-      if (selectedConferencia) setSelectedConferencia(null);
-      toast({ title: "Conferência excluída!" });
-    },
-    onError: (error) => {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const updateItemObsMutation = useMutation({
-    mutationFn: async ({ itemId, observacoes }: { itemId: string; observacoes: string }) => {
-      const { error } = await supabase
-        .from("conferencia_seguros_itens")
-        .update({ observacoes: observacoes || null })
-        .eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["conferencia_seguros_itens", selectedConferencia] });
-    },
-  });
 
   const selectedConf = conferencias?.find((c) => c.id === selectedConferencia);
 
@@ -552,7 +419,7 @@ function ConferenciaTab() {
           onArquivoUrlChange={setNewArquivoUrl}
           observacoes={newObs}
           onObservacoesChange={setNewObs}
-          onCreate={() => createMutation.mutate()}
+          onCreate={handleCreateConferencia}
           isPending={createMutation.isPending}
         />
       </div>
@@ -563,8 +430,9 @@ function ConferenciaTab() {
           selectedId={selectedConferencia}
           isLoading={loadingConferencias}
           onSelect={(id) => { setSelectedConferencia(id); pdfExtraction.loadSavedExtraction(id); }}
-          onDelete={(id) => deleteMutation.mutate(id)}
+          onDelete={handleDeleteConferencia}
         />
+
 
         {/* Detail */}
         <div className="lg:col-span-3">
@@ -579,24 +447,23 @@ function ConferenciaTab() {
                 conferencia={selectedConf}
                 onUploadApolice={async (url) => {
                   if (!selectedConf) return;
-                  const { error } = await supabase
-                    .from("conferencia_seguros")
-                    .update({ arquivo_apolice_url: url })
-                    .eq("id", selectedConf.id);
-                  if (reportDbError("anexar apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-                  queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
-                  toast({ title: "Apólice anexada com sucesso!" });
+                  try {
+                    await apoliceMutation.mutateAsync({ id: selectedConf.id, url });
+                    toast({ title: "Apólice anexada com sucesso!" });
+                  } catch (error: any) {
+                    toast({ title: "Erro ao anexar apólice", description: error?.message, variant: "destructive" });
+                  }
                 }}
                 onRemoveApolice={async () => {
                   if (!selectedConf) return;
-                  const { error } = await supabase
-                    .from("conferencia_seguros")
-                    .update({ arquivo_apolice_url: null })
-                    .eq("id", selectedConf.id);
-                  if (reportDbError("remover apólice", error, (m) => toast({ title: m, variant: "destructive" }))) return;
-                  queryClient.invalidateQueries({ queryKey: ["conferencia_seguros"] });
+                  try {
+                    await apoliceMutation.mutateAsync({ id: selectedConf.id, url: null });
+                  } catch (error: any) {
+                    toast({ title: "Erro ao remover apólice", description: error?.message, variant: "destructive" });
+                  }
                 }}
               />
+
 
               <Tabs value={confTab} onValueChange={setConfTab}>
                 <TabsList className="w-full">

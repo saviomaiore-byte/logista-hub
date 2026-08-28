@@ -32,15 +32,6 @@ import { FormField, FormSelectWrapper } from "@/components/form/FormField";
 import { useDocumentosEmpresa, useCriarDocumentoEmpresa } from "@/hooks/useDocumentosEmpresa";
 
 
-interface DocumentoEmpresa {
-  id: string;
-  empresa: string;
-  tipo: string;
-  descricao: string | null;
-  vencimento: string | null;
-  status: string;
-}
-
 const tiposDocumento = [
   { value: "contrato_social", label: "Contrato Social" },
   { value: "cnd_federal", label: "CND Federal" },
@@ -58,47 +49,24 @@ const initialValues = {
 };
 
 export default function DocumentosEmpresa() {
-  const [documentos, setDocumentos] = useState<DocumentoEmpresa[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const fetchDocumentos = async () => {
-    const { data, error } = await supabase
-      .from("documentos_empresa")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Erro ao carregar documentos");
-    } else {
-      setDocumentos(data || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchDocumentos();
-  }, []);
+  const { data: documentos = [], isLoading: loading } = useDocumentosEmpresa();
+  const criarDocumento = useCriarDocumentoEmpresa();
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
-    const { error } = await supabase.from("documentos_empresa").insert({
-      empresa: values.empresa,
-      tipo: values.tipo,
-      descricao: values.descricao || null,
-      vencimento: values.vencimento || null,
-      status: "valido",
-    });
-
-    if (error) {
-      toast.error("Erro ao salvar documento");
-    } else {
-      toast.success("Documento adicionado!");
-      setOpen(false);
-      resetForm();
-      fetchDocumentos();
+    try {
+      await criarDocumento.mutateAsync(values);
+    } catch {
+      return;
     }
+
+    toast.success("Documento adicionado!");
+    setOpen(false);
+    resetForm();
   };
+
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { class: string; icon: typeof CheckCircle }> = {

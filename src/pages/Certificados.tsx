@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -19,7 +19,6 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
@@ -31,6 +30,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/FileUpload";
+import {
+  useCertificados,
+  useTransportadorasResumo,
+  useCriarCertificado,
+  useAgendarRenovacao,
+} from "@/hooks/useCertificados";
+
 
 interface Certificado {
   id: string;

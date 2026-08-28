@@ -1,153 +1,133 @@
-# T11 — Planejamento da refatoração de Relatorios.tsx
+# Detalhamento — T12 (Hooks/React Query), T13 (limpeza de dependências) e T14 (endurecer CSP)
 
-Refatoração exclusivamente estrutural. Sem novas funcionalidades, sem mudança de layout, regra de negócio, banco, queries, permissões ou rotas.
+Refatorações puramente técnicas. Nenhuma alteração de funcionalidade, layout, regra de negócio, banco, queries, permissões ou rotas. Mantém o princípio do plano técnico: **não quebrar o que já funciona**, uma alteração por vez, com regressão.
 
-## A. Diagnóstico atual
+---
 
-`src/pages/Relatorios.tsx` — 976 linhas, um único componente `Relatorios()`.
+## T12 — Hooks de dados por entidade + migração para React Query
 
-Responsabilidades acumuladas:
+### Objetivo
+Centralizar as consultas ao backend em hooks reutilizáveis por entidade e migrar as buscas manuais (`useState` + `useEffect` + `supabase.from(...)`) para React Query, que já está instalado (`@tanstack/react-query`, v5) e **já em uso** em `Seguros.tsx`, `Transportadores.tsx` e `ConferenciaSeguros.tsx`. O trabalho é padronizar o restante, não introduzir a lib.
 
-1. Tipos locais `TransportadorComMotoristas` e `MotoristaRelatorio` + constantes `SITUACAO_LABELS`, `SITUACAO_ICONS`, `DIAS_SEMANA`.
-2. Carregamento de dados (`fetchDados`) e da configuração de envio (`fetchConfig`).
-3. Cálculo do resumo (`useMemo`) e helpers `formatDate` / `docStatus`.
-4. Geração de PDF (`buildPdfDoc`, ~90 linhas com jsPDF + autoTable) e de Excel (`buildExcelWorkbook`, ~38 linhas com XLSX).
-5. Download (`gerarPDF`, `gerarExcel`), pré-visualização (`gerarPreviewPDF` com blob URL, `gerarPreviewExcel` com `sheet_to_json`) e base64 para envio (`getPdfBase64`, `getExcelBase64`).
-6. Destinatários (`addDestinatario`, `removeDestinatario`, validação por regex) e `saveConfig`.
-7. Envio via edge function (`enviarRelatorio`).
-8. JSX: cabeçalho com 4 ações, 6 cards de resumo, e 4 abas — Dados, Pré-visualizar PDF, Pré-visualizar Excel, Configurações.
+### Estado atual (confirmado por leitura)
+- Consultas diretas ao banco em 12 arquivos (páginas + componentes de anexos).
+- React Query já usado em 3 páginas (padrão de referência a seguir).
+- `reportDbError` (`src/lib/dbError.ts`) **não** está aplicado em todas as consultas (ver T8b).
 
-Estados (13): `loading`, `sending`, `dados`, `activeTab`, `pdfPreviewUrl`, `excelPreviewData`, `activeExcelSheet`, `destinatarios`, `novoEmail`, `assunto`, `corpo`, `diaEnvio`, `horarioEnvio`, `envioAutomatico`, `configId`.
+### Escopo — criar hooks por entidade em `src/hooks/`
+| Hook | Origem (pagina/componente) | Retorna |
+|---|---|---|
+| `useMotoristas` | `pages/Motoristas.tsx`, `MotoristaAnexos.tsx` | lista + criacao/atualizacao/exclusao (mutations com invalidation) |
+| `useTransportadores` | `pages/Transportadores.tsx` | lista + vinculo motoristas + cavalos + reboques |
+| `useContratos` | `pages/Contratos.tsx`, `ContratoAnexos.tsx` | lista + anexos |
+| `useSeguros` | `pages/Seguros.tsx`, `usePdfExtraction` | lista + apolice |
+| `useCertificados` | `pages/Certificados.tsx` | lista |
+| `useConferenciaSeguros` | `pages/ConferenciaSeguros.tsx` | conferencias + itens + extraidos |
+| `useUsuarios` / `useAuditoria` | `pages/Usuarios.tsx` | contas + roles |
+| `useDocumentosEmpresa` | `pages/DocumentosEmpresa.tsx` | lista (rota oculta) |
 
-Hooks: `useState`, `useEffect` (carga inicial + revoke do blob URL), `useMemo`, `useToast`, `useAuth`.
+### Regras obrigatórias dos hooks
+1. Toda query usa React Query `useQuery` com `queryKey` estável por entidade.
+2. Toda mutation usa `useMutation` e invalida a `queryKey` da entidade ao concluir (`invalidateQueries`).
+3. Todo erro passa por `reportDbError` — aproveita para fechar a pendência **T8b** (erro tratado em um só lugar).
+4. `Relatorios.tsx` **não** é migrado para React Query nesta tarefa: o payload da edge function e o fluxo de envio precisam permanecer byte a byte iguais e já foram validados na T11. Se migrado, só numa etapa final e isolada.
+5. Estados vazios/opcionais continuam enviados como `null` (regra de memória).
 
-Não existem: filtros, ordenação, paginação, gráficos ou modais. Não há react-query nesta página (fetch manual com `useState`).
+### Riscos e mitigação
+- **Médio/Alto**: trocar fetch manual por React Query muda o ciclo de vida (cache, refetch, loading). Mitigação: fazer página a página, começando pelas de baixo risco (Certificados, DocumentosEmpresa), mantendo as telas visualmente idênticas.
+- **Médio**: `reportDbError` ainda parcial — migrar junto com o hook, não em separado.
+- **Baixo**: hooks são autocontidos; nenhum módulo externo importa as páginas.
 
-Observações registradas (não corrigir agora):
-- `useAuth`/`user` é importado e não utilizado.
-- Vários casts `(data as any)` em `relatorio_config`.
-- Lógica de "email digitado e não adicionado" está duplicada em `saveConfig` e `enviarRelatorio`.
-- `SITUACAO_ICONS` é declarado mas parece só usado na aba Dados.
+### Ordem de execução (uma etapa por vez, com regressão)
+1. `useCertificados` + `useDocumentosEmpresa` (mais simples).
+2. `useContratos` (+ anexos).
+3. `useMotoristas` (+ anexos).
+4. `useTransportadores` (maior volume: cavalos, reboques, vínculos).
+5. `useSeguros` + `useConferenciaSeguros`.
+6. `useUsuarios` / `useAuditoria`.
+7. Regressão completa: login → dashboard → todas as telas de CRUD → conferências → relatórios (PDF/Excel) → logout.
 
-## B. Componentes recomendados
+### Critérios de conclusão
+Todas as consultas de CRUD via hooks React Query; `reportDbError` aplicado em todos os hooks; invalidação correta (criar/editar reflete na lista); nenhuma mudança visual; build, typecheck e 20+ testes verdes; console sem erros novos.
 
-Pasta nova: `src/components/relatorio/`.
+---
 
-**1. `types.ts`** — Risco: Baixo
-Responsabilidade: tipos e constantes compartilhadas. Extrai `TransportadorComMotoristas`, `MotoristaRelatorio`, `SITUACAO_LABELS`, `SITUACAO_ICONS`, `DIAS_SEMANA` e os helpers puros `formatDate` e `docStatus`. Sem estado, sem props, sem banco.
+## T13 — Limpeza de dependências não usadas
 
-**2. `RelatoriosHeader.tsx`** — Risco: Baixo
-Responsabilidade: título + botões Atualizar / Excel / PDF / Enviar.
-Props: `loading`, `sending`, `sendDisabled`, `onRefresh`, `onExcel`, `onPdf`, `onEnviar`. Sem banco.
+### Objetivo
+Remover do `package.json` as dependências que não são importadas em nenhum lugar, reduzindo o peso do bundle e a superfície de ataque.
 
-**3. `RelatorioResumoCards.tsx`** — Risco: Baixo
-Responsabilidade: os 6 cards (Transportadoras, Motoristas, Aptos, Inaptos, Em Praça, Em Viagem).
-Props: `resumo`. O `useMemo` permanece na página. Sem banco.
+### Estado atual (package.json lido)
+Dependências potencialmente não usadas a **confirmar por busca** antes de remover:
+- `jsdom` (devDependency) — o Vitest usa `happy-dom`; verificar se algum teste importa jsdom.
+- `@vitejs/plugin-react-swc` — o build usa `@vitejs/plugin-react` (memória: trocado do swc); confirmar em `vite.config.ts`.
+- `@hookform/resolvers`, `react-hook-form` — confirmar se ainda há formulários react-hook-form (projeto migrou para Formik).
+- `input-otp` — confirmar uso (MFA usa lib própria?).
+- `sonner` — confirmar se o Toaster usado é shadcn (`use-toast`) ou sonner.
+- `cmdk` — confirmar se algum comando usa `Command`.
+- `react-resizable-panels`, `vaul`, `embla-carousel-react`, `next-themes`, `react-day-picker` — confirmar uso real.
 
-**4. `RelatorioDadosTab.tsx`** — Risco: Baixo/Médio
-Responsabilidade: aba "Dados" — loading, estado vazio, card por transportadora e tabela de motoristas com badges de aptidão/situação/contrato/motivos.
-Props: `dados`, `loading`. Usa `SITUACAO_LABELS`/`SITUACAO_ICONS` de `types.ts`. Sem banco.
+### Processo (por dependência candidata)
+1. `rg "<import>|from '<pkg>'|require('<pkg>')" src` — se **zero** ocorrências de import, marcar como candidata.
+2. Verificar se aparece em `vite.config.ts`, `tailwind.config.ts`, `postcss.config.js` ou scripts de build.
+3. Remover apenas as confirmadamente sem uso.
+4. Rodar build + `vitest run` para detectar quebra de import em tempo de execução.
 
-**5. `relatorioPdf.ts`** (módulo, não componente) — Risco: Médio
-Responsabilidade: `buildPdfDoc(dados, resumo)` retornando `jsPDF`. Move jsPDF/autoTable para fora da página. Nenhuma alteração de conteúdo, fontes, colunas ou ordem.
+### Regras
+- **Nunca** remover uma dependência usada por uma Edge Function (`supabase/functions/`) — o escopo da limpeza é o frontend; functions têm seu próprio runtime.
+- Manter `@tanstack/react-query` (usado e alvo da T12), `jspdf`, `xlsx`, `pdfjs-dist`, `formik`, `yup`, `@supabase/supabase-js`.
+- Uma remoção por vez; se o build quebrar, reverter a dependência.
 
-**6. `relatorioExcel.ts`** (módulo) — Risco: Médio
-Responsabilidade: `buildExcelWorkbook(dados, resumo)` retornando `XLSX.WorkBook`. Mesmas abas, colunas e ordem.
+### Risco
+Baixo, desde que cada remoção seja precedida por busca de import e seguida de build.
 
-**7. `PdfPreviewTab.tsx`** — Risco: Médio
-Responsabilidade: aba de pré-visualização PDF (iframe com `pdfPreviewUrl`, botões de regenerar/baixar).
-Props: `pdfPreviewUrl`, `onRegenerar`, `onDownload`. O ciclo de vida do blob URL (criação e `revokeObjectURL`) permanece na página.
+### Critérios de conclusão
+`package.json` sem dependências não usadas; build, typecheck e testes verdes; bundle menor (comparar `bun run build` antes/depois).
 
-**8. `ExcelPreviewTab.tsx`** — Risco: Médio
-Responsabilidade: aba de pré-visualização Excel (seletor de planilha, tabela renderizada a partir de `sheet_to_json`).
-Props: `excelPreviewData`, `activeExcelSheet`, `onSelectSheet`, `onRegenerar`, `onDownload`.
+---
 
-**9. `ConfiguracoesTab.tsx`** — Risco: Médio
-Responsabilidade: aba Configurações — destinatários (chips + input + add/remove), assunto, corpo, dia, horário, switch de envio automático e botão Salvar.
-Props: os estados de config e seus setters + `onAdd`, `onRemove`, `onSave`. `saveConfig` permanece na página.
+## T14 — Endurecer a Content Security Policy
 
-Não serão criados componentes artificiais: cabeçalho de aba, badges isolados e blocos de 5 linhas continuam inline.
+### Objetivo
+Reduzir `unsafe-inline` / `unsafe-eval` da CSP atual para defesa em profundidade, sem quebrar o app em produção.
 
-## C. Estrutura de pastas
+### Estado atual (index.html lido)
+`default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';`
 
-Atual:
+### Endurecimentos propostos
+1. **Remover `'unsafe-eval'`** do `script-src` — o maior risco. Antes: confirmar que Vite em produção não precisa de eval (build gera JS estático; pdfjs-dist e jspdf podem exigir `'unsafe-eval'` em modo worker — validar no preview de produção e na geração de PDF).
+   - Se pdfjs-dist/jspdf exigirem, avaliar alternativas (worker via `new Worker(..., { type: 'module' })` já usado no projeto) em vez de abrir mão da proteção.
+2. **Remover `'unsafe-inline'` do `script-src`** — exige que nenhum script inline exista. Vite em produção não injeta script inline por padrão; validar o HTML de build.
+3. **Manter `'unsafe-inline'` no `style-src`** — o shadcn/Tailwind (injetado via `<style>`) e fontes Google dependem disso; remover quebraria o visual. Restringir à origem das fontes é o suficiente nesta etapa.
+4. **Aplicar `worker-src 'self' blob:`** explícito se pdfjs-dist usar workers.
+5. **`frame-ancestors 'self'`** para impedir que o app seja embutido em iframe de terceiros (defesa anti-clickjacking).
+6. Revisar `img-src`/`connect-src` se houver novos hosts de arquivos/upload.
+
+### Processo
+1. Testar o app com `'unsafe-eval'` removido **em preview de produção** (build + `bun run preview`), exercitando: login, MFA, geração/visualização de PDF e Excel, upload/abertura de arquivos, extração de PDF por IA.
+2. Se algo quebrar, identificar o requisito exato (ex.: pdfjs `'unsafe-eval'`) e decidir: configurar worker module (melhor) ou manter a diretiva só para o contexto necessário.
+3. Aplicar `frame-ancestors`, `worker-src` e validar novamente.
+4. Não usar meta tag duplicada nem headers de servidor em paralelo (meta única no `index.html`).
+
+### Risco
+Médio — CSP afeta o app inteiro (scripts, workers, estilos). Por isso é a última tarefa e exige validação de produção, não só de dev.
+
+### Critérios de conclusão
+CSP em produção sem `unsafe-eval` (e, se possível, sem `unsafe-inline` em `script-src`), com `frame-ancestors` e `worker-src`; todas as funcionalidades críticas (login, MFA, PDF/Excel, upload, IA) validadas; nenhum erro de CSP no console.
+
+---
+
+## Roadmap de execução
+
 ```text
-src/pages/Relatorios.tsx   (976 linhas — tudo)
+T12 (hooks/React Query)  →  T13 (limpar dependências)  →  T14 (endurecer CSP)
 ```
 
-Proposta:
-```text
-src/pages/Relatorios.tsx            (~300 linhas: estados, fetch, mutations, orquestração)
-src/components/relatorio/
-├── types.ts
-├── relatorioPdf.ts
-├── relatorioExcel.ts
-├── RelatoriosHeader.tsx
-├── RelatorioResumoCards.tsx
-├── RelatorioDadosTab.tsx
-├── PdfPreviewTab.tsx
-├── ExcelPreviewTab.tsx
-└── ConfiguracoesTab.tsx
-```
+- **T12 primeiro**: a limpeza de dependências (T13) fica mais segura depois que todas as consultas forem centralizadas nos hooks (só importam o que usam). Além disso, T12 encerra a pendência T8b.
+- **T13 em seguida**: reduz o peso e a superfície antes do endurecimento de CSP.
+- **T14 por último**: maior risco; exige rede de testes (T12) e bundle limpo (T13) antes.
 
-## D. Dependências
-
-Fluxo de banco/API atual (deve ser preservado integralmente, todo ele na página):
-
-```text
-Relatorios.tsx
-├── fetchConfig  → SELECT relatorio_config (limit 1, maybeSingle) → reportDbError
-├── saveConfig   → UPDATE relatorio_config (por id) | INSERT relatorio_config → reportDbError
-├── fetchDados   → SELECT transportadores (status = ativo)
-│                → SELECT transportador_motoristas
-│                → SELECT motoristas
-│                → SELECT contratos (status = assinado)
-│                → checkMotoristaAptidao(m, temContrato, t)  [src/lib/aptidao.ts]
-│                → reportDbError no primeiro erro
-└── enviarRelatorio → supabase.functions.invoke("send-report-email", { destinatarios, assunto, corpo, dados, anexos[pdf, xlsx base64] })
-```
-
-Sem INSERT/UPDATE/DELETE fora de `relatorio_config`. Sem RPC. Sem react-query, portanto sem invalidação de cache. Sem agregação no banco — todo cálculo é em memória.
-
-A página depende de dados de Transportadores, Motoristas, Contratos e do vínculo transportador↔motorista, mas não importa código desses módulos. Depende de `MainLayout`, UI shadcn, `checkMotoristaAptidao`, `reportDbError`, `useToast`.
-
-Nenhum outro módulo importa `Relatorios.tsx` — apenas a rota `/relatorios` em `App.tsx`. Risco de regressão externa: praticamente nulo.
-
-## E. Riscos
-
-- **Alto**: `buildPdfDoc` e `buildExcelWorkbook` — geram o arquivo enviado por e-mail. Qualquer troca de ordem de colunas ou de dados muda o entregável. Devem ser movidos por cópia literal, recebendo `dados` e `resumo` por parâmetro.
-- **Médio**: `pdfPreviewUrl` (blob URL) — o `revokeObjectURL` no unmount e na regeneração precisa continuar na página, senão vaza memória ou o iframe quebra.
-- **Médio**: `enviarRelatorio` reaproveita `getPdfBase64`/`getExcelBase64`; se os builders forem movidos, o payload da edge function precisa ficar byte a byte igual.
-- **Baixo**: header, cards e aba Dados são puramente apresentacionais.
-
-## F. Ordem de execução
-
-- **Etapa 1** — `types.ts` + `RelatoriosHeader` + `RelatorioResumoCards` (baixo risco, valida o padrão).
-- **Etapa 2** — `RelatorioDadosTab` (maior bloco visual, sem banco).
-- **Etapa 3** — `relatorioPdf.ts` e `relatorioExcel.ts` (geradores; comparar PDF/Excel antes e depois).
-- **Etapa 4** — `PdfPreviewTab` e `ExcelPreviewTab`.
-- **Etapa 5** — `ConfiguracoesTab`.
-- **Etapa 6** — Regressão completa (mesmo formato da Etapa 7 de Seguros).
-
-Uma etapa por vez, com validação e aprovação entre elas.
-
-## G. Plano de testes por etapa
-
-Em todas: build, typecheck (`tsgo`), `vitest run` (20 testes atuais) e console sem erros novos.
-
-- Etapa 1: os 6 cards com os mesmos números; os 4 botões funcionando (Atualizar recarrega, Excel/PDF baixam, Enviar respeita o `disabled`).
-- Etapa 2: mesma quantidade de transportadoras e motoristas; badges de aptidão, situação, contrato e motivos idênticos; estados de loading e vazio.
-- Etapa 3: baixar PDF e Excel antes e depois e comparar número de páginas/abas, cabeçalhos, colunas e totais.
-- Etapa 4: abrir cada aba de pré-visualização, regenerar, trocar de planilha no Excel, baixar a partir da aba, e trocar de aba várias vezes verificando o blob URL.
-- Etapa 5: adicionar/remover destinatário, e-mail inválido, e-mail duplicado, salvar configurações e recarregar a página conferindo a persistência em `relatorio_config`.
-- Etapa 6: fluxo completo Atualizar → Dados → PDF → Excel → Configurações → Enviar, mais checagem de que Motoristas, Transportadores e Seguros seguem intactos.
-
-O envio real de e-mail será testado no máximo uma vez, na Etapa 6, com um destinatário definido por você.
-
-## H. Critérios de conclusão
-
-Página em torno de 300 linhas com responsabilidades separadas; relatórios, filtros de aba, exportações, downloads, pré-visualizações, configurações e envio idênticos; queries e payloads preservados; build, typecheck e testes OK; console sem erros novos; nenhuma regressão.
-
-## I. Recomendação
-
-Seguro iniciar. A página é autocontida, não é importada por nenhum outro módulo e não usa react-query, o que elimina riscos de cache. O único ponto realmente delicado são os geradores de PDF/Excel, isolados na Etapa 3 justamente para poderem ser validados por comparação de arquivos.
+## Riscos de regressão (maiores primeiro)
+1. T14 — CSP afeta todo o app (scripts, workers, estilos).
+2. T12 — trocar fetch manual por React Query muda ciclo de vida de dados.
+3. T13 — remover dependência usada em runtime quebra build/imports.

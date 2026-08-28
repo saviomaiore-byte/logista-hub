@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -33,37 +33,24 @@ import {
   Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
 import { openSignedFile } from "@/lib/storage";
 import { FormSelectWrapper } from "@/components/form/FormField";
+import {
+  useContratos,
+  useTransportadoresOpcoes,
+  useCriarContrato,
+  useAtualizarContrato,
+  useExcluirContrato,
+  useEnviarContrato,
+  type ContratoComVinculos as Contrato,
+} from "@/hooks/useContratos";
 
-interface Contrato {
-  id: string;
-  tipo: string;
-  modelo: string | null;
-  empresa: string;
-  cnpj: string | null;
-  data_envio: string | null;
-  data_assinatura: string | null;
-  status: string;
-  observacoes: string | null;
-  arquivo_url: string | null;
-  motorista_id: string | null;
-  transportador_id: string | null;
-  motoristas?: { nome: string } | null;
-  transportadores?: { razao_social: string } | null;
-}
-
-interface TransportadorOption {
-  id: string;
-  razao_social: string;
-  cpf_cnpj: string;
-}
 
 const initialValues = {
+
   tipo: "",
   modelo: "",
   transportador_id: "",
@@ -86,57 +73,23 @@ const modeloOptions = [
 ];
 
 export default function Contratos() {
-  const [contratos, setContratos] = useState<Contrato[]>([]);
-  const [transportadores, setTransportadores] = useState<TransportadorOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingContrato, setEditingContrato] = useState<Contrato | null>(null);
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroModelo, setFiltroModelo] = useState("todos");
 
-  const fetchContratos = async () => {
-    const { data, error } = await supabase
-      .from("contratos")
-      .select("*, motoristas(nome), transportadores(razao_social)")
-      .order("created_at", { ascending: false });
+  const { data: contratos = [], isLoading: loadingContratos } = useContratos();
+  const { data: transportadores = [], isLoading: loadingTransportadores } =
+    useTransportadoresOpcoes();
 
-    if (error) {
-      toast.error("Erro ao carregar contratos");
-      return;
-    }
+  const criarContrato = useCriarContrato();
+  const atualizarContrato = useAtualizarContrato();
+  const excluirContrato = useExcluirContrato();
+  const enviarContratoMutation = useEnviarContrato();
 
-    setContratos(
-      ((data as unknown as Contrato[]) || []).map((contrato) => ({
-        ...contrato,
-        modelo: contrato.modelo ?? null,
-      })),
-    );
-  };
+  const loading = loadingContratos || loadingTransportadores;
 
-  const fetchTransportadores = async () => {
-    const { data, error } = await supabase
-      .from("transportadores")
-      .select("id, razao_social, cpf_cnpj")
-      .order("razao_social", { ascending: true });
-
-    if (error) {
-      toast.error("Erro ao carregar transportadores");
-      return;
-    }
-
-    setTransportadores((data as TransportadorOption[]) || []);
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([fetchContratos(), fetchTransportadores()]);
-      setLoading(false);
-    };
-
-    loadData();
-  }, []);
 
   const resetForm = () => {
     setFormInitialValues(initialValues);
@@ -177,61 +130,51 @@ export default function Contratos() {
     };
 
     if (editingContrato) {
-      const { error } = await supabase.from("contratos").update(payload).eq("id", editingContrato.id);
-
-      if (error) {
-        toast.error("Erro ao atualizar contrato");
-      } else {
-        toast.success("Contrato atualizado!");
-        setOpen(false);
-        resetForm();
-        formikReset();
-        await fetchContratos();
+      try {
+        await atualizarContrato.mutateAsync({ id: editingContrato.id, payload });
+      } catch {
+        return;
       }
 
-      return;
-    }
-
-    const { error } = await supabase.from("contratos").insert({
-      ...payload,
-      status: "pendente",
-    });
-
-    if (error) {
-      toast.error("Erro ao salvar contrato");
-    } else {
-      toast.success("Contrato adicionado!");
+      toast.success("Contrato atualizado!");
       setOpen(false);
       resetForm();
       formikReset();
-      await fetchContratos();
+      return;
     }
+
+    try {
+      await criarContrato.mutateAsync(payload);
+    } catch {
+      return;
+    }
+
+    toast.success("Contrato adicionado!");
+    setOpen(false);
+    resetForm();
+    formikReset();
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("contratos").delete().eq("id", id);
-
-    if (error) {
-      toast.error("Erro ao excluir contrato");
-    } else {
-      toast.success("Contrato excluído!");
-      await fetchContratos();
+    try {
+      await excluirContrato.mutateAsync(id);
+    } catch {
+      return;
     }
+
+    toast.success("Contrato excluído!");
   };
 
   const enviarContrato = async (id: string) => {
-    const { error } = await supabase
-      .from("contratos")
-      .update({ status: "enviado", data_envio: new Date().toISOString().split("T")[0] })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Erro ao enviar contrato");
-    } else {
-      toast.success("Contrato enviado!");
-      await fetchContratos();
+    try {
+      await enviarContratoMutation.mutateAsync(id);
+    } catch {
+      return;
     }
+
+    toast.success("Contrato enviado!");
   };
+
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {

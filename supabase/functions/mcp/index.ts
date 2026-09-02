@@ -700,6 +700,10 @@ var analisar_vencimentos_default = defineTool8({
           if (!valor) continue;
           total_analisado++;
           const dias_para_vencer = diasEntre(hoje, valor);
+          if (dias_para_vencer === null) {
+            total_datas_invalidas++;
+            continue;
+          }
           if (dias_para_vencer > dias) continue;
           itens.push({
             entidade: "motorista",

@@ -1,7 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { paginationShape } from "../schemas";
-import { notAuthenticated, paginationMetaimport { notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
+import { notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_contratos",

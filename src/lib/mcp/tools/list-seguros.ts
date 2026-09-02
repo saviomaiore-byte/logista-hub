@@ -1,7 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { paginationShape } from "../schemas";
-import { likeTerm, notAuthenticatedimport { likeTerm, notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
+import { likeTerm, notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_seguros",

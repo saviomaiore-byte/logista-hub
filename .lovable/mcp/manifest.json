@@ -1627,6 +1627,163 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         }
+      },
+      {
+        "name": "resumo_operacional",
+        "title": "Resumo operacional consolidado",
+        "description": "Panorama operacional consolidado, montado a partir das ferramentas de análise já existentes: analisar_pendencias (regras oficiais de aptidão do relatório semanal) e analisar_vencimentos (documentos vencidos e a vencer de motoristas), além das contagens diretas de motoristas, transportadores e contratos. Retorna apenas totais comprovados; quando alguma contagem não pode ser confirmada ou alguma lista foi truncada, isso é sinalizado em 'incompleto' e 'avisos'. Não classifica ninguém como apto/inapto ou regular/irregular fora dos motivos produzidos pelas regras existentes. Nenhum CPF/CNPJ ou número de documento é retornado. Ferramenta somente leitura.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "dias": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 365,
+              "default": 30,
+              "description": "Janela em dias usada na análise de vencimentos. Padrão 30."
+            },
+            "top_pendencias": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5,
+              "description": "Quantidade de motivos de pendência mais frequentes retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "totais": {
+              "type": "object",
+              "properties": {
+                "motoristas": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Total de motoristas cadastrados visíveis; null quando não comprovado."
+                },
+                "transportadores": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "contratos": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "registros_analisados_pendencias": {
+                  "type": "integer",
+                  "description": "Registros efetivamente analisados por analisar_pendencias (transportadores ativos e motoristas vinculados)."
+                },
+                "com_pendencias": {
+                  "type": "integer"
+                },
+                "sem_pendencias": {
+                  "type": "integer"
+                },
+                "documentos_vencidos": {
+                  "type": "integer"
+                },
+                "documentos_a_vencer": {
+                  "type": "integer"
+                },
+                "vencimentos_analisados": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "motoristas",
+                "transportadores",
+                "contratos",
+                "registros_analisados_pendencias",
+                "com_pendencias",
+                "sem_pendencias",
+                "documentos_vencidos",
+                "documentos_a_vencer",
+                "vencimentos_analisados"
+              ],
+              "additionalProperties": false
+            },
+            "principais_pendencias": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "motivo": {
+                    "type": "string"
+                  },
+                  "ocorrencias": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "motivo",
+                  "ocorrencias"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "incompleto": {
+              "type": "boolean",
+              "description": "true quando alguma métrica veio de lista truncada ou não pôde ser comprovada."
+            },
+            "avisos": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "dias": {
+                  "type": "integer"
+                },
+                "top_pendencias": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "dias",
+                "top_pendencias"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "totais",
+            "principais_pendencias",
+            "incompleto",
+            "avisos",
+            "filtros_aplicados"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       }
     ]
   }

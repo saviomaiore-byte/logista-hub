@@ -8,6 +8,7 @@ import listCertificadosVencendo from "./tools/list-certificados-vencendo";
 import analisarPendencias from "./tools/analisar-pendencias";
 import analisarVencimentos from "./tools/analisar-vencimentos";
 import analisarCruzamentos from "./tools/analisar-cruzamentos";
+import resumoOperacional from "./tools/resumo-operacional";
 
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
 
@@ -24,7 +25,8 @@ export default defineMcp({
     "Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem genérica. " +
     "Para perguntas sobre pendências, inaptidão ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relatório semanal. " +
     "Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa). " +
-    "Para perguntas sobre vínculos entre motoristas, transportadores e contratos, use analisar_cruzamentos, que retorna apenas relacionamentos comprovados por registro existente.",
+    "Para perguntas sobre vínculos entre motoristas, transportadores e contratos, use analisar_cruzamentos, que retorna apenas relacionamentos comprovados por registro existente. " +
+    "Para uma visão geral consolidada (totais, pendências e vencimentos), use resumo_operacional, que apenas agrega os resultados das análises existentes e sinaliza quando algo está incompleto.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
@@ -39,5 +41,6 @@ export default defineMcp({
     analisarPendencias,
     analisarVencimentos,
     analisarCruzamentos,
+    resumoOperacional,
   ],
 });

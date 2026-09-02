@@ -854,13 +854,130 @@ var analisar_cruzamentos_default = defineTool9({
   }
 });
 
+// src/lib/mcp/tools/resumo-operacional.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@1.0.0";
+import { z as z11 } from "npm:zod@^3.25.76";
+var resumo_operacional_default = defineTool10({
+  name: "resumo_operacional",
+  title: "Resumo operacional consolidado",
+  description: "Panorama operacional consolidado, montado a partir das ferramentas de an\xE1lise j\xE1 existentes: analisar_pendencias (regras oficiais de aptid\xE3o do relat\xF3rio semanal) e analisar_vencimentos (documentos vencidos e a vencer de motoristas), al\xE9m das contagens diretas de motoristas, transportadores e contratos. Retorna apenas totais comprovados; quando alguma contagem n\xE3o pode ser confirmada ou alguma lista foi truncada, isso \xE9 sinalizado em 'incompleto' e 'avisos'. N\xE3o classifica ningu\xE9m como apto/inapto ou regular/irregular fora dos motivos produzidos pelas regras existentes. Nenhum CPF/CNPJ ou n\xFAmero de documento \xE9 retornado. Ferramenta somente leitura.",
+  inputSchema: {
+    dias: z11.number().int().min(0).max(365).default(30).describe("Janela em dias usada na an\xE1lise de vencimentos. Padr\xE3o 30."),
+    top_pendencias: z11.number().int().min(1).max(20).default(5).describe("Quantidade de motivos de pend\xEAncia mais frequentes retornados.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  outputSchema: {
+    totais: z11.object({
+      motoristas: z11.number().int().nullable().describe("Total de motoristas cadastrados vis\xEDveis; null quando n\xE3o comprovado."),
+      transportadores: z11.number().int().nullable(),
+      contratos: z11.number().int().nullable(),
+      registros_analisados_pendencias: z11.number().int().describe("Registros efetivamente analisados por analisar_pendencias (transportadores ativos e motoristas vinculados)."),
+      com_pendencias: z11.number().int(),
+      sem_pendencias: z11.number().int(),
+      documentos_vencidos: z11.number().int(),
+      documentos_a_vencer: z11.number().int(),
+      vencimentos_analisados: z11.number().int()
+    }),
+    principais_pendencias: z11.array(
+      z11.object({
+        motivo: z11.string(),
+        ocorrencias: z11.number().int()
+      })
+    ),
+    incompleto: z11.boolean().describe("true quando alguma m\xE9trica veio de lista truncada ou n\xE3o p\xF4de ser comprovada."),
+    avisos: z11.array(z11.string()),
+    filtros_aplicados: z11.object({
+      dias: z11.number().int(),
+      top_pendencias: z11.number().int()
+    })
+  },
+  handler: async ({ dias, top_pendencias }, ctx) => {
+    if (!ctx.isAuthenticated()) return notAuthenticated();
+    const supabase = supabaseForUser(ctx);
+    const [motoristasCount, transportadoresCount, contratosCount, pendRes, vencRes] = await Promise.all([
+      supabase.from("motoristas").select("id", { count: "exact", head: true }),
+      supabase.from("transportadores").select("id", { count: "exact", head: true }),
+      supabase.from("contratos").select("id", { count: "exact", head: true }),
+      analisar_pendencias_default.handler({ entidade: "ambos", limite: 200 }, ctx),
+      analisar_vencimentos_default.handler({ dias, entidade: "ambos", limite: 200 }, ctx)
+    ]);
+    if (pendRes.isError) return pendRes;
+    if (vencRes.isError) return vencRes;
+    const pend = pendRes.structuredContent;
+    const venc = vencRes.structuredContent;
+    if (!pend || !venc) {
+      return {
+        content: [{ type: "text", text: "N\xE3o foi poss\xEDvel consolidar as an\xE1lises existentes." }],
+        isError: true
+      };
+    }
+    const avisos = [];
+    let incompleto = false;
+    if (motoristasCount.error || motoristasCount.count == null) {
+      incompleto = true;
+      avisos.push("Total de motoristas n\xE3o p\xF4de ser comprovado (retornado como null).");
+    }
+    if (transportadoresCount.error || transportadoresCount.count == null) {
+      incompleto = true;
+      avisos.push("Total de transportadores n\xE3o p\xF4de ser comprovado (retornado como null).");
+    }
+    if (contratosCount.error || contratosCount.count == null) {
+      incompleto = true;
+      avisos.push("Total de contratos n\xE3o p\xF4de ser comprovado (retornado como null).");
+    }
+    const contagem = /* @__PURE__ */ new Map();
+    for (const p of pend.pendencias) {
+      for (const motivo of p.motivos) {
+        contagem.set(motivo, (contagem.get(motivo) ?? 0) + 1);
+      }
+    }
+    const principais_pendencias = [...contagem.entries()].map(([motivo, ocorrencias]) => ({ motivo, ocorrencias })).sort((a, b) => b.ocorrencias - a.ocorrencias || a.motivo.localeCompare(b.motivo)).slice(0, top_pendencias);
+    if (pend.truncated) {
+      incompleto = true;
+      avisos.push(
+        `A lista de pend\xEAncias foi truncada (${pend.returned} de ${pend.total_com_pendencias}); 'principais_pendencias' considera apenas os registros retornados. Use analisar_pendencias com limite maior para o detalhamento completo.`
+      );
+    }
+    if (venc.truncated) {
+      incompleto = true;
+      avisos.push(
+        "A lista de vencimentos foi truncada; os totais de vencidos/a vencer refletem apenas os itens retornados por analisar_vencimentos. Use a ferramenta diretamente com limite maior."
+      );
+    }
+    avisos.push(
+      "Vencimentos consideram apenas motoristas: transportadores n\xE3o possuem datas de vencimento cadastradas. Certificados digitais da empresa s\xE3o consultados por list_certificados_vencendo."
+    );
+    const payload = {
+      totais: {
+        motoristas: motoristasCount.count ?? null,
+        transportadores: transportadoresCount.count ?? null,
+        contratos: contratosCount.count ?? null,
+        registros_analisados_pendencias: pend.total_analisado,
+        com_pendencias: pend.total_com_pendencias,
+        sem_pendencias: pend.total_sem_pendencias,
+        documentos_vencidos: venc.total_vencidos,
+        documentos_a_vencer: venc.total_a_vencer,
+        vencimentos_analisados: venc.total_analisado
+      },
+      principais_pendencias,
+      incompleto,
+      avisos,
+      filtros_aplicados: { dias, top_pendencias }
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "nfvokydyrklwvhqbavtx";
 var mcp_default = defineMcp({
   name: "pactum-logistica-hub",
   title: "Pactum Logista Hub",
   version: "0.1.0",
-  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal. Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa). Para perguntas sobre v\xEDnculos entre motoristas, transportadores e contratos, use analisar_cruzamentos, que retorna apenas relacionamentos comprovados por registro existente.",
+  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal. Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa). Para perguntas sobre v\xEDnculos entre motoristas, transportadores e contratos, use analisar_cruzamentos, que retorna apenas relacionamentos comprovados por registro existente. Para uma vis\xE3o geral consolidada (totais, pend\xEAncias e vencimentos), use resumo_operacional, que apenas agrega os resultados das an\xE1lises existentes e sinaliza quando algo est\xE1 incompleto.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -874,7 +991,8 @@ var mcp_default = defineMcp({
     list_certificados_vencendo_default,
     analisar_pendencias_default,
     analisar_vencimentos_default,
-    analisar_cruzamentos_default
+    analisar_cruzamentos_default,
+    resumo_operacional_default
   ]
 });
 

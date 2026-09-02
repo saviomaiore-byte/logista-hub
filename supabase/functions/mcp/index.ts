@@ -62,6 +62,13 @@ function notAuthenticated() {
     isError: true
   };
 }
+function maskDocumento(value) {
+  if (!value) return value ?? null;
+  const digitos = value.replace(/\D/g, "");
+  if (digitos.length <= 4) return value;
+  let restantes = digitos.length - 4;
+  return value.replace(/\d/g, (d) => restantes-- > 0 ? "*" : d);
+}
 function quoteFilterValue(value) {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
@@ -117,7 +124,7 @@ var list_motoristas_default = defineTool({
     if (situacao_operacional) query = query.eq("situacao_operacional", situacao_operacional);
     const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const motoristas = data ?? [];
+    const motoristas = (data ?? []).map((m) => ({ ...m, cpf: maskDocumento(m.cpf) }));
     const payload = {
       motoristas,
       ...paginationMeta(motoristas.length, count ?? null, limite, offset),

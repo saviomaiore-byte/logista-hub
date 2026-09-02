@@ -55,7 +55,7 @@ export default defineTool({
 
     const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const motoristas = data ?? [];
+    const motoristas = (data ?? []).map((m) => ({ ...m, cpf: maskDocumento(m.cpf) }));
     const payload = {
       motoristas,
       ...paginationMeta(motoristas.length, count ?? null, limite, offset),

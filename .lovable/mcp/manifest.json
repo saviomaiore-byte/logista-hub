@@ -1257,6 +1257,161 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         }
+      },
+      {
+        "name": "analisar_vencimentos",
+        "title": "Analisar vencimentos de documentos",
+        "description": "Lista documentos já vencidos ou que vencem dentro de uma janela de dias (padrão 30), usando apenas os campos de vencimento existentes no sistema. Motorista: CNH ('cnh_vencimento'), MOPP ('mopp_vencimento', ignorado quando 'mopp_vitalicio' = true), ANTT, Alvará e Certificado. Transportador: o cadastro guarda apenas os números de ANTT, alvará e certificado, SEM data de vencimento — por isso não há vencimentos a analisar para transportadores (use analisar_pendencias para ausência desses documentos). Para certificados digitais DA EMPRESA use list_certificados_vencendo. 'dias_para_vencer' negativo significa documento já vencido. Nenhum CPF/CNPJ ou número de documento é retornado. Ferramenta somente leitura.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "dias": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 365,
+              "default": 30,
+              "description": "Janela em dias a partir de hoje. Vencidos são sempre incluídos."
+            },
+            "entidade": {
+              "type": "string",
+              "enum": [
+                "ambos",
+                "motorista",
+                "transportador"
+              ],
+              "default": "ambos",
+              "description": "Restringe a análise a um tipo de entidade. Padrão: 'ambos'."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100,
+              "description": "Máximo de itens retornados na lista (os totais consideram tudo)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "total_analisado": {
+              "type": "integer",
+              "description": "Total de campos de vencimento preenchidos que foram avaliados."
+            },
+            "total_vencidos": {
+              "type": "integer"
+            },
+            "total_a_vencer": {
+              "type": "integer",
+              "description": "Vencem dentro da janela de dias informada (ainda não vencidos)."
+            },
+            "returned": {
+              "type": "integer"
+            },
+            "limite": {
+              "type": "integer"
+            },
+            "truncated": {
+              "type": "boolean"
+            },
+            "aviso": {
+              "type": "string"
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "dias": {
+                  "type": "integer"
+                },
+                "entidade": {
+                  "type": "string"
+                },
+                "data_limite": {
+                  "type": "string",
+                  "description": "Data limite (YYYY-MM-DD) considerada na janela."
+                }
+              },
+              "required": [
+                "dias",
+                "entidade",
+                "data_limite"
+              ],
+              "additionalProperties": false
+            },
+            "vencimentos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "entidade": {
+                    "type": "string",
+                    "enum": [
+                      "motorista",
+                      "transportador"
+                    ]
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "nome": {
+                    "type": "string"
+                  },
+                  "tipo_documento": {
+                    "type": "string"
+                  },
+                  "data_vencimento": {
+                    "type": "string",
+                    "description": "Data de vencimento (YYYY-MM-DD)."
+                  },
+                  "dias_para_vencer": {
+                    "type": "integer",
+                    "description": "Negativo quando já vencido."
+                  },
+                  "vencido": {
+                    "type": "boolean"
+                  },
+                  "situacao_operacional": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "entidade",
+                  "id",
+                  "nome",
+                  "tipo_documento",
+                  "data_vencimento",
+                  "dias_para_vencer",
+                  "vencido",
+                  "situacao_operacional"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "total_analisado",
+            "total_vencidos",
+            "total_a_vencer",
+            "returned",
+            "limite",
+            "truncated",
+            "aviso",
+            "filtros_aplicados",
+            "vencimentos"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       }
     ]
   }

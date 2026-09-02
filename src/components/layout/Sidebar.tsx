@@ -16,6 +16,7 @@ import {
   Menu,
   ClipboardList,
   Building2,
+  MessagesSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ const baseNavigation = [
   { name: "Conferência Docs", href: "/conferencia", icon: AlertTriangle },
   { name: "Certificados Digitais", href: "/certificados", icon: Calendar },
   { name: "Relatórios", href: "/relatorios", icon: ClipboardList },
+  { name: "Assistente", href: "/assistente", icon: MessagesSquare },
 ];
 
 const adminNavigation = [

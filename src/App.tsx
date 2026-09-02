@@ -18,6 +18,7 @@ import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
 import Seguranca from "./pages/Seguranca";
 import Relatorios from "./pages/Relatorios";
+import Assistente from "./pages/Assistente";
 import OAuthConsent from "./pages/OAuthConsent";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
@@ -81,6 +82,8 @@ function AppRoutes() {
       <Route path="/documentos-empresa" element={<ProtectedRoute><DocumentosEmpresa /></ProtectedRoute>} />
       <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
       <Route path="/seguranca" element={<ProtectedRoute><Seguranca /></ProtectedRoute>} />
+      <Route path="/assistente" element={<ProtectedRoute><Assistente /></ProtectedRoute>} />
+      <Route path="/assistente/:threadId" element={<ProtectedRoute><Assistente /></ProtectedRoute>} />
       <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />

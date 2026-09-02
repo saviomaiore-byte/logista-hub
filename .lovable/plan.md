@@ -1,219 +1,151 @@
-# Interface do Assistente Maiore — plano de UX/UI
+# Auditoria final do Assistente Maiore — somente inspeção
 
-Somente planejamento. Nenhuma alteração de código, banco, RLS, Storage, MCP, ferramentas ou deploy.
+Nenhum arquivo de código, banco, RLS, MCP, tool, dependência ou deploy foi alterado. Todas as verificações abaixo vieram de leitura de código, consultas read-only ao banco, execução de typecheck/testes e um novo Security Scan.
 
-Decisões já confirmadas: **conversas múltiplas (threads)**, **persistência no banco (Lovable Cloud)** e **motor de IA da Lovable chamando as consultas como tools**.
+## 1. Capacidades no chat vs. 10 tools MCP
 
-## A. Diagnóstico da UI atual
+Todas as 10 capacidades existem na Edge Function (`supabase/functions/assistente-chat/tools.ts`): list_motoristas, get_motorista, list_transportadores, list_contratos, list_seguros, list_certificados_vencendo, analisar_pendencias, analisar_vencimentos, analisar_cruzamentos, resumo_operacional.
 
-Verificado no código:
+- Filtros: preservados (busca, status, situacao_operacional, motorista_id, transportador_id, dias, entidade, limite, offset).
+- Paginação: presente em todas as listagens via `paginationMeta` (returned / total_encontrado / limite / offset / truncated / aviso). Exceção: `list_certificados_vencendo` retorna apenas `returned/limite/truncated`, sem `total_encontrado` (mesma limitação já registrada na auditoria MCP).
+- PII: CPF e CPF/CNPJ mascarados nas listagens; transportador expõe apenas presença de ANTT/alvará/certificado; análises não retornam documentos.
+- Status: OK para 9; ATENÇÃO para `get_motorista` (ver seção PII) e `list_certificados_vencendo` (sem total).
 
-- `src/components/layout/MainLayout.tsx`: sidebar fixa + `<main>` com `pl-64` no desktop e `pt-14` no mobile; conteúdo com `p-6 lg:p-8`. Não existe header global — cada página traz seu próprio cabeçalho (`MotoristasHeader`, `TransportadoresHeader`, `RelatoriosHeader`), com título, contador dinâmico e ações à direita.
-- `src/components/layout/Sidebar.tsx`: navy (`--sidebar-background: 222 47% 11%`), colapsável (64 → 20), ícones Lucide, item ativo via classe `nav-item active`, rodapé com avatar/inicial do usuário e "Sair". No mobile vira `Sheet` lateral com top bar de 14. Nav base: Dashboard, Motoristas, Transportadores, Seguros, Contratos, Conferência Docs, Certificados Digitais, Relatórios (+ Usuários/Segurança para admin).
-- `src/index.css`: tokens HSL semânticos (`--primary 222 47% 20%`, `--success`, `--warning`, `--destructive`, `--radius: 0.75rem`), gradientes e sombras de card, tema dark definido. Fonte **Inter** via Google Fonts.
-- Componentes: shadcn/Radix completo (`card`, `table`, `dialog`, `sheet`, `badge`, `tabs`, `accordion`, `skeleton`, `tooltip`), `sonner` + `use-toast` para notificações, tabelas que viram cards no mobile, React Query em hooks centralizados (`useMotoristas`, `useContratos`, …), `usePermissoes`/`useAdmin` para gates de UI.
-- Rotas em `src/App.tsx` protegidas por `AuthContext`; padrão de página = `MainLayout` + header + cards de resumo + lista/tabela + dialogs.
+## 2. Duplicação de lógica (débito técnico confirmado)
 
-Implicação: o Assistente deve reusar sidebar, tokens, Inter, Card/Badge/Table e o padrão de header de página. Nada de paleta nova nem de layout "produto separado".
+Cenário **C**: o chat tem uma segunda implementação independente em `supabase/functions/assistente-chat/tools.ts` (648 linhas), que reimplementa `maskDocumento`, `paginationMeta`, `diasEntre` e as regras de aptidão de `src/lib/aptidao.ts`. Os arquivos MCP (`src/lib/mcp/tools/*`) não foram tocados. Risco real de divergência: qualquer mudança futura de regra de aptidão, mascaramento ou paginação precisa ser aplicada em dois lugares. Registrado como débito técnico — sem refactor nesta etapa.
 
-## B. Recomendação de localização
+## 3. Autenticação e autorização
 
-| Opção | Usabilidade | Espaço | Impacto nas telas | Esforço | Responsivo | Escala |
-|---|---|---|---|---|---|---|
-| A. Página própria | Alta para análise longa | Total | Nenhum | Baixo | Boa | Boa |
-| B. Chat lateral global | Boa para consulta rápida | Estreito demais para tabelas | Precisa mexer no MainLayout | Médio | Ruim no mobile | Limitada |
-| C. **Página própria + acesso rápido** | Alta nos dois modos | Total na página | Mínimo (1 botão flutuante/atalho) | Médio-baixo | Boa | Boa |
-| D. Só dentro do Dashboard | Baixa | Pequeno | Alto | Baixo | Média | Ruim |
+- `supabase/config.toml`: `[functions.assistente-chat] verify_jwt = true`.
+- A função exige header `Bearer`, valida com `auth.getUser()` e cria o client com `SUPABASE_ANON_KEY` + token do usuário, preservando RLS.
+- Nenhum uso de `SUPABASE_SERVICE_ROLE_KEY` na função nem no frontend; nenhum secret no cliente (só `VITE_SUPABASE_URL`/anon key).
+- Sem autenticação: retorna 401 (`nao_autenticado`) — comportamento já validado anteriormente e presente no código.
 
-**Recomendada: C**, alinhada à sua preferência. Página `/assistente` (thread própria em `/assistente/:threadId`) como casa do Assistente + item na sidebar + botão de acesso rápido flutuante que **navega** para a página já com a pergunta pré-preenchida (não um segundo chat paralelo — evita duplicar estado e RLS). O botão respeita o mesmo gate de auth das demais rotas.
+## 4. Lovable AI / Gateway
 
-## C. Wireframe textual
+- Modelo `google/gemini-3.7-flash` via `https://ai.gateway.lovable.dev/v1` com header `Lovable-API-Key` lido de `LOVABLE_API_KEY` (secret já existente).
+- Streaming via `toUIMessageStreamResponse` com CORS.
+- **Pendência**: não há tratamento explícito de 429 (rate limit) nem 402 (créditos). Tudo cai no `catch` genérico `erro_temporario`, e o usuário vê apenas a mensagem genérica de falha. Sem timeout explícito e sem `onError`/`abort` do streamText.
 
-```text
-Desktop (>= 1024px)
-┌──────────┬───────────────────────────────┬──────────────────┐
-│ Sidebar  │ AssistenteHeader              │ Painel de        │
-│ (navy)   │  [logo] Assistente Maiore     │ conversas        │
-│          │  "Seu assistente operacional" │  + Nova conversa │
-│ ...      │  [Nova conversa]              │  • Pendências... │
-│ Assistente│──────────────────────────────│  • Vencimentos.. │
-│ (ativo)  │                               │  • Contratos ... │
-│          │  [Conversa / WelcomeState]    │  (renomear/excl.)│
-│          │                               │                  │
-│          │  ┌ Assistente ──────────────┐ │                  │
-│          │  │ Resumo + KPIs + tabela   │ │                  │
-│          │  │ ⚠ Resultado parcial      │ │                  │
-│          │  └──────────────────────────┘ │                  │
-│          │              ┌ Você ────────┐ │                  │
-│          │              │ pergunta...  │ │                  │
-│          │──────────────────────────────│                  │
-│          │ [textarea ............] [→]  │                  │
-└──────────┴───────────────────────────────┴──────────────────┘
+## 5. Tools do chat — somente leitura
 
-Tablet: painel de conversas vira Sheet acionado por botão no header.
-Mobile: sidebar já é Sheet; chat ocupa 100%; input fixo no rodapé (safe-area);
-        sugestões viram chips com scroll horizontal; tabelas viram cards.
-```
+Todas as tools usam apenas `.select()`. Nenhum `insert/update/delete/upsert`, nenhuma chamada a Storage, nenhuma RPC. As únicas escritas do Assistente são em `assistente_conversas`/`assistente_mensagens`, feitas pelo frontend com o usuário autenticado. Schemas de entrada validados por `zod` com min/max em `limite`, `offset`, `dias` e `uuid` em ids; erros de tool retornam `{ erro: true, mensagem }` (mensagem do PostgREST, sem SQL nem stack).
 
-## D. Fluxo de interação
+## 6. Prompt injection
 
-1. Usuário abre `/assistente` → se não há thread, cria uma e navega para `/assistente/:id`.
-2. WelcomeState com saudação + 5 sugestões clicáveis.
-3. Envio: mensagem do usuário aparece na hora (otimista) + indicador "Pensando…".
-4. Streaming: passos de execução aparecem em linha ("Consultando motoristas…", "Analisando pendências…"), colapsados por padrão.
-5. Resposta renderizada em markdown + blocos estruturados (KPI/tabela/lista/alerta).
-6. Follow-up: a thread inteira é reenviada ao modelo, então "e quais deles têm contrato pendente?" mantém contexto.
-7. Ações por mensagem: copiar, tentar novamente (em erro).
-8. Nova conversa / renomear / excluir pelo painel de conversas.
+O system prompt fixa escopo, somente leitura, privacidade e limites. Proteções estruturais reais: o modelo só enxerga as 10 tools de leitura, não recebe credenciais, e escrita é impossível pela RLS/anon key. **Pendência**: não há instrução explícita para recusar pedidos de revelar o system prompt / listar ferramentas internas, nem defesa declarada contra "ignore as instruções anteriores". Como não há capacidade de escrita nem acesso a secrets, o impacto é baixo (vazamento de instruções, não de dados).
 
-## E. Componentes necessários
+## 7. PII
 
-```text
-src/pages/Assistente.tsx                (rota /assistente e /assistente/:threadId)
-src/components/assistente/
-├── AssistenteHeader.tsx        título, subtítulo, nova conversa, botão de threads (mobile)
-├── ConversasSidebar.tsx        lista de threads, renomear, excluir, busca simples
-├── ChatContainer.tsx           Conversation + scroll-to-bottom
-├── WelcomeState.tsx            saudação + capacidades + sugestões
-├── SuggestedQuestions.tsx      chips de perguntas
-├── UserMessage.tsx             bolha primary/primary-foreground
-├── AssistantMessage.tsx        markdown sem bolha, sobre o fundo
-├── ToolExecutionState.tsx      passos amigáveis, accordion fechado
-├── ResultTable.tsx             tabela → cards no mobile
-├── ResultKpi.tsx               indicador numérico (reusa padrão do StatCard)
-├── PartialResultAlert.tsx      "⚠ Mostrando parte dos resultados (N de M)"
-├── ErrorMessage.tsx            erro amigável + botão Tentar novamente
-└── ChatInput.tsx               textarea, Enter envia, Shift+Enter quebra linha
-```
+- Listagens: CPF/CNPJ mascarados (só 4 dígitos). OK.
+- `get_motorista`: **permanece pendente** — retorna telefone, cidade/estado e as datas de documentos; o CPF está mascarado nesta versão do chat (diferente do achado MCP anterior). CNH/número de documento não é retornado. Risco baixo-médio, impacto limitado a usuários já autenticados.
+- `list_certificados_vencendo`: retorna `empresa`, sem CNPJ. O achado anterior de CNPJ completo **não se reproduz** na implementação do chat.
+- Análises (pendências, vencimentos, cruzamentos, resumo): sem documentos, apenas nomes/ids. OK.
+- UI: renderiza texto do modelo como markdown; não há filtro adicional de PII no cliente (débito conhecido, dependente do backend).
 
-Base: AI Elements (`conversation`, `message`, `prompt-input`, `shimmer`, `tool`) instalados via registry, customizados com os tokens do Pactum. Identidade visual própria (marca gerada), **sem** ícone `Sparkles` genérico.
+## 8. Contexto das conversas
 
-## F. Estados da interface
+Cada thread tem id próprio; `useChat({ id: conversaId })` + `key={threadId}` isolam o estado; mensagens carregadas por `conversa_id` e enviadas ao modelo apenas as da thread atual. Vazamento entre usuários é bloqueado pela RLS (`user_id = auth.uid()`).
 
-| Estado | Apresentação |
-|---|---|
-| Vazio (primeira vez) | WelcomeState + sugestões |
-| Enviando | Mensagem do usuário + shimmer "Pensando…" |
-| Executando consultas | Lista de passos em linguagem de negócio, sem nomes técnicos de tool |
-| Streaming | Texto aparecendo progressivamente; input desabilitado, botão vira "parar" |
-| Resposta completa | Markdown + blocos estruturados + ações (copiar) |
-| Resposta parcial | `PartialResultAlert` acima da lista/tabela |
-| Sem resultado | "Nenhum registro encontrado para esse filtro" (nunca inventar) |
-| Erro | Mensagem curta + "Tentar novamente"; sem stack trace |
-| Offline / sessão expirada | Aviso e chamada para reautenticar |
+## 9. Banco e RLS (verificado em produção)
 
-Mensagens de erro por caso: temporário ("Instabilidade momentânea, tente de novo"), autenticação ("Sua sessão expirou — entre novamente"), ferramenta indisponível ("Não consegui consultar X agora; o restante da resposta segue abaixo"), limite de uso (429/402 do gateway, tratado como aviso amigável), pergunta fora de escopo ("Consigo responder sobre motoristas, transportadores, contratos, seguros e certificados").
+- `assistente_conversas`: PK, RLS ativa, índice `idx_assistente_conversas_user`, policies SELECT/INSERT/UPDATE/DELETE todas com `user_id = auth.uid()` para `authenticated`.
+- `assistente_mensagens`: PK, FK `conversa_id → assistente_conversas(id) ON DELETE CASCADE`, índice por conversa, RLS ativa, policies SELECT/INSERT/DELETE com `user_id = auth.uid()` (sem UPDATE — correto).
+- Grants: `authenticated` e `service_role` têm privilégios; `anon` também tem grant de tabela, mas **nenhuma policy para anon**, então o acesso anônimo é efetivamente bloqueado.
+- **Débito**: o `WITH CHECK` de `assistente_mensagens` não valida que `conversa_id` pertence ao mesmo usuário. Um usuário poderia inserir uma mensagem apontando para a conversa de outro; ele não conseguiria lê-la (RLS por `user_id`) e o dono também não a veria. Impacto: integridade referencial/lixo, não vazamento.
 
-## G. Responsividade
+## 10. Persistência e streaming
 
-- **Desktop ≥1280**: 3 colunas (sidebar, chat, conversas). Chat com largura máxima legível (~48rem centralizada).
-- **1024–1279**: painel de conversas colapsa em botão/Sheet.
-- **Tablet 768–1023**: uma coluna, header compacto, sugestões em 2 linhas.
-- **Mobile <768**: chat full-screen sob a top bar de 14; input fixo no rodapé; tabelas em cards; alvos de toque ≥44px.
+Fluxo: criar conversa → salvar mensagem do usuário → stream → `onFinish` salva a resposta. Riscos identificados (não corrigidos):
+- Se a geração falhar ou o usuário sair antes do fim, `onFinish` não dispara e a resposta não é persistida: a thread fica com pergunta sem resposta ao recarregar.
+- Se `salvar.mutate` falhar (toast de erro), a UI segue com a mensagem em memória → divergência frontend/banco até o reload.
+- Não há botão de parar/cancelar a geração; interrupção não corrompe o histórico (nada é gravado parcialmente).
+- Título automático é a primeira pergunta; conversa pode ser criada sem nenhuma mensagem (thread vazia listada no painel).
 
-## H. Acessibilidade
+## 11. Paginação e resultados parciais
 
-- Landmark único `<main>`; lista de mensagens em `role="log"` com `aria-live="polite"` para leitura das respostas.
-- Foco no textarea ao abrir, após enviar, ao terminar o stream e ao trocar de thread.
-- Enter envia, Shift+Enter quebra linha, Esc fecha painéis; navegação por Tab em todos os controles.
-- `aria-label` em todo botão só de ícone (enviar, nova conversa, excluir, copiar).
-- Contraste via tokens (`text-foreground`, `primary`/`primary-foreground`); nada de cinza arbitrário.
-- Loading anunciado por texto ("Consultando dados…"), não só animação.
-- Item de conversa: linha não-botão com botões separados de selecionar e excluir (sem botão dentro de botão).
+Metadados corretos são devolvidos ao modelo, e o system prompt obriga usar `total_encontrado` e sinalizar "⚠ Resultado parcial:". Isso é **instrução ao modelo**, não garantia técnica: não existe componente de UI que force o aviso quando `truncated = true` — depende do texto gerado.
 
-## I. Histórico de conversas
+## 12. Regras de orquestração
 
-UX: painel com lista de conversas (título automático a partir da primeira pergunta), "Nova conversa", renomear inline, excluir com confirmação e busca por texto do título. Cada conversa tem URL própria; recarregar `/assistente/:id` restaura a conversa.
+Os limites (5 chamadas, 3 níveis, 10 ids, 4 páginas) existem apenas como texto no system prompt. O único controle técnico real é `stopWhen: stepCountIs(8)`, que é mais permissivo que o limite declarado de 5 chamadas. Classificação: débito técnico, sem risco de escrita.
 
-Persistência escolhida: **banco (Lovable Cloud)**. O que será necessário na etapa de implementação:
+## 13. Erros
 
-- Tabela `assistente_conversas` (id, user_id, titulo, created_at, updated_at) e `assistente_mensagens` (id uuid gerado pelo banco, conversa_id, role, parts jsonb, created_at).
-- GRANTs para `authenticated` e `service_role`; RLS estrita por `auth.uid() = user_id` (SELECT/INSERT/UPDATE/DELETE somente do dono — nada de leitura ampla como nas tabelas operacionais).
-- Ids de mensagem do AI SDK (`msg_…`) não vão em coluna uuid; se necessários, coluna texto à parte.
-- Persistência do assistente no `onFinish` do stream, com tratamento explícito de erro.
+401 tratado; erros de tool encapsulados; catch genérico devolve `erro_temporario`; UI mostra mensagem amigável com "Tentar novamente". Nenhum stack trace, token ou SQL chega ao usuário. Faltam: distinção de 429/402, sessão expirada e timeout.
 
-## J. Arquitetura de integração
+## 14. CSP
 
-```text
-Chat UI (React, useChat)
-   ↓ POST /functions/v1/assistente-chat  (JWT do usuário)
-Camada do Assistente (Edge Function)
-   • system prompt = protocolo de orquestração
-   • define as consultas como tools do AI SDK
-   • aplica limites (nº de chamadas, ids propagados, páginas)
-   ↓
-Camada de consulta (mesma lógica das 10 tools MCP)
-   ↓ client Supabase com o Bearer do usuário
-Supabase + RLS
-```
+`connect-src 'self' https://*.supabase.co wss://*.supabase.co` cobre a Edge Function (mesmo domínio Supabase). O gateway da Lovable é chamado **server-side**, não pelo browser, então não precisa estar na CSP. Streaming SSE passa pelo `connect-src` já liberado. Sem risco identificado.
 
-Responsabilidades: a **UI** só envia texto e renderiza `message.parts` — não conhece nomes de tabela, filtros nem nomes técnicos das tools; a **camada do Assistente** decide quais consultas fazer, em que ordem, e formata o resultado; a **camada de consulta** é read-only e roda sob o token do usuário; o **banco** aplica RLS.
+## 15. Dependências
 
-Observação técnica importante: as ferramentas do MCP são consumidas por clientes MCP externos (Connector, Claude, Cursor). O chat dentro do app **não pode chamar o Connector**; a Edge Function precisa expor as mesmas consultas como tools do AI SDK, **reutilizando a lógica já existente** em `src/lib/mcp/tools/*` (ou um módulo compartilhado) para não duplicar regras de negócio. Nenhuma tool MCP é alterada.
+`ai@^7.0.90`, `@ai-sdk/react@^4.0.93`, `zod@^3.25.76`, `react-markdown@^10.1.0`. Observações: a Edge Function fixa `npm:ai@7.0.90` e `npm:zod@3.25.76` (bom, evita a regressão de Standard Schema já corrigida). `react-markdown` está instalado mas **não é usado** — a renderização usa `streamdown` via AI Elements: dependência supérflua no bundle. `@ai-sdk/openai-compatible` só existe na Edge Function (não é dep do frontend).
 
-## K. Arquivos que precisariam ser criados/alterados
+## 16. Testes e regressão
 
-| Arquivo | Motivo | Tipo |
-|---|---|---|
-| `src/pages/Assistente.tsx` | Página do chat | Novo |
-| `src/components/assistente/*` | Componentes listados na seção E | Novos |
-| `src/components/ai-elements/*` | Primitivas AI Elements instaladas via registry | Novos (gerados) |
-| `src/App.tsx` | Rotas `/assistente` e `/assistente/:threadId` | Edição pequena |
-| `src/components/layout/Sidebar.tsx` | Item de menu "Assistente" | Edição pequena (1 entrada no array) |
-| `src/hooks/useAssistenteConversas.ts` | React Query para threads/mensagens | Novo |
-| `supabase/functions/assistente-chat/index.ts` | Motor do chat (AI Gateway + tools) | Nova Edge Function |
-| `src/lib/mcp/tools/*` (ou módulo compartilhado) | Reuso da lógica de consulta pelo chat | Refactor sem mudança de comportamento (etapa futura) |
-| Migration `assistente_conversas` / `assistente_mensagens` | Persistência com RLS por usuário | Nova migration |
-| `index.html` / assets | Marca do Assistente | Ajuste pontual |
+- Typecheck: OK, sem erros.
+- Vitest: 20/20 passando (5 arquivos).
+- Sidebar/App.tsx receberam apenas a nova entrada e as duas rotas protegidas; MainLayout, AuthContext, React Query, CSP, MCP e as 10 tools MCP permanecem inalterados.
 
-## L. Dependências novas
+## 17. Novo Security Scan
 
-- `ai` + `@ai-sdk/react` (+ `@ai-sdk/openai-compatible` no lado da Edge Function) para streaming.
-- AI Elements via `shadcn add` (código-fonte no projeto, não é dependência de runtime).
-- `react-markdown` se as primitivas instaladas não cobrirem a renderização de markdown.
-- Lovable AI Gateway habilitado (`LOVABLE_API_KEY`); nenhuma chave de terceiros.
+15 achados no total; os 4 críticos (motoristas, transportadores, contratos, seguros) e os warns operacionais já eram conhecidos e aceitos. **Nenhum achado novo introduzido pelo Assistente**: `assistente_conversas` e `assistente_mensagens` não aparecem no scan, não há novo secret, nem exposição via Edge Function.
 
-## M. Riscos
+## 18. Classificação final
 
-| Risco | Nível |
-|---|---|
-| Chat expor PII além do necessário (ex.: pedir cadastro completo) | **Alto** — mitigar no system prompt e evitando exibir documento na UI |
-| Duplicação de regra de negócio entre MCP e Edge Function do chat | **Alto** se copiada; médio com módulo compartilhado |
-| Custo/latência de LLM em perguntas amplas | Médio |
-| Respostas parciais interpretadas como totais pelo usuário | Médio — mitigado pelo `PartialResultAlert` |
-| Novas tabelas de conversa com RLS frouxa | Médio — exigir política estrita por `auth.uid()` |
-| CSP atual bloquear o endpoint de streaming | Médio — revisar `connect-src` |
-| Peso de bundle das primitivas de chat | Baixo |
-| Quebra de layout em telas pequenas | Baixo |
+| Área | Status | Gravidade | Evidência | Ação necessária |
+|---|---|---|---|---|
+| Interface | 🟢 OK | — | Welcome state, 6 cards, painel de threads, tokens do design system | — |
+| Rotas | 🟢 OK | — | `/assistente` e `/assistente/:threadId` protegidas | — |
+| Histórico | 🟡 Atenção | baixa | Thread pode ficar vazia; resposta não persistida em falha | Persistir resposta parcial / limpar threads vazias |
+| RLS | 🟡 Atenção | baixa | `WITH CHECK` de mensagens não valida dono da conversa | Reforçar policy com EXISTS na conversa |
+| Autenticação | 🟢 OK | — | verify_jwt, getUser, token propagado, 401 | — |
+| Edge Function | 🟢 OK | — | Somente leitura, CORS, catch genérico | — |
+| Lovable AI | 🟡 Atenção | média | Sem tratamento de 429/402/timeout | Mapear erros do gateway |
+| 10 tools | 🟡 Atenção | média | Lógica duplicada do MCP | Extrair módulo compartilhado |
+| PII | 🟡 Atenção | baixa | `get_motorista` retorna telefone/cidade | Reduzir campos ou condicionar |
+| Prompt injection | 🟡 Atenção | baixa | Sem regra anti-revelação de prompt | Adicionar cláusula ao system prompt |
+| Contexto | 🟢 OK | — | id por thread, RLS por usuário | — |
+| Streaming | 🟡 Atenção | baixa | Sem botão de parar; onFinish único ponto de persistência | Adicionar stop + persistência resiliente |
+| Paginação | 🟡 Atenção | média | Aviso de parcialidade depende do modelo | Componente de alerta parcial na UI |
+| CSP | 🟢 OK | — | connect-src cobre Supabase; gateway é server-side | — |
+| Dependências | 🟡 Atenção | baixa | `react-markdown` não utilizado | Remover em limpeza futura |
+| Regressão | 🟢 OK | — | typecheck + 20/20 testes; MCP intacto | — |
+| Segurança | 🟢 OK | — | Scan sem achados novos do Assistente | — |
 
-## N. Critérios de aceite da futura implementação
+## 19. Resultado final
 
-1. `/assistente` acessível pela sidebar e por acesso rápido, dentro do `MainLayout`, visualmente indistinguível do resto do sistema (tokens, Inter, Card/Badge/Table).
-2. Threads com URL própria: criar → navega; recarregar restaura a conversa certa; duas conversas não misturam mensagens.
-3. Mensagens persistidas por usuário com RLS validada (usuário A não lê conversa de B).
-4. Mensagem do usuário aparece imediatamente; indicador de processamento em linguagem de negócio; input desabilitado durante o stream.
-5. Renderização de `message.parts`, markdown, tabela, KPI, alerta de parcial e erro amigável — sem stack trace nem nome técnico de tool.
-6. `truncated:true` sempre gera o alerta de resultado parcial com "N de M".
-7. Nenhum CPF/CNPJ exibido na interface do chat.
-8. Teclado: Enter envia, Shift+Enter quebra linha, foco correto, `aria-label` em ícones, `aria-live` na conversa.
-9. Mobile 375px sem overflow horizontal; tabelas em cards.
-10. Somente leitura: nenhuma ação de escrita disponível ao Assistente.
-11. Typecheck, build, Vitest e scan de segurança sem novos achados.
+### ✅ O que foi confirmado
+- 10 capacidades disponíveis no chat, todas somente leitura.
+- JWT obrigatório, RLS preservada, sem service_role e sem secrets no frontend.
+- Tabelas do Assistente com RLS por proprietário, FK com cascade, índices e grants corretos.
+- Contexto isolado por thread e entre usuários.
+- CSP compatível com o streaming; typecheck e 20/20 testes OK; MCP e telas existentes intactos.
+- Security Scan sem nenhum achado novo atribuível ao Assistente.
 
-## O. Escopo: agora x depois
+### ⚠️ Pendências encontradas
+- Duplicação das regras entre MCP e Edge Function.
+- Erros 429/402/timeout do gateway sem tratamento específico.
+- Limites de orquestração apenas textuais (`stepCountIs(8)` > 5 chamadas declaradas).
+- Resposta não persistida quando a geração falha; sem cancelar geração.
+- `WITH CHECK` de mensagens sem verificação do dono da conversa.
+- `get_motorista` devolve telefone/cidade; `list_certificados_vencendo` sem `total_encontrado`.
+- `react-markdown` instalado sem uso.
 
-**Agora (etapa da interface)**
-- Página `/assistente` + rota de thread, item na sidebar e acesso rápido.
-- Componentes de chat, welcome state, sugestões, input, estados de loading/erro/parcial.
-- Blocos de resultado (KPI, tabela, lista, alerta).
-- Edge Function de chat com as consultas como tools e o protocolo de orquestração no system prompt.
-- Tabelas de conversa/mensagem com RLS por usuário.
+### 🔴 Bloqueadores
+Nenhum.
 
-**Depois**
-- Correção dos achados de PII em `get_motorista` e `list_certificados_vencendo`.
-- Exportar conversa (PDF/e-mail) e integração com o módulo de Relatórios.
-- Busca semântica no histórico e favoritos.
-- Ações de escrita (nenhuma nesta etapa nem na seguinte sem decisão explícita).
-- Refactor formal do módulo compartilhado de consultas MCP ↔ chat.
+### 🟡 Débitos técnicos
+Duplicação de lógica, ausência de UI dedicada a resultado parcial, threads vazias, dependência não usada, limites de orquestração não técnicos.
 
-Aguardando sua autorização para implementar.
+### 📌 Recomendações (por prioridade)
+1. **Alto** — Tratar 429/402 e timeout do gateway com mensagens específicas ao usuário.
+2. **Alto** — Reforçar o `WITH CHECK` de `assistente_mensagens` com verificação do dono da conversa.
+3. **Médio** — Extrair as regras compartilhadas (aptidão, máscara, paginação, datas) para um módulo único usado por MCP e chat.
+4. **Médio** — Persistência resiliente da resposta (salvar parcial/erro) e botão de parar geração.
+5. **Baixo** — Reduzir campos de `get_motorista`, adicionar `total_encontrado` em certificados, cláusula anti-revelação no prompt e remover `react-markdown`.
+
+### 🏁 Veredito
+**B) APROVADO COM PENDÊNCIAS NÃO BLOQUEADORAS** — a arquitetura é segura (autenticada, RLS, somente leitura, sem secrets expostos e sem novos achados de segurança), e as pendências encontradas são de robustez, UX de erro e manutenção, não de exposição de dados ou de integridade operacional.

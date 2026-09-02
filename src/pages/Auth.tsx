@@ -160,7 +160,7 @@ export default function Auth() {
           navigate(nextPath);
         }
       } else {
-        const { error } = await signUp(email, password, nome);
+        const { error } = await signUp(email, password, nome, `${window.location.origin}${nextPath}`);
         if (error) {
           toast.error(error.message);
         } else {

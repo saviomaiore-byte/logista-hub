@@ -2,7 +2,7 @@
 // Espelham exatamente as regras das 10 tools MCP (src/lib/mcp/tools/*), que
 // permanecem inalteradas. Somente leitura: nenhum insert/update/delete.
 import { tool } from "npm:ai@7.0.90";
-import { z } from "npm:zod@3.23.8";
+import { z } from "npm:zod@3.25.76";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 /* ------------------------------- helpers ------------------------------- */

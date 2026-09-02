@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { likeTerm, notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
+import { paginationShape } from "../schemas";
+import { likeTerm, notAuthenticatedimport { likeTerm, notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_seguros",
@@ -19,6 +20,26 @@ export default defineTool({
     seguradora: z.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
     limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros por página."),
     offset: z.number().int().min(0).default(0).describe("Deslocamento para paginação (padrão 0)."),
+  },
+  outputSchema: {
+    seguros: z.array(
+      z.object({
+        id: z.string(),
+        seguradora: z.string().nullable(),
+        tipo: z.string().nullable(),
+        numero_apolice: z.string().nullable(),
+        status: z.string().nullable(),
+        vigencia_inicio: z.string().nullable(),
+        vigencia_fim: z.string().nullable(),
+        valor_premio: z.number().nullable(),
+        motorista_id: z.string().nullable(),
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z.object({
+      status: z.string().nullable(),
+      seguradora: z.string().nullable(),
+    }),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, seguradora, limite, offset }, ctx) => {

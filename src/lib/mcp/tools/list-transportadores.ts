@@ -8,6 +8,7 @@ import {
   supabaseForUser,
   temDocumento,
 } from "../supabase";
+import { paginationShape } from "../schemas";
 import { z } from "zod";
 
 export default defineTool({
@@ -26,6 +27,24 @@ export default defineTool({
     busca: z.string().trim().optional().describe("Texto para buscar em razão social ou CPF/CNPJ (parcial)."),
     limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros por página."),
     offset: z.number().int().min(0).default(0).describe("Deslocamento para paginação (padrão 0)."),
+  },
+  outputSchema: {
+    transportadores: z.array(
+      z.object({
+        id: z.string(),
+        razao_social: z.string(),
+        cpf_cnpj: z.string().nullable().describe("CPF/CNPJ mascarado (apenas 4 últimos dígitos visíveis)."),
+        contato: z.string().nullable(),
+        email: z.string().nullable(),
+        status: z.string().nullable(),
+        situacao_operacional: z.string().nullable(),
+        tem_antt: z.boolean(),
+        tem_alvara: z.boolean(),
+        tem_certificado: z.boolean(),
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z.object({ busca: z.string().nullable() }),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, limite, offset }, ctx) => {

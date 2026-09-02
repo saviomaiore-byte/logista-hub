@@ -111,6 +111,8 @@ export default defineTool({
 
     const itens: Item[] = [];
     let total_analisado = 0;
+    let total_datas_invalidas = 0;
+
 
     if (entidade !== "transportador") {
       const { data, error } = await supabase

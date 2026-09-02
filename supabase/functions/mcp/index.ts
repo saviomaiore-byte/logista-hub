@@ -687,6 +687,7 @@ var analisar_vencimentos_default = defineTool8({
     const data_limite = new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10);
     const itens = [];
     let total_analisado = 0;
+    let total_datas_invalidas = 0;
     if (entidade !== "transportador") {
       const { data, error } = await supabase.from("motoristas").select(
         "id, nome, situacao_operacional, mopp_vitalicio, cnh_vencimento, mopp_vencimento, antt_vencimento, alvara_vencimento, certificado_vencimento"

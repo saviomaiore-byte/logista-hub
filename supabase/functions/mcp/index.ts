@@ -732,7 +732,7 @@ var analisar_vencimentos_default = defineTool8({
       returned: lista.length,
       limite,
       truncated,
-      aviso: (truncated ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em at\xE9 ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) + semTransportador,
+      aviso: (truncated ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em at\xE9 ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) + semTransportador + avisoDatasInvalidas,
       filtros_aplicados: { dias, entidade, data_limite },
       vencimentos: lista
     };

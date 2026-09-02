@@ -633,9 +633,16 @@ var CAMPOS_MOTORISTA = [
   { campo: "alvara_vencimento", tipo: "Alvar\xE1" },
   { campo: "certificado_vencimento", tipo: "Certificado" }
 ];
+var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function diasEntre(hojeISO, dataISO) {
-  const ms = Date.parse(`${dataISO}T00:00:00Z`) - Date.parse(`${hojeISO}T00:00:00Z`);
-  return Math.round(ms / 864e5);
+  const bruto = String(dataISO).slice(0, 10);
+  if (!ISO_DATE.test(bruto)) return null;
+  const alvo = Date.parse(`${bruto}T00:00:00Z`);
+  const base = Date.parse(`${hojeISO}T00:00:00Z`);
+  if (!Number.isFinite(alvo) || !Number.isFinite(base)) return null;
+  if (new Date(alvo).toISOString().slice(0, 10) !== bruto) return null;
+  const dias = Math.round((alvo - base) / 864e5);
+  return Number.isFinite(dias) ? dias : null;
 }
 var analisar_vencimentos_default = defineTool8({
   name: "analisar_vencimentos",

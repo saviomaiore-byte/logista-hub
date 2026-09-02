@@ -15,10 +15,25 @@ const CAMPOS_MOTORISTA = [
   { campo: "certificado_vencimento", tipo: "Certificado" },
 ] as const;
 
-function diasEntre(hojeISO: string, dataISO: string): number {
-  const ms = Date.parse(`${dataISO}T00:00:00Z`) - Date.parse(`${hojeISO}T00:00:00Z`);
-  return Math.round(ms / 86400000);
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Retorna a diferença em dias inteiros, ou `null` quando a data armazenada não
+ * pode ser interpretada com segurança (formato inesperado ou data inválida).
+ * Nunca retorna NaN.
+ */
+function diasEntre(hojeISO: string, dataISO: string): number | null {
+  const bruto = String(dataISO).slice(0, 10);
+  if (!ISO_DATE.test(bruto)) return null;
+  const alvo = Date.parse(`${bruto}T00:00:00Z`);
+  const base = Date.parse(`${hojeISO}T00:00:00Z`);
+  if (!Number.isFinite(alvo) || !Number.isFinite(base)) return null;
+  // Rejeita datas "roláveis" como 2025-02-31.
+  if (new Date(alvo).toISOString().slice(0, 10) !== bruto) return null;
+  const dias = Math.round((alvo - base) / 86400000);
+  return Number.isFinite(dias) ? dias : null;
 }
+
 
 export default defineTool({
   name: "analisar_vencimentos",

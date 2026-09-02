@@ -14,11 +14,11 @@ export default defineMcp({
   version: "0.1.0",
   instructions:
     "Ferramentas de consulta do Pactum Logística: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permissões do usuário autenticado. " +
-    "REGRA OBRIGATÓRIA para as tools de listagem: nunca deduza ausência, inexistência ou contagem total de registros a partir de uma lista que possa estar truncada. " +
-    "As respostas trazem os campos 'returned', 'limite', 'truncated' e, quando disponível, 'total_encontrado'. " +
-    "Se 'truncated' for true, informe explicitamente que o resultado é parcial e não afirme que não existem outros registros. " +
-    "Se uma listagem retornar zero registros com filtros amplos ou truncamento possível, diga que nada foi encontrado no conjunto consultado, sem afirmar inexistência. " +
-    "Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de procurar em uma listagem genérica.",
+    "PAGINAÇÃO: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1–100, padrão 25) e 'offset' (padrão 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. " +
+    "'total_encontrado' é o total de registros que atendem aos filtros aplicados; 'returned' é apenas a quantidade da página atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver disponível. " +
+    "'truncated' = true significa que existem mais registros além da página atual: informe que o resultado é parcial e use 'offset' (offset + limite) para buscar as próximas páginas antes de concluir qualquer coisa. " +
+    "NUNCA afirme que não existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de paginação e 'total_encontrado' antes de afirmar ausência — offset além do total também produz zero registros. " +
+    "Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem genérica.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",

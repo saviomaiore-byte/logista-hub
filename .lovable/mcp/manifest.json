@@ -53,7 +53,166 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "motoristas": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "nome": {
+                    "type": "string"
+                  },
+                  "cpf": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "CPF mascarado (apenas 4 últimos dígitos visíveis)."
+                  },
+                  "telefone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "cidade": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "estado": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "situacao_operacional": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "cnh_vencimento": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "mopp_vencimento": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "mopp_vitalicio": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "nome",
+                  "cpf",
+                  "telefone",
+                  "email",
+                  "cidade",
+                  "estado",
+                  "status",
+                  "situacao_operacional",
+                  "cnh_vencimento",
+                  "mopp_vencimento",
+                  "mopp_vitalicio"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "returned": {
+              "type": "integer",
+              "description": "Quantidade de registros nesta página."
+            },
+            "total_encontrado": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Total de registros que atendem aos filtros (null quando indisponível)."
+            },
+            "limite": {
+              "type": "integer",
+              "description": "Limite aplicado na consulta."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Deslocamento aplicado na consulta."
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "true quando existem mais registros além desta página."
+            },
+            "aviso": {
+              "type": "string",
+              "description": "Mensagem sobre a completude do resultado."
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "busca": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "situacao_operacional": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "busca",
+                "situacao_operacional"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "motoristas",
+            "returned",
+            "total_encontrado",
+            "limite",
+            "offset",
+            "truncated",
+            "aviso",
+            "filtros_aplicados"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       },
       {
         "name": "get_motorista",
@@ -79,7 +238,243 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "motorista": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "cpf": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "telefone": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cidade": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "estado": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "situacao_operacional": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_transportador_proprio": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "cnh_numero": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cnh_vencimento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "mopp_numero": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "mopp_vencimento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "mopp_vitalicio": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "antt_numero": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "antt_vencimento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "alvara_numero": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "alvara_vencimento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "certificado_numero": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "certificado_vencimento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "updated_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nome",
+                "cpf",
+                "telefone",
+                "email",
+                "cidade",
+                "estado",
+                "status",
+                "situacao_operacional",
+                "is_transportador_proprio",
+                "cnh_numero",
+                "cnh_vencimento",
+                "mopp_numero",
+                "mopp_vencimento",
+                "mopp_vitalicio",
+                "antt_numero",
+                "antt_vencimento",
+                "alvara_numero",
+                "alvara_vencimento",
+                "certificado_numero",
+                "certificado_vencimento",
+                "created_at",
+                "updated_at"
+              ],
+              "additionalProperties": false
+            },
+            "transportadores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "transportador_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transportadores": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "razao_social": {
+                            "type": "string"
+                          },
+                          "cpf_cnpj": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "situacao_operacional": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "razao_social",
+                          "cpf_cnpj",
+                          "status",
+                          "situacao_operacional"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "transportador_id",
+                  "transportadores"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "motorista",
+            "transportadores"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       },
       {
         "name": "list_transportadores",
@@ -114,7 +509,136 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "transportadores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "razao_social": {
+                    "type": "string"
+                  },
+                  "cpf_cnpj": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "CPF/CNPJ mascarado (apenas 4 últimos dígitos visíveis)."
+                  },
+                  "contato": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "situacao_operacional": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "tem_antt": {
+                    "type": "boolean"
+                  },
+                  "tem_alvara": {
+                    "type": "boolean"
+                  },
+                  "tem_certificado": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "razao_social",
+                  "cpf_cnpj",
+                  "contato",
+                  "email",
+                  "status",
+                  "situacao_operacional",
+                  "tem_antt",
+                  "tem_alvara",
+                  "tem_certificado"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "returned": {
+              "type": "integer",
+              "description": "Quantidade de registros nesta página."
+            },
+            "total_encontrado": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Total de registros que atendem aos filtros (null quando indisponível)."
+            },
+            "limite": {
+              "type": "integer",
+              "description": "Limite aplicado na consulta."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Deslocamento aplicado na consulta."
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "true quando existem mais registros além desta página."
+            },
+            "aviso": {
+              "type": "string",
+              "description": "Mensagem sobre a completude do resultado."
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "busca": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "busca"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "transportadores",
+            "returned",
+            "total_encontrado",
+            "limite",
+            "offset",
+            "truncated",
+            "aviso",
+            "filtros_aplicados"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       },
       {
         "name": "list_contratos",
@@ -159,7 +683,168 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "contratos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "empresa": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "cnpj": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "tipo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "modelo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "data_envio": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "data_assinatura": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "motorista_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transportador_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "observacoes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "empresa",
+                  "cnpj",
+                  "tipo",
+                  "modelo",
+                  "status",
+                  "data_envio",
+                  "data_assinatura",
+                  "motorista_id",
+                  "transportador_id",
+                  "observacoes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "returned": {
+              "type": "integer",
+              "description": "Quantidade de registros nesta página."
+            },
+            "total_encontrado": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Total de registros que atendem aos filtros (null quando indisponível)."
+            },
+            "limite": {
+              "type": "integer",
+              "description": "Limite aplicado na consulta."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Deslocamento aplicado na consulta."
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "true quando existem mais registros além desta página."
+            },
+            "aviso": {
+              "type": "string",
+              "description": "Mensagem sobre a completude do resultado."
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "motorista_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "transportador_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "status",
+                "motorista_id",
+                "transportador_id"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "contratos",
+            "returned",
+            "total_encontrado",
+            "limite",
+            "offset",
+            "truncated",
+            "aviso",
+            "filtros_aplicados"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       },
       {
         "name": "list_seguros",
@@ -198,7 +883,147 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "seguros": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "seguradora": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "tipo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "numero_apolice": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "vigencia_inicio": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "vigencia_fim": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "valor_premio": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "motorista_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "seguradora",
+                  "tipo",
+                  "numero_apolice",
+                  "status",
+                  "vigencia_inicio",
+                  "vigencia_fim",
+                  "valor_premio",
+                  "motorista_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "returned": {
+              "type": "integer",
+              "description": "Quantidade de registros nesta página."
+            },
+            "total_encontrado": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Total de registros que atendem aos filtros (null quando indisponível)."
+            },
+            "limite": {
+              "type": "integer",
+              "description": "Limite aplicado na consulta."
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Deslocamento aplicado na consulta."
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "true quando existem mais registros além desta página."
+            },
+            "aviso": {
+              "type": "string",
+              "description": "Mensagem sobre a completude do resultado."
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "seguradora": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "status",
+                "seguradora"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "seguros",
+            "returned",
+            "total_encontrado",
+            "limite",
+            "offset",
+            "truncated",
+            "aviso",
+            "filtros_aplicados"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       },
       {
         "name": "list_certificados_vencendo",
@@ -230,7 +1055,78 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "outputSchema": null
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "certificados": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "empresa": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "tipo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "vencimento": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "data_renovacao_agendada": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "observacoes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "empresa",
+                  "tipo",
+                  "status",
+                  "vencimento",
+                  "data_renovacao_agendada",
+                  "observacoes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "ate": {
+              "type": "string",
+              "description": "Data limite (YYYY-MM-DD) usada no filtro de vencimento."
+            }
+          },
+          "required": [
+            "certificados",
+            "ate"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       }
     ]
   }

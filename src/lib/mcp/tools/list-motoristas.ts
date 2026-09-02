@@ -7,6 +7,7 @@ import {
   rangeFor,
   supabaseForUser,
 } from "../supabase";
+import { paginationShape } from "../schemas";
 import { z } from "zod";
 
 export default defineTool({
@@ -32,6 +33,29 @@ export default defineTool({
       ),
     limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros por página."),
     offset: z.number().int().min(0).default(0).describe("Deslocamento para paginação (padrão 0)."),
+  },
+  outputSchema: {
+    motoristas: z.array(
+      z.object({
+        id: z.string(),
+        nome: z.string(),
+        cpf: z.string().nullable().describe("CPF mascarado (apenas 4 últimos dígitos visíveis)."),
+        telefone: z.string().nullable(),
+        email: z.string().nullable(),
+        cidade: z.string().nullable(),
+        estado: z.string().nullable(),
+        status: z.string().nullable(),
+        situacao_operacional: z.string().nullable(),
+        cnh_vencimento: z.string().nullable(),
+        mopp_vencimento: z.string().nullable(),
+        mopp_vitalicio: z.boolean().nullable(),
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z.object({
+      busca: z.string().nullable(),
+      situacao_operacional: z.string().nullable(),
+    }),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, situacao_operacional, limite, offset }, ctx) => {

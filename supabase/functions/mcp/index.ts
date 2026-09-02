@@ -97,19 +97,54 @@ function paginationMeta(returned, total, limite, offset) {
   };
 }
 
-// src/lib/mcp/tools/list-motoristas.ts
+// src/lib/mcp/schemas.ts
 import { z } from "npm:zod@^3.25.76";
+var paginationShape = {
+  returned: z.number().int().describe("Quantidade de registros nesta p\xE1gina."),
+  total_encontrado: z.number().int().nullable().describe("Total de registros que atendem aos filtros (null quando indispon\xEDvel)."),
+  limite: z.number().int().describe("Limite aplicado na consulta."),
+  offset: z.number().int().describe("Deslocamento aplicado na consulta."),
+  truncated: z.boolean().describe("true quando existem mais registros al\xE9m desta p\xE1gina."),
+  aviso: z.string().describe("Mensagem sobre a completude do resultado.")
+};
+var dataNullable = z.string().nullable();
+
+// src/lib/mcp/tools/list-motoristas.ts
+import { z as z2 } from "npm:zod@^3.25.76";
 var list_motoristas_default = defineTool({
   name: "list_motoristas",
   title: "Listar motoristas",
   description: "Lista motoristas cadastrados, com busca por nome ou CPF e filtro por situa\xE7\xE3o operacional. Filtros: 'busca' (nome ou CPF, correspond\xEAncia parcial), 'situacao_operacional', 'limite' e 'offset'. Campo 'status' do motorista (retornado, n\xE3o filtr\xE1vel): 'ativo', 'inativo' ou 'pendente'. Campo 'situacao_operacional' do motorista \xE9 um marcador operacional legado, n\xE3o editado nas telas atuais; valores existentes: 'em_praca_apto' e 'em_praca' (em pra\xE7a, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. A situa\xE7\xE3o operacional usada oficialmente nos relat\xF3rios \xE9 a do TRANSPORTADOR vinculado (ver list_transportadores), n\xE3o a do motorista. O CPF \xE9 retornado mascarado (apenas os 4 \xFAltimos d\xEDgitos vis\xEDveis); a busca continua funcionando com o CPF completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
   inputSchema: {
-    busca: z.string().trim().optional().describe("Texto para buscar em nome ou CPF (parcial)."),
-    situacao_operacional: z.string().trim().optional().describe(
+    busca: z2.string().trim().optional().describe("Texto para buscar em nome ou CPF (parcial)."),
+    situacao_operacional: z2.string().trim().optional().describe(
       "Filtra pela situa\xE7\xE3o operacional do motorista (campo legado). Valores em uso: 'em_praca_apto', 'em_praca', 'em_viagem_apto', 'inapto'."
     ),
-    limite: z.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
-    offset: z.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+    limite: z2.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z2.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+  },
+  outputSchema: {
+    motoristas: z2.array(
+      z2.object({
+        id: z2.string(),
+        nome: z2.string(),
+        cpf: z2.string().nullable().describe("CPF mascarado (apenas 4 \xFAltimos d\xEDgitos vis\xEDveis)."),
+        telefone: z2.string().nullable(),
+        email: z2.string().nullable(),
+        cidade: z2.string().nullable(),
+        estado: z2.string().nullable(),
+        status: z2.string().nullable(),
+        situacao_operacional: z2.string().nullable(),
+        cnh_vencimento: z2.string().nullable(),
+        mopp_vencimento: z2.string().nullable(),
+        mopp_vitalicio: z2.boolean().nullable()
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z2.object({
+      busca: z2.string().nullable(),
+      situacao_operacional: z2.string().nullable()
+    })
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, situacao_operacional, limite, offset }, ctx) => {
@@ -145,12 +180,51 @@ var list_motoristas_default = defineTool({
 
 // src/lib/mcp/tools/get-motorista.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z as z2 } from "npm:zod@^3.25.76";
+import { z as z3 } from "npm:zod@^3.25.76";
 var get_motorista_default = defineTool2({
   name: "get_motorista",
   title: "Detalhar motorista",
   description: "Retorna o cadastro completo de um motorista pelo id, incluindo documentos, vencimentos e transportadoras vinculadas.",
-  inputSchema: { id: z2.string().uuid().describe("Identificador do motorista.") },
+  inputSchema: { id: z3.string().uuid().describe("Identificador do motorista.") },
+  outputSchema: {
+    motorista: z3.object({
+      id: z3.string(),
+      nome: z3.string(),
+      cpf: z3.string().nullable(),
+      telefone: z3.string().nullable(),
+      email: z3.string().nullable(),
+      cidade: z3.string().nullable(),
+      estado: z3.string().nullable(),
+      status: z3.string().nullable(),
+      situacao_operacional: z3.string().nullable(),
+      is_transportador_proprio: z3.boolean().nullable(),
+      cnh_numero: z3.string().nullable(),
+      cnh_vencimento: z3.string().nullable(),
+      mopp_numero: z3.string().nullable(),
+      mopp_vencimento: z3.string().nullable(),
+      mopp_vitalicio: z3.boolean().nullable(),
+      antt_numero: z3.string().nullable(),
+      antt_vencimento: z3.string().nullable(),
+      alvara_numero: z3.string().nullable(),
+      alvara_vencimento: z3.string().nullable(),
+      certificado_numero: z3.string().nullable(),
+      certificado_vencimento: z3.string().nullable(),
+      created_at: z3.string().nullable(),
+      updated_at: z3.string().nullable()
+    }),
+    transportadores: z3.array(
+      z3.object({
+        transportador_id: z3.string().nullable(),
+        transportadores: z3.object({
+          id: z3.string(),
+          razao_social: z3.string(),
+          cpf_cnpj: z3.string().nullable(),
+          status: z3.string().nullable(),
+          situacao_operacional: z3.string().nullable()
+        }).nullable()
+      })
+    )
+  },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ id }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
@@ -196,15 +270,33 @@ var get_motorista_default = defineTool2({
 
 // src/lib/mcp/tools/list-transportadores.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z as z3 } from "npm:zod@^3.25.76";
+import { z as z4 } from "npm:zod@^3.25.76";
 var list_transportadores_default = defineTool3({
   name: "list_transportadores",
   title: "Listar transportadores",
   description: "Lista transportadores cadastrados. Filtros: 'busca' (raz\xE3o social ou CPF/CNPJ, parcial), 'limite' e 'offset'. Campo 'status': 'ativo' ou 'inativo'. Campo 'situacao_operacional' do transportador \xE9 a situa\xE7\xE3o operacional oficial usada nos relat\xF3rios semanais; valores: 'em_praca_apto' (em pra\xE7a, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. Documentos do transportador (ANTT, alvar\xE1 e certificado de transporte) s\xE3o retornados apenas como presen\xE7a/aus\xEAncia em 'tem_antt', 'tem_alvara' e 'tem_certificado' \u2014 sem o n\xFAmero. Aten\xE7\xE3o: esse 'certificado' \xE9 o documento do transportador e n\xE3o se confunde com os certificados digitais da empresa, consultados por list_certificados_vencendo. O CPF/CNPJ \xE9 retornado mascarado (apenas os 4 \xFAltimos d\xEDgitos vis\xEDveis); a busca continua funcionando com o documento completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
   inputSchema: {
-    busca: z3.string().trim().optional().describe("Texto para buscar em raz\xE3o social ou CPF/CNPJ (parcial)."),
-    limite: z3.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
-    offset: z3.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+    busca: z4.string().trim().optional().describe("Texto para buscar em raz\xE3o social ou CPF/CNPJ (parcial)."),
+    limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z4.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+  },
+  outputSchema: {
+    transportadores: z4.array(
+      z4.object({
+        id: z4.string(),
+        razao_social: z4.string(),
+        cpf_cnpj: z4.string().nullable().describe("CPF/CNPJ mascarado (apenas 4 \xFAltimos d\xEDgitos vis\xEDveis)."),
+        contato: z4.string().nullable(),
+        email: z4.string().nullable(),
+        status: z4.string().nullable(),
+        situacao_operacional: z4.string().nullable(),
+        tem_antt: z4.boolean(),
+        tem_alvara: z4.boolean(),
+        tem_certificado: z4.boolean()
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z4.object({ busca: z4.string().nullable() })
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ busca, limite, offset }, ctx) => {
@@ -244,17 +336,40 @@ var list_transportadores_default = defineTool3({
 
 // src/lib/mcp/tools/list-contratos.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z as z4 } from "npm:zod@^3.25.76";
+import { z as z5 } from "npm:zod@^3.25.76";
 var list_contratos_default = defineTool4({
   name: "list_contratos",
   title: "Listar contratos",
   description: "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. Status em uso: 'pendente', 'enviado', 'assinado', 'recusado'. Campo 'tipo': 'contrato', 'distrato' ou 'adesao'. Campo 'modelo': 'Maiore', 'Start' ou 'Comodato'. O resultado \xE9 paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
   inputSchema: {
-    status: z4.string().trim().optional().describe("Filtra pelo status do contrato: 'pendente', 'enviado', 'assinado' ou 'recusado'."),
-    motorista_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um motorista espec\xEDfico."),
-    transportador_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um transportador espec\xEDfico."),
-    limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
-    offset: z4.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+    status: z5.string().trim().optional().describe("Filtra pelo status do contrato: 'pendente', 'enviado', 'assinado' ou 'recusado'."),
+    motorista_id: z5.string().uuid().optional().describe("Filtra contratos vinculados a um motorista espec\xEDfico."),
+    transportador_id: z5.string().uuid().optional().describe("Filtra contratos vinculados a um transportador espec\xEDfico."),
+    limite: z5.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z5.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+  },
+  outputSchema: {
+    contratos: z5.array(
+      z5.object({
+        id: z5.string(),
+        empresa: z5.string().nullable(),
+        cnpj: z5.string().nullable(),
+        tipo: z5.string().nullable(),
+        modelo: z5.string().nullable(),
+        status: z5.string().nullable(),
+        data_envio: z5.string().nullable(),
+        data_assinatura: z5.string().nullable(),
+        motorista_id: z5.string().nullable(),
+        transportador_id: z5.string().nullable(),
+        observacoes: z5.string().nullable()
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z5.object({
+      status: z5.string().nullable(),
+      motorista_id: z5.string().nullable(),
+      transportador_id: z5.string().nullable()
+    })
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, motorista_id, transportador_id, limite, offset }, ctx) => {
@@ -289,16 +404,36 @@ var list_contratos_default = defineTool4({
 
 // src/lib/mcp/tools/list-seguros.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z as z5 } from "npm:zod@^3.25.76";
+import { z as z6 } from "npm:zod@^3.25.76";
 var list_seguros_default = defineTool5({
   name: "list_seguros",
   title: "Listar seguros",
   description: "Lista ap\xF3lices de seguro cadastradas, com filtro opcional por status ou por seguradora (parcial). Status em uso: 'ativo', 'vencido' e 'cancelado'. A interface tamb\xE9m sinaliza vencimento pela data 'vigencia_fim', ent\xE3o uma ap\xF3lice com status 'ativo' e 'vigencia_fim' no passado deve ser tratada como vencida. Suporta pagina\xE7\xE3o por offset e retorna o total de ap\xF3lices encontradas para os filtros aplicados.",
   inputSchema: {
-    status: z5.string().trim().optional().describe("Filtra pelo status da ap\xF3lice: 'ativo', 'vencido' ou 'cancelado'."),
-    seguradora: z5.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
-    limite: z5.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
-    offset: z5.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+    status: z6.string().trim().optional().describe("Filtra pelo status da ap\xF3lice: 'ativo', 'vencido' ou 'cancelado'."),
+    seguradora: z6.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
+    limite: z6.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z6.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
+  },
+  outputSchema: {
+    seguros: z6.array(
+      z6.object({
+        id: z6.string(),
+        seguradora: z6.string().nullable(),
+        tipo: z6.string().nullable(),
+        numero_apolice: z6.string().nullable(),
+        status: z6.string().nullable(),
+        vigencia_inicio: z6.string().nullable(),
+        vigencia_fim: z6.string().nullable(),
+        valor_premio: z6.number().nullable(),
+        motorista_id: z6.string().nullable()
+      })
+    ),
+    ...paginationShape,
+    filtros_aplicados: z6.object({
+      status: z6.string().nullable(),
+      seguradora: z6.string().nullable()
+    })
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status, seguradora, limite, offset }, ctx) => {
@@ -328,14 +463,28 @@ var list_seguros_default = defineTool5({
 
 // src/lib/mcp/tools/list-certificados-vencendo.ts
 import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z as z6 } from "npm:zod@^3.25.76";
+import { z as z7 } from "npm:zod@^3.25.76";
 var list_certificados_vencendo_default = defineTool6({
   name: "list_certificados_vencendo",
   title: "Certificados digitais a vencer",
   description: "Lista certificados digitais DA EMPRESA (ex.: e-CNPJ/e-CPF, tabela de certificados) que vencem dentro de um n\xFAmero de dias (padr\xE3o 30), incluindo os j\xE1 vencidos. N\xE3o confundir com o 'certificado' do transportador (documento operacional exibido como 'tem_certificado' em list_transportadores).",
   inputSchema: {
-    dias: z6.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje."),
-    limite: z6.number().int().min(1).max(100).default(50).describe("M\xE1ximo de registros.")
+    dias: z7.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje."),
+    limite: z7.number().int().min(1).max(100).default(50).describe("M\xE1ximo de registros.")
+  },
+  outputSchema: {
+    certificados: z7.array(
+      z7.object({
+        id: z7.string(),
+        empresa: z7.string().nullable(),
+        tipo: z7.string().nullable(),
+        status: z7.string().nullable(),
+        vencimento: z7.string().nullable(),
+        data_renovacao_agendada: z7.string().nullable(),
+        observacoes: z7.string().nullable()
+      })
+    ),
+    ate: z7.string().describe("Data limite (YYYY-MM-DD) usada no filtro de vencimento.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ dias, limite }, ctx) => {

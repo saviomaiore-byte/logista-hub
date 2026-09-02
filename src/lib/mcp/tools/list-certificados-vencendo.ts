@@ -12,6 +12,20 @@ export default defineTool({
     dias: z.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje."),
     limite: z.number().int().min(1).max(100).default(50).describe("Máximo de registros."),
   },
+  outputSchema: {
+    certificados: z.array(
+      z.object({
+        id: z.string(),
+        empresa: z.string().nullable(),
+        tipo: z.string().nullable(),
+        status: z.string().nullable(),
+        vencimento: z.string().nullable(),
+        data_renovacao_agendada: z.string().nullable(),
+        observacoes: z.string().nullable(),
+      })
+    ),
+    ate: z.string().describe("Data limite (YYYY-MM-DD) usada no filtro de vencimento."),
+  },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ dias, limite }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();

@@ -8,6 +8,47 @@ export default defineTool({
   description:
     "Retorna o cadastro completo de um motorista pelo id, incluindo documentos, vencimentos e transportadoras vinculadas.",
   inputSchema: { id: z.string().uuid().describe("Identificador do motorista.") },
+  outputSchema: {
+    motorista: z.object({
+      id: z.string(),
+      nome: z.string(),
+      cpf: z.string().nullable(),
+      telefone: z.string().nullable(),
+      email: z.string().nullable(),
+      cidade: z.string().nullable(),
+      estado: z.string().nullable(),
+      status: z.string().nullable(),
+      situacao_operacional: z.string().nullable(),
+      is_transportador_proprio: z.boolean().nullable(),
+      cnh_numero: z.string().nullable(),
+      cnh_vencimento: z.string().nullable(),
+      mopp_numero: z.string().nullable(),
+      mopp_vencimento: z.string().nullable(),
+      mopp_vitalicio: z.boolean().nullable(),
+      antt_numero: z.string().nullable(),
+      antt_vencimento: z.string().nullable(),
+      alvara_numero: z.string().nullable(),
+      alvara_vencimento: z.string().nullable(),
+      certificado_numero: z.string().nullable(),
+      certificado_vencimento: z.string().nullable(),
+      created_at: z.string().nullable(),
+      updated_at: z.string().nullable(),
+    }),
+    transportadores: z.array(
+      z.object({
+        transportador_id: z.string().nullable(),
+        transportadores: z
+          .object({
+            id: z.string(),
+            razao_social: z.string(),
+            cpf_cnpj: z.string().nullable(),
+            status: z.string().nullable(),
+            situacao_operacional: z.string().nullable(),
+          })
+          .nullable(),
+      })
+    ),
+  },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ id }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();

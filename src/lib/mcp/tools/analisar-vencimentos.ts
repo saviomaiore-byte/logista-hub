@@ -15,10 +15,25 @@ const CAMPOS_MOTORISTA = [
   { campo: "certificado_vencimento", tipo: "Certificado" },
 ] as const;
 
-function diasEntre(hojeISO: string, dataISO: string): number {
-  const ms = Date.parse(`${dataISO}T00:00:00Z`) - Date.parse(`${hojeISO}T00:00:00Z`);
-  return Math.round(ms / 86400000);
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Retorna a diferença em dias inteiros, ou `null` quando a data armazenada não
+ * pode ser interpretada com segurança (formato inesperado ou data inválida).
+ * Nunca retorna NaN.
+ */
+function diasEntre(hojeISO: string, dataISO: string): number | null {
+  const bruto = String(dataISO).slice(0, 10);
+  if (!ISO_DATE.test(bruto)) return null;
+  const alvo = Date.parse(`${bruto}T00:00:00Z`);
+  const base = Date.parse(`${hojeISO}T00:00:00Z`);
+  if (!Number.isFinite(alvo) || !Number.isFinite(base)) return null;
+  // Rejeita datas "roláveis" como 2025-02-31.
+  if (new Date(alvo).toISOString().slice(0, 10) !== bruto) return null;
+  const dias = Math.round((alvo - base) / 86400000);
+  return Number.isFinite(dias) ? dias : null;
 }
+
 
 export default defineTool({
   name: "analisar_vencimentos",
@@ -96,6 +111,8 @@ export default defineTool({
 
     const itens: Item[] = [];
     let total_analisado = 0;
+    let total_datas_invalidas = 0;
+
 
     if (entidade !== "transportador") {
       const { data, error } = await supabase
@@ -113,7 +130,12 @@ export default defineTool({
           if (!valor) continue;
           total_analisado++;
           const dias_para_vencer = diasEntre(hoje, valor);
+          if (dias_para_vencer === null) {
+            total_datas_invalidas++;
+            continue;
+          }
           if (dias_para_vencer > dias) continue;
+
           itens.push({
             entidade: "motorista",
             id: m.id,
@@ -140,6 +162,12 @@ export default defineTool({
         ? " Transportadores não possuem datas de vencimento cadastradas no sistema, portanto não entram nesta análise."
         : "";
 
+    const avisoDatasInvalidas =
+      total_datas_invalidas > 0
+        ? ` ${total_datas_invalidas} registro(s) possuem data de vencimento inválida ou não interpretável e foram excluídos da lista (nenhuma data foi inferida).`
+        : "";
+
+
     const payload = {
       total_analisado,
       total_vencidos,
@@ -151,7 +179,9 @@ export default defineTool({
         (truncated
           ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.`
           : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em até ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) +
-        semTransportador,
+        semTransportador +
+        avisoDatasInvalidas,
+
       filtros_aplicados: { dias, entidade, data_limite },
       vencimentos: lista,
     };

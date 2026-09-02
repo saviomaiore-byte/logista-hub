@@ -633,9 +633,16 @@ var CAMPOS_MOTORISTA = [
   { campo: "alvara_vencimento", tipo: "Alvar\xE1" },
   { campo: "certificado_vencimento", tipo: "Certificado" }
 ];
+var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function diasEntre(hojeISO, dataISO) {
-  const ms = Date.parse(`${dataISO}T00:00:00Z`) - Date.parse(`${hojeISO}T00:00:00Z`);
-  return Math.round(ms / 864e5);
+  const bruto = String(dataISO).slice(0, 10);
+  if (!ISO_DATE.test(bruto)) return null;
+  const alvo = Date.parse(`${bruto}T00:00:00Z`);
+  const base = Date.parse(`${hojeISO}T00:00:00Z`);
+  if (!Number.isFinite(alvo) || !Number.isFinite(base)) return null;
+  if (new Date(alvo).toISOString().slice(0, 10) !== bruto) return null;
+  const dias = Math.round((alvo - base) / 864e5);
+  return Number.isFinite(dias) ? dias : null;
 }
 var analisar_vencimentos_default = defineTool8({
   name: "analisar_vencimentos",
@@ -680,6 +687,7 @@ var analisar_vencimentos_default = defineTool8({
     const data_limite = new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10);
     const itens = [];
     let total_analisado = 0;
+    let total_datas_invalidas = 0;
     if (entidade !== "transportador") {
       const { data, error } = await supabase.from("motoristas").select(
         "id, nome, situacao_operacional, mopp_vitalicio, cnh_vencimento, mopp_vencimento, antt_vencimento, alvara_vencimento, certificado_vencimento"
@@ -692,6 +700,10 @@ var analisar_vencimentos_default = defineTool8({
           if (!valor) continue;
           total_analisado++;
           const dias_para_vencer = diasEntre(hoje, valor);
+          if (dias_para_vencer === null) {
+            total_datas_invalidas++;
+            continue;
+          }
           if (dias_para_vencer > dias) continue;
           itens.push({
             entidade: "motorista",
@@ -712,6 +724,7 @@ var analisar_vencimentos_default = defineTool8({
     const lista = itens.slice(0, limite);
     const truncated = itens.length > lista.length;
     const semTransportador = entidade !== "motorista" ? " Transportadores n\xE3o possuem datas de vencimento cadastradas no sistema, portanto n\xE3o entram nesta an\xE1lise." : "";
+    const avisoDatasInvalidas = total_datas_invalidas > 0 ? ` ${total_datas_invalidas} registro(s) possuem data de vencimento inv\xE1lida ou n\xE3o interpret\xE1vel e foram exclu\xEDdos da lista (nenhuma data foi inferida).` : "";
     const payload = {
       total_analisado,
       total_vencidos,
@@ -719,7 +732,7 @@ var analisar_vencimentos_default = defineTool8({
       returned: lista.length,
       limite,
       truncated,
-      aviso: (truncated ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em at\xE9 ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) + semTransportador,
+      aviso: (truncated ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em at\xE9 ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) + semTransportador + avisoDatasInvalidas,
       filtros_aplicados: { dias, entidade, data_limite },
       vencimentos: lista
     };

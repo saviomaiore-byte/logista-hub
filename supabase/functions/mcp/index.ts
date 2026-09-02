@@ -623,13 +623,120 @@ var analisar_pendencias_default = defineTool7({
   }
 });
 
+// src/lib/mcp/tools/analisar-vencimentos.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@1.0.0";
+import { z as z9 } from "npm:zod@^3.25.76";
+var CAMPOS_MOTORISTA = [
+  { campo: "cnh_vencimento", tipo: "CNH" },
+  { campo: "mopp_vencimento", tipo: "MOPP" },
+  { campo: "antt_vencimento", tipo: "ANTT" },
+  { campo: "alvara_vencimento", tipo: "Alvar\xE1" },
+  { campo: "certificado_vencimento", tipo: "Certificado" }
+];
+function diasEntre(hojeISO, dataISO) {
+  const ms = Date.parse(`${dataISO}T00:00:00Z`) - Date.parse(`${hojeISO}T00:00:00Z`);
+  return Math.round(ms / 864e5);
+}
+var analisar_vencimentos_default = defineTool8({
+  name: "analisar_vencimentos",
+  title: "Analisar vencimentos de documentos",
+  description: "Lista documentos j\xE1 vencidos ou que vencem dentro de uma janela de dias (padr\xE3o 30), usando apenas os campos de vencimento existentes no sistema. Motorista: CNH ('cnh_vencimento'), MOPP ('mopp_vencimento', ignorado quando 'mopp_vitalicio' = true), ANTT, Alvar\xE1 e Certificado. Transportador: o cadastro guarda apenas os n\xFAmeros de ANTT, alvar\xE1 e certificado, SEM data de vencimento \u2014 por isso n\xE3o h\xE1 vencimentos a analisar para transportadores (use analisar_pendencias para aus\xEAncia desses documentos). Para certificados digitais DA EMPRESA use list_certificados_vencendo. 'dias_para_vencer' negativo significa documento j\xE1 vencido. Nenhum CPF/CNPJ ou n\xFAmero de documento \xE9 retornado. Ferramenta somente leitura.",
+  inputSchema: {
+    dias: z9.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje. Vencidos s\xE3o sempre inclu\xEDdos."),
+    entidade: z9.enum(["ambos", "motorista", "transportador"]).default("ambos").describe("Restringe a an\xE1lise a um tipo de entidade. Padr\xE3o: 'ambos'."),
+    limite: z9.number().int().min(1).max(200).default(100).describe("M\xE1ximo de itens retornados na lista (os totais consideram tudo).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  outputSchema: {
+    total_analisado: z9.number().int().describe("Total de campos de vencimento preenchidos que foram avaliados."),
+    total_vencidos: z9.number().int(),
+    total_a_vencer: z9.number().int().describe("Vencem dentro da janela de dias informada (ainda n\xE3o vencidos)."),
+    returned: z9.number().int(),
+    limite: z9.number().int(),
+    truncated: z9.boolean(),
+    aviso: z9.string(),
+    filtros_aplicados: z9.object({
+      dias: z9.number().int(),
+      entidade: z9.string(),
+      data_limite: z9.string().describe("Data limite (YYYY-MM-DD) considerada na janela.")
+    }),
+    vencimentos: z9.array(
+      z9.object({
+        entidade: z9.enum(["motorista", "transportador"]),
+        id: z9.string(),
+        nome: z9.string(),
+        tipo_documento: z9.string(),
+        data_vencimento: z9.string().describe("Data de vencimento (YYYY-MM-DD)."),
+        dias_para_vencer: z9.number().int().describe("Negativo quando j\xE1 vencido."),
+        vencido: z9.boolean(),
+        situacao_operacional: z9.string().nullable()
+      })
+    )
+  },
+  handler: async ({ dias, entidade, limite }, ctx) => {
+    if (!ctx.isAuthenticated()) return notAuthenticated();
+    const supabase = supabaseForUser(ctx);
+    const hoje = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const data_limite = new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10);
+    const itens = [];
+    let total_analisado = 0;
+    if (entidade !== "transportador") {
+      const { data, error } = await supabase.from("motoristas").select(
+        "id, nome, situacao_operacional, mopp_vitalicio, cnh_vencimento, mopp_vencimento, antt_vencimento, alvara_vencimento, certificado_vencimento"
+      ).order("nome", { ascending: true });
+      if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+      for (const m of data ?? []) {
+        for (const { campo, tipo } of CAMPOS_MOTORISTA) {
+          if (campo === "mopp_vencimento" && m.mopp_vitalicio) continue;
+          const valor = m[campo];
+          if (!valor) continue;
+          total_analisado++;
+          const dias_para_vencer = diasEntre(hoje, valor);
+          if (dias_para_vencer > dias) continue;
+          itens.push({
+            entidade: "motorista",
+            id: m.id,
+            nome: m.nome,
+            tipo_documento: tipo,
+            data_vencimento: valor,
+            dias_para_vencer,
+            vencido: dias_para_vencer < 0,
+            situacao_operacional: m.situacao_operacional ?? null
+          });
+        }
+      }
+    }
+    itens.sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento));
+    const total_vencidos = itens.filter((i) => i.vencido).length;
+    const total_a_vencer = itens.length - total_vencidos;
+    const lista = itens.slice(0, limite);
+    const truncated = itens.length > lista.length;
+    const semTransportador = entidade !== "motorista" ? " Transportadores n\xE3o possuem datas de vencimento cadastradas no sistema, portanto n\xE3o entram nesta an\xE1lise." : "";
+    const payload = {
+      total_analisado,
+      total_vencidos,
+      total_a_vencer,
+      returned: lista.length,
+      limite,
+      truncated,
+      aviso: (truncated ? `Resultado parcial: ${lista.length} de ${itens.length} documento(s) retornados. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} documento(s) vencidos ou a vencer em at\xE9 ${dias} dia(s), de ${total_analisado} vencimento(s) analisados.`) + semTransportador,
+      filtros_aplicados: { dias, entidade, data_limite },
+      vencimentos: lista
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "nfvokydyrklwvhqbavtx";
 var mcp_default = defineMcp({
   name: "pactum-logistica-hub",
   title: "Pactum Logista Hub",
   version: "0.1.0",
-  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal.",
+  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal. Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa).",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -641,7 +748,8 @@ var mcp_default = defineMcp({
     list_contratos_default,
     list_seguros_default,
     list_certificados_vencendo_default,
-    analisar_pendencias_default
+    analisar_pendencias_default,
+    analisar_vencimentos_default
   ]
 });
 

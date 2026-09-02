@@ -1,79 +1,74 @@
-# Diagnóstico — 6 achados críticos de SELECT (somente análise)
+# Auditoria funcional do MCP / Assistente Maiore em produção
 
-Escopo: apenas os achados de nível `error` do último scan. Nenhuma alteração foi feita.
-Os outros 8 achados de SELECT (cavalos, reboques, certificados, documentos_empresa, relatorio_config, conferencia_*, transportador_motoristas) são nível `warn` e ficam fora desta análise.
+Somente teste e registro de resultados. Nenhuma alteração de código, banco, RLS, Storage, MCP, UI ou publicação.
 
-## Contexto verificado no banco
+## Matriz de testes
 
-- Todas as 6 tabelas têm o mesmo padrão: `SELECT` com `USING (true)` para o papel `authenticated`; `UPDATE` restrito a `created_by = auth.uid() OR has_role(...,'admin')`; `DELETE` só admin.
-- Volume atual: motoristas 307, transportadores 137, contratos 910, seguros 1.
-- `created_by` está concentrado em apenas 2 usuários distintos por tabela (efeito do backfill anterior para o admin).
-- Contas: 6 perfis, 3 com papel admin.
+| # | Ferramenta | Cenário | Entrada | Resultado esperado | Criticidade |
+|---|------------|---------|---------|--------------------|-------------|
+| A1 | list_motoristas | Smoke | `{}` | Lista com metadata (returned/total_encontrado/limite/offset/truncated/aviso) | Alta |
+| A2 | list_transportadores | Smoke | `{}` | Lista + metadata; documentos mascarados | Alta |
+| A3 | list_contratos | Smoke | `{}` | Lista + metadata; total ~910 | Alta |
+| A4 | list_seguros | Smoke | `{}` | Lista + metadata (base pequena) | Média |
+| A5 | list_certificados_vencendo | Smoke | `{}` (dias padrão 30) | Lista + campo `ate` coerente | Média |
+| A6 | resumo_operacional | Smoke | `{}` | Totais consolidados, sem erro | Alta |
+| B1 | list_motoristas | Busca por nome | `busca:"a"` | Subconjunto coerente, total_encontrado menor que o geral | Alta |
+| B2 | list_motoristas | Situação operacional | `situacao_operacional:"em_praca_apto"` | Só registros com esse marcador | Média |
+| B3 | list_transportadores | Busca parcial | `busca:"transp"` | Filtro aplicado, refletido em filtros_aplicados | Média |
+| B4 | list_contratos | Status | `status:"assinado"` | Só assinados; total coerente | Alta |
+| B5 | list_contratos | Por motorista | `motorista_id:<id real>` | Só contratos daquele motorista | Alta |
+| B6 | list_contratos | Por transportador | `transportador_id:<id real>` | Só contratos daquele transportador | Alta |
+| B7 | list_seguros | Status + seguradora | `status:"ativo"`, `seguradora:"<parcial>"` | Filtro combinado correto | Média |
+| B8 | list_certificados_vencendo | Janela ampliada | `dias:90` | Conjunto ⊇ ao de dias:30 | Média |
+| B9 | analisar_vencimentos | Entidade | `entidade:"motorista"`, `dias:30` | Só motoristas | Alta |
+| B10 | analisar_pendencias | Entidade | `entidade:"transportador"` | Só motivos de transportador | Alta |
+| C1 | list_motoristas | Limite pequeno | `limite:2, offset:0` | returned=2, truncated=true, total real | Alta |
+| C2 | list_motoristas | Offset > 0 | `limite:2, offset:2` | Página distinta da C1, mesmo total | Alta |
+| C3 | list_motoristas | Offset além do total | `limite:5, offset:100000` | returned=0 sem erro, total preservado | Alta |
+| C4 | list_contratos | Sem truncamento | `limite:100` + filtro estreito | truncated=false quando total ≤ limite | Média |
+| C5 | list_seguros | Metadata | `limite:1` | Campos de paginação completos e coerentes | Média |
+| D1 | list_motoristas | Sem resultado | `busca:"zzzzqqq"` | returned=0, total 0, sem erro nem invenção | Alta |
+| D2 | list_contratos | Status inexistente na base | `status:"recusado"` | 0 ou N reais, resposta limpa | Média |
+| D3 | list_certificados_vencendo | Janela zero | `dias:0` | Só vencidos/hoje, sem erro | Média |
+| D4 | analisar_cruzamentos | Motorista sem vínculos | `motorista_id:<sem vínculo>` | Listas vazias, nenhum vínculo inferido | Alta |
+| E1 | list_motoristas | Limite acima do máximo | `limite:500` | Rejeição de validação clara | Alta |
+| E2 | list_motoristas | Offset negativo | `offset:-1` | Rejeição de validação | Alta |
+| E3 | analisar_vencimentos | Dias fora do intervalo | `dias:9999` | Rejeição de validação | Alta |
+| E4 | analisar_pendencias | Entidade inválida | `entidade:"veiculo"` | Rejeição de enum | Média |
+| E5 | get_motorista | UUID inválido | `id:"abc"` | Erro de validação, não erro 500 | Alta |
+| E6 | get_motorista | UUID válido inexistente | `id:<uuid aleatório>` | "Motorista não encontrado", sem vazamento | Alta |
+| E7 | get_motorista | Motorista existente | `id:<id real>` | Cadastro completo + transportadoras vinculadas | Alta |
+| F1 | list_motoristas | PII | `limite:5` | CPF mascarado (4 últimos dígitos) | Crítica |
+| F2 | list_transportadores | PII | `limite:5` | CPF/CNPJ mascarado; documentos como booleanos | Crítica |
+| F3 | analisar_pendencias | PII | `limite:20` | Nenhum CPF/CNPJ ou número de documento | Crítica |
+| F4 | analisar_vencimentos | PII | `dias:30` | Sem números de documento | Crítica |
+| F5 | analisar_cruzamentos | PII | `limite:20` | Só ids e nomes, sem documentos | Crítica |
+| F6 | resumo_operacional | PII | `{}` | Só totais e motivos | Crítica |
+| G1 | resumo_operacional × análises | Consistência | comparar com analisar_pendencias/vencimentos | Totais batem ou `incompleto`/`avisos` explicam | Alta |
+| G2 | analisar_vencimentos | Janela | `dias:30` | Nenhum item com dias_para_vencer > 30 | Alta |
+| G3 | analisar_pendencias × list_contratos | Coerência | motorista com "Sem contrato assinado" | list_contratos confirma ausência de assinado | Alta |
+| G4 | analisar_cruzamentos × get_motorista | Coerência | mesmo motorista | Vínculos idênticos | Média |
+| G5 | list_* | Contagens | totais das listagens | Coerentes com resumo_operacional | Média |
+| H1 | Todas | Autenticação | chamada sem token | 401/não autenticado | Crítica |
+| H2 | Código | Sem service role | inspeção de `src/lib/mcp/supabase.ts` | Usa token do usuário, RLS ativa | Crítica |
+| H3 | Código | Somente leitura | inspeção das 10 tools | Nenhum insert/update/delete; readOnlyHint | Crítica |
+| H4 | RLS | Escopo de leitura | comparar retorno com policies vigentes | Sem bypass de policy | Alta |
+| I1 | Connector | Regressão de catálogo | listar tools | 10 ferramentas disponíveis | Alta |
+| I2 | analisar_vencimentos | Regressão NaN | `dias:30, entidade:"ambos", limite:20` | Nenhum NaN/Infinity; datas inválidas em `aviso` | Crítica |
+| I3 | Anexos pós-mudança de RLS | Regressão | listagens que dependem de motoristas/transportadores | Nenhuma tool quebrada pela alteração de policies de arquivos | Alta |
+| I4 | Todas | Campos nulos | respostas das seções A–D | Nulos tratados, sem crash | Média |
 
-## Achado 1 — `motoristas`
+## Resumo
 
-- Policy: `All authenticated can view motoristas` (SELECT, `authenticated`, `USING true`)
-- Hoje lê: qualquer usuário logado (todos os 6), inclusive não-admins.
-- Por que é crítico: expõe CPF, RG, telefone, e-mail, endereço, nascimento e dados de CNH/MOPP de 307 pessoas — PII sensível sem qualquer vínculo de negócio.
-- Depende dessa leitura: Motoristas, Index (dashboard), Conferência, Conferência de Seguros, Relatórios; MCP `list_motoristas`, `get_motorista`, `analisar_pendencias`, `analisar_vencimentos`, `analisar_cruzamentos`, `resumo_operacional`.
-- Correção mínima: manter leitura para todos os autenticados, mas retirar as colunas de PII do alcance geral — expor a listagem por uma view/coluna reduzida e restringir a tabela completa a admin; alternativa mais simples: `USING (created_by = auth.uid() OR has_role(auth.uid(),'admin'))`.
-- Risco: **alto**. Com `created_by` concentrado em 2 usuários, a versão por propriedade deixaria os demais com a base praticamente vazia — quebra telas e MCP.
+- **Total planejado: 48 testes** (A:6, B:10, C:5, D:4, E:7, F:6, G:5, H:4, I:4 — os itens H2/H3 são inspeção de código).
+- **Executáveis direto pelo Connector:** A1–A6, B1–B10, C1–C5, D1–D4, E1–E7, F1–F6, G1–G5, I1, I2, I4 — 44 testes.
+- **Dependem de inspeção técnica do código/infra:** H1 (chamada sem token), H2, H3, H4, I3.
+- **Dependem de dados específicos (ids reais coletados na fase A/B):** B5, B6, B7, D4, E6, E7, G3, G4.
 
-## Achado 2 — `transportadores`
+## Execução proposta
 
-- Policy: `All authenticated can view transportadores` (SELECT, `USING true`)
-- Hoje lê: qualquer usuário logado.
-- Por que é crítico: CPF/CNPJ, e-mail, endereço e dados cadastrais de 137 transportadores.
-- Depende: Transportadores, Contratos, Certificados, Relatórios; MCP `list_transportadores`, `analisar_pendencias`, `analisar_cruzamentos`, `resumo_operacional`.
-- Correção mínima: mesma opção da anterior — view sem documento completo para leitura ampla, tabela completa só para admin.
-- Risco: **alto** pela mesma concentração de `created_by`. O MCP já mascara CPF/CNPJ na saída, então o vazamento real é via cliente web, não via MCP.
+1. Fase A (smoke) para coletar ids reais e totais de referência.
+2. Fases B→I na ordem, registrando entrada, saída resumida e veredito (OK / Divergência / Falha).
+3. Relatório final apenas em chat, com a lista de divergências encontradas — sem correções nesta etapa.
 
-## Achado 3 — `contratos`
-
-- Policy: `All authenticated can view contratos` (SELECT, `USING true`)
-- Hoje lê: qualquer usuário logado.
-- Por que é crítico: 910 contratos com CNPJ e `arquivo_url` de documentos assinados.
-- Depende: Contratos, Index, Relatórios; MCP `list_contratos`, `analisar_pendencias`, `analisar_cruzamentos`, `resumo_operacional`.
-- Correção mínima: restringir SELECT a criador/admin, ou a contratos cujo transportador/motorista o usuário possa ver.
-- Risco: **alto**; Relatórios e o resumo do MCP passariam a produzir números diferentes por usuário.
-
-## Achado 4 — `seguros`
-
-- Policy: `All authenticated can view seguros` (SELECT, `USING true`)
-- Hoje lê: qualquer usuário logado.
-- Por que é crítico: apólices vinculadas a motoristas identificáveis (prêmio, seguradora, arquivo).
-- Depende: Seguros, Conferência de Seguros; MCP `list_seguros`.
-- Correção mínima: `USING (created_by = auth.uid() OR has_role(...,'admin'))`.
-- Risco: **baixo hoje** (apenas 1 registro), mas cresce conforme a base for populada por usuários diferentes.
-
-## Achado 5 — `motorista_arquivos`
-
-- Policy: `All authenticated can view motorista_arquivos` (SELECT, `USING true`); INSERT já é dono-ou-admin.
-- Hoje lê: qualquer usuário logado.
-- Por que é crítico: incoerência com o INSERT — quem não pode anexar consegue listar todos os caminhos de arquivos de documentos pessoais.
-- Depende: aba de anexos do motorista (`useMotoristas`), diálogo de documentos.
-- Correção mínima: alinhar o SELECT ao mesmo predicado do INSERT (join de propriedade com `motoristas`), sem mexer no bucket.
-- Risco: **médio**. A tabela guarda só metadados; o download real já usa URL assinada no bucket privado. Não é usada por nenhuma ferramenta MCP.
-
-## Achado 6 — `transportador_arquivos`
-
-- Policy: `All authenticated can view transportador_arquivos` (SELECT, `USING true`); INSERT já é dono-ou-admin.
-- Hoje lê: qualquer usuário logado.
-- Por que é crítico: mesma incoerência do achado 5, para documentos de transportadoras.
-- Depende: aba de anexos do transportador (`useTransportadores`), `TransportadorDocsDialog`.
-- Correção mínima: alinhar SELECT ao predicado do INSERT.
-- Risco: **médio**; sem impacto no MCP.
-
-## Leitura geral e recomendação
-
-O padrão atual não é um bug: foi decidido em etapa anterior que qualquer usuário autenticado precisa enxergar toda a base operacional (era exatamente o problema de "só o meu usuário vê os dados"). O scanner avalia isso como um modelo multi-tenant, que não é o caso — aqui todos os 6 usuários pertencem à mesma empresa e ao domínio `@maiore.com.br`.
-
-Assim, a correção realista não é restringir por `created_by`, e sim reduzir a superfície de PII:
-
-1. **Achados 5 e 6 (arquivos)** — corrigíveis com baixo risco: alinhar SELECT ao INSERT. Não afetam o MCP.
-2. **Achados 1 e 2 (motoristas, transportadores)** — tratar com view de leitura sem documento completo (CPF/CNPJ/RG mascarados) para não-admin, mantendo a tabela crua para admin. Exige ajuste em telas e nas tools MCP.
-3. **Achados 3 e 4 (contratos, seguros)** — manter leitura geral e marcar como aceitos conscientemente, ou restringir junto com o item 2.
-
-Se nada for alterado, a alternativa formal é marcar os achados como aceitos com justificativa (empresa única, domínio restrito, auditoria em `audit_log`), para o scan parar de reportá-los como pendentes.
-
-Nenhuma alteração foi executada nesta etapa.
+Nenhuma alteração será feita sem sua autorização.

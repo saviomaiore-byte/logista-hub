@@ -1127,6 +1127,136 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         }
+      },
+      {
+        "name": "analisar_pendencias",
+        "title": "Analisar pendências operacionais",
+        "description": "Analisa pendências operacionais de transportadores ativos e dos motoristas vinculados, usando exatamente as mesmas regras de aptidão do relatório semanal. Motivos possíveis para motorista: 'Sem contrato assinado', 'Transportadora sem ANTT', 'Transportadora sem Alvará', 'Transportadora sem Certificado', 'CNH vencida', 'MOPP vencido', 'Motorista inativo'. Motivos possíveis para transportador: 'Transportadora sem ANTT', 'Transportadora sem Alvará', 'Transportadora sem Certificado'. Somente transportadores com status 'ativo' são analisados (mesmo critério do relatório). Nenhum CPF/CNPJ ou número de documento é retornado. Ferramenta somente leitura.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entidade": {
+              "type": "string",
+              "enum": [
+                "ambos",
+                "motorista",
+                "transportador"
+              ],
+              "default": "ambos",
+              "description": "Restringe a análise a um tipo de entidade. Padrão: 'ambos'."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100,
+              "description": "Máximo de registros COM pendência retornados na lista (os totais consideram tudo)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "total_analisado": {
+              "type": "integer",
+              "description": "Total de registros analisados (motoristas + transportadores conforme o filtro)."
+            },
+            "total_com_pendencias": {
+              "type": "integer"
+            },
+            "total_sem_pendencias": {
+              "type": "integer"
+            },
+            "returned": {
+              "type": "integer",
+              "description": "Quantidade de pendências retornadas na lista."
+            },
+            "limite": {
+              "type": "integer"
+            },
+            "truncated": {
+              "type": "boolean",
+              "description": "true quando há mais pendências do que o limite retornado."
+            },
+            "aviso": {
+              "type": "string"
+            },
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "entidade": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "entidade"
+              ],
+              "additionalProperties": false
+            },
+            "pendencias": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "entidade": {
+                    "type": "string",
+                    "enum": [
+                      "motorista",
+                      "transportador"
+                    ]
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "nome": {
+                    "type": "string"
+                  },
+                  "situacao_operacional": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Situação operacional quando disponível; null caso contrário."
+                  },
+                  "motivos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "entidade",
+                  "id",
+                  "nome",
+                  "situacao_operacional",
+                  "motivos"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "total_analisado",
+            "total_com_pendencias",
+            "total_sem_pendencias",
+            "returned",
+            "limite",
+            "truncated",
+            "aviso",
+            "filtros_aplicados",
+            "pendencias"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       }
     ]
   }

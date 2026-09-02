@@ -1,6 +1,13 @@
 // Assistente Maiore — motor de chat (somente leitura).
 // Chat UI -> esta Edge Function -> Lovable AI Gateway -> ferramentas de consulta -> Supabase (RLS).
-import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "npm:ai@7.0.90";
+import {
+  APICallError,
+  convertToModelMessages,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from "npm:ai@7.0.90";
+
 import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import { buildTools } from "./tools.ts";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { AlertTriangle, RefreshCw, Database } from "lucide-react";
@@ -59,7 +59,8 @@ export function ChatWindow({
   onEnviarUsuario,
   onRespostaFinal,
 }: Props) {
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const [texto, setTexto] = useState("");
   const iniciais = useMemo(() => toUIMessages(mensagensIniciais), [mensagensIniciais]);
 
   const { messages, sendMessage, status, error, regenerate, setMessages } = useChat({
@@ -76,7 +77,7 @@ export function ChatWindow({
     setMessages(iniciais);
   }, [iniciais, setMessages]);
 
-  const focar = () => inputRef.current?.focus();
+  const focar = () => composerRef.current?.querySelector("textarea")?.focus();
 
   useEffect(() => {
     focar();
@@ -92,6 +93,7 @@ export function ChatWindow({
     const limpo = texto.trim();
     if (!limpo || ocupado) return;
     onEnviarUsuario(limpo);
+    setTexto("");
     void sendMessage({ text: limpo });
     focar();
   };
@@ -150,20 +152,17 @@ export function ChatWindow({
       </Conversation>
 
       <div className="border-t bg-background p-3">
-        <div className="mx-auto w-full max-w-3xl">
+        <div className="mx-auto w-full max-w-3xl" ref={composerRef}>
           <PromptInput
-            onSubmit={(_msg, e) => {
+            onSubmit={(_message, e) => {
               e.preventDefault();
-              const form = e.currentTarget as HTMLFormElement;
-              const campo = form.querySelector("textarea");
-              const valor = campo?.value ?? "";
-              if (campo) campo.value = "";
-              enviar(valor);
+              enviar(texto);
             }}
           >
             <PromptInputTextarea
-              ref={inputRef}
               autoFocus
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
               disabled={ocupado}
               placeholder="Pergunte sobre motoristas, contratos, vencimentos..."
             />
@@ -171,7 +170,7 @@ export function ChatWindow({
               <span className="text-xs text-muted-foreground">
                 Consulta somente leitura. Enter envia, Shift + Enter quebra linha.
               </span>
-              <PromptInputSubmit status={status} disabled={ocupado} />
+              <PromptInputSubmit status={status} disabled={ocupado || !texto.trim()} />
             </PromptInputFooter>
           </PromptInput>
         </div>

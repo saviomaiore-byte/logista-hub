@@ -1,11 +1,13 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { notAuthenticated, supabaseForUser } from "../supabase";
+import { notAuthenticated, paginationMeta, rangeFor, supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_contratos",
   title: "Listar contratos",
-  description: "Lista contratos cadastrados, com filtro opcional por status.",
+  description:
+    "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. " +
+    "O resultado é paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
   inputSchema: {
     status: z.string().trim().optional().describe("Filtra pelo status do contrato."),
     motorista_id: z
@@ -18,12 +20,14 @@ export default defineTool({
       .uuid()
       .optional()
       .describe("Filtra contratos vinculados a um transportador específico."),
-    limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros."),
+    limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros por página."),
+    offset: z.number().int().min(0).default(0).describe("Deslocamento para paginação (padrão 0)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, motorista_id, transportador_id, limite }, ctx) => {
+  handler: async ({ status, motorista_id, transportador_id, limite, offset }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
+    const [from, to] = rangeFor(limite, offset);
     let query = supabase
       .from("contratos")
       .select(
@@ -31,7 +35,7 @@ export default defineTool({
         { count: "exact" }
       )
       .order("created_at", { ascending: false })
-      .limit(limite);
+      .range(from, to);
 
     if (status) query = query.eq("status", status);
     if (motorista_id) query = query.eq("motorista_id", motorista_id);
@@ -41,20 +45,14 @@ export default defineTool({
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
     const contratos = data ?? [];
-    const total_encontrado = count ?? null;
-    const truncated =
-      total_encontrado !== null ? total_encontrado > contratos.length : contratos.length >= limite;
-
     const payload = {
       contratos,
-      returned: contratos.length,
-      total_encontrado,
-      limite,
-      truncated,
-      filtros_aplicados: { status: status ?? null, motorista_id: motorista_id ?? null, transportador_id: transportador_id ?? null },
-      aviso: truncated
-        ? "Resultado truncado pelo limite: não conclua ausência de contratos nem totais a partir desta lista."
-        : "Resultado completo para os filtros aplicados.",
+      ...paginationMeta(contratos.length, count ?? null, limite, offset),
+      filtros_aplicados: {
+        status: status ?? null,
+        motorista_id: motorista_id ?? null,
+        transportador_id: transportador_id ?? null,
+      },
     };
 
     return {

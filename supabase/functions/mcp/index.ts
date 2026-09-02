@@ -66,39 +66,63 @@ function notAuthenticated() {
 function quoteFilterValue(value) {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
+function escapeLikeWildcards(value) {
+  return value.replace(/([\\%_])/g, "\\$1");
+}
+function likeTerm(value) {
+  return quoteFilterValue(`%${escapeLikeWildcards(value)}%`);
+}
+function rangeFor(limite, offset) {
+  return [offset, offset + limite - 1];
+}
+function paginationMeta(returned, total, limite, offset) {
+  const total_encontrado = total ?? null;
+  const truncated = total_encontrado !== null ? offset + returned < total_encontrado : returned >= limite;
+  return {
+    returned,
+    total_encontrado,
+    limite,
+    offset,
+    truncated,
+    aviso: truncated ? `Resultado parcial: ${returned} registro(s) nesta p\xE1gina${total_encontrado !== null ? ` de ${total_encontrado} encontrados` : ""} (offset ${offset}). Existem mais registros \u2014 use offset para as pr\xF3ximas p\xE1ginas e nunca conclua aus\xEAncia ou totais a partir desta p\xE1gina.` : `Resultado final da pagina\xE7\xE3o: ${returned} registro(s) nesta p\xE1gina${total_encontrado !== null ? ` de ${total_encontrado} encontrados` : ""} (offset ${offset}).`
+  };
+}
 
 // src/lib/mcp/tools/list-motoristas.ts
 var list_motoristas_default = defineTool({
   name: "list_motoristas",
   title: "Listar motoristas",
-  description: "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situa\xE7\xE3o operacional.",
+  description: "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situa\xE7\xE3o operacional. Suporta pagina\xE7\xE3o por offset e retorna o total de registros encontrados para os filtros aplicados.",
   inputSchema: {
     busca: z.string().trim().optional().describe("Texto para buscar em nome ou CPF."),
     situacao_operacional: z.string().trim().optional().describe("Filtra pela situa\xE7\xE3o operacional (ex.: 'apto em viagem', 'inapto')."),
-    limite: z.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros.")
+    limite: z.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ busca, situacao_operacional, limite }, ctx) => {
+  handler: async ({ busca, situacao_operacional, limite, offset }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
+    const [from, to] = rangeFor(limite, offset);
     let query = supabase.from("motoristas").select(
-      "id, nome, cpf, telefone, email, cidade, estado, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"
-    ).order("nome", { ascending: true }).limit(limite);
+      "id, nome, cpf, telefone, email, cidade, estado, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio",
+      { count: "exact" }
+    ).order("nome", { ascending: true }).range(from, to);
     if (busca) {
-      const termo = quoteFilterValue(`%${busca}%`);
+      const termo = likeTerm(busca);
       query = query.or(`nome.ilike.${termo},cpf.ilike.${termo}`);
     }
     if (situacao_operacional) query = query.eq("situacao_operacional", situacao_operacional);
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const motoristas = data ?? [];
-    const truncated = motoristas.length >= limite;
     const payload = {
       motoristas,
-      returned: motoristas.length,
-      limite,
-      truncated,
-      aviso: truncated ? "Resultado possivelmente truncado pelo limite. N\xE3o afirme aus\xEAncia nem totais a partir desta lista." : void 0
+      ...paginationMeta(motoristas.length, count ?? null, limite, offset),
+      filtros_aplicados: {
+        busca: busca ?? null,
+        situacao_operacional: situacao_operacional ?? null
+      }
     };
     return {
       content: [{ type: "text", text: JSON.stringify(payload) }],
@@ -164,32 +188,32 @@ import { z as z3 } from "npm:zod@^3.25.76";
 var list_transportadores_default = defineTool3({
   name: "list_transportadores",
   title: "Listar transportadores",
-  description: "Lista transportadores cadastrados com raz\xE3o social, CPF/CNPJ, situa\xE7\xE3o operacional e documentos (ANTT, alvar\xE1, certificado).",
+  description: "Lista transportadores cadastrados com raz\xE3o social, CPF/CNPJ, situa\xE7\xE3o operacional e documentos (ANTT, alvar\xE1, certificado). Suporta busca por raz\xE3o social ou CPF/CNPJ, pagina\xE7\xE3o por offset e retorna o total de registros encontrados.",
   inputSchema: {
     busca: z3.string().trim().optional().describe("Texto para buscar em raz\xE3o social ou CPF/CNPJ."),
-    limite: z3.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros.")
+    limite: z3.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z3.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ busca, limite }, ctx) => {
+  handler: async ({ busca, limite, offset }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
+    const [from, to] = rangeFor(limite, offset);
     let query = supabase.from("transportadores").select(
-      "id, razao_social, cpf_cnpj, contato, email, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero"
-    ).order("razao_social", { ascending: true }).limit(limite);
+      "id, razao_social, cpf_cnpj, contato, email, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero",
+      { count: "exact" }
+    ).order("razao_social", { ascending: true }).range(from, to);
     if (busca) {
-      const termo = quoteFilterValue(`%${busca}%`);
+      const termo = likeTerm(busca);
       query = query.or(`razao_social.ilike.${termo},cpf_cnpj.ilike.${termo}`);
     }
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const transportadores = data ?? [];
-    const truncated = transportadores.length >= limite;
     const payload = {
       transportadores,
-      returned: transportadores.length,
-      limite,
-      truncated,
-      aviso: truncated ? "Resultado possivelmente truncado pelo limite. N\xE3o afirme aus\xEAncia nem totais a partir desta lista." : void 0
+      ...paginationMeta(transportadores.length, count ?? null, limite, offset),
+      filtros_aplicados: { busca: busca ?? null }
     };
     return {
       content: [{ type: "text", text: JSON.stringify(payload) }],
@@ -204,37 +228,37 @@ import { z as z4 } from "npm:zod@^3.25.76";
 var list_contratos_default = defineTool4({
   name: "list_contratos",
   title: "Listar contratos",
-  description: "Lista contratos cadastrados, com filtro opcional por status.",
+  description: "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. O resultado \xE9 paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
   inputSchema: {
     status: z4.string().trim().optional().describe("Filtra pelo status do contrato."),
     motorista_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um motorista espec\xEDfico."),
     transportador_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um transportador espec\xEDfico."),
-    limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros.")
+    limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z4.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, motorista_id, transportador_id, limite }, ctx) => {
+  handler: async ({ status, motorista_id, transportador_id, limite, offset }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
+    const [from, to] = rangeFor(limite, offset);
     let query = supabase.from("contratos").select(
       "id, empresa, cnpj, tipo, modelo, status, data_envio, data_assinatura, motorista_id, transportador_id, observacoes",
       { count: "exact" }
-    ).order("created_at", { ascending: false }).limit(limite);
+    ).order("created_at", { ascending: false }).range(from, to);
     if (status) query = query.eq("status", status);
     if (motorista_id) query = query.eq("motorista_id", motorista_id);
     if (transportador_id) query = query.eq("transportador_id", transportador_id);
     const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const contratos = data ?? [];
-    const total_encontrado = count ?? null;
-    const truncated = total_encontrado !== null ? total_encontrado > contratos.length : contratos.length >= limite;
     const payload = {
       contratos,
-      returned: contratos.length,
-      total_encontrado,
-      limite,
-      truncated,
-      filtros_aplicados: { status: status ?? null, motorista_id: motorista_id ?? null, transportador_id: transportador_id ?? null },
-      aviso: truncated ? "Resultado truncado pelo limite: n\xE3o conclua aus\xEAncia de contratos nem totais a partir desta lista." : "Resultado completo para os filtros aplicados."
+      ...paginationMeta(contratos.length, count ?? null, limite, offset),
+      filtros_aplicados: {
+        status: status ?? null,
+        motorista_id: motorista_id ?? null,
+        transportador_id: transportador_id ?? null
+      }
     };
     return {
       content: [{ type: "text", text: JSON.stringify(payload) }],
@@ -249,26 +273,35 @@ import { z as z5 } from "npm:zod@^3.25.76";
 var list_seguros_default = defineTool5({
   name: "list_seguros",
   title: "Listar seguros",
-  description: "Lista ap\xF3lices de seguro cadastradas, com filtro opcional por status ou seguradora.",
+  description: "Lista ap\xF3lices de seguro cadastradas, com filtro opcional por status ou seguradora. Suporta pagina\xE7\xE3o por offset e retorna o total de ap\xF3lices encontradas para os filtros aplicados.",
   inputSchema: {
     status: z5.string().trim().optional().describe("Filtra pelo status da ap\xF3lice."),
     seguradora: z5.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
-    limite: z5.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros.")
+    limite: z5.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
+    offset: z5.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, seguradora, limite }, ctx) => {
+  handler: async ({ status, seguradora, limite, offset }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
+    const [from, to] = rangeFor(limite, offset);
     let query = supabase.from("seguros").select(
-      "id, seguradora, tipo, numero_apolice, status, vigencia_inicio, vigencia_fim, valor_premio, motorista_id"
-    ).order("vigencia_fim", { ascending: true, nullsFirst: false }).limit(limite);
+      "id, seguradora, tipo, numero_apolice, status, vigencia_inicio, vigencia_fim, valor_premio, motorista_id",
+      { count: "exact" }
+    ).order("vigencia_fim", { ascending: true, nullsFirst: false }).range(from, to);
     if (status) query = query.eq("status", status);
-    if (seguradora) query = query.ilike("seguradora", `%${seguradora}%`);
-    const { data, error } = await query;
+    if (seguradora) query = query.or(`seguradora.ilike.${likeTerm(seguradora)}`);
+    const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const seguros = data ?? [];
+    const payload = {
+      seguros,
+      ...paginationMeta(seguros.length, count ?? null, limite, offset),
+      filtros_aplicados: { status: status ?? null, seguradora: seguradora ?? null }
+    };
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { seguros: data ?? [] }
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
     };
   }
 });

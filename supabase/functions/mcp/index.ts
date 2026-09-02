@@ -724,6 +724,7 @@ var analisar_vencimentos_default = defineTool8({
     const lista = itens.slice(0, limite);
     const truncated = itens.length > lista.length;
     const semTransportador = entidade !== "motorista" ? " Transportadores n\xE3o possuem datas de vencimento cadastradas no sistema, portanto n\xE3o entram nesta an\xE1lise." : "";
+    const avisoDatasInvalidas = total_datas_invalidas > 0 ? ` ${total_datas_invalidas} registro(s) possuem data de vencimento inv\xE1lida ou n\xE3o interpret\xE1vel e foram exclu\xEDdos da lista (nenhuma data foi inferida).` : "";
     const payload = {
       total_analisado,
       total_vencidos,

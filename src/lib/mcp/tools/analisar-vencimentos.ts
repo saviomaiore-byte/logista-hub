@@ -162,6 +162,12 @@ export default defineTool({
         ? " Transportadores não possuem datas de vencimento cadastradas no sistema, portanto não entram nesta análise."
         : "";
 
+    const avisoDatasInvalidas =
+      total_datas_invalidas > 0
+        ? ` ${total_datas_invalidas} registro(s) possuem data de vencimento inválida ou não interpretável e foram excluídos da lista (nenhuma data foi inferida).`
+        : "";
+
+
     const payload = {
       total_analisado,
       total_vencidos,

@@ -19,7 +19,7 @@
       {
         "name": "list_motoristas",
         "title": "Listar motoristas",
-        "description": "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situação operacional. Suporta paginação por offset e retorna o total de registros encontrados para os filtros aplicados.",
+        "description": "Lista motoristas cadastrados, com busca por nome ou CPF e filtro por situação operacional. Filtros: 'busca' (nome ou CPF, correspondência parcial), 'situacao_operacional', 'limite' e 'offset'. Campo 'status' do motorista (retornado, não filtrável): 'ativo', 'inativo' ou 'pendente'. Campo 'situacao_operacional' do motorista é um marcador operacional legado, não editado nas telas atuais; valores existentes: 'em_praca_apto' e 'em_praca' (em praça, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. A situação operacional usada oficialmente nos relatórios é a do TRANSPORTADOR vinculado (ver list_transportadores), não a do motorista. O CPF é retornado mascarado (apenas os 4 últimos dígitos visíveis); a busca continua funcionando com o CPF completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -30,11 +30,11 @@
           "properties": {
             "busca": {
               "type": "string",
-              "description": "Texto para buscar em nome ou CPF."
+              "description": "Texto para buscar em nome ou CPF (parcial)."
             },
             "situacao_operacional": {
               "type": "string",
-              "description": "Filtra pela situação operacional (ex.: 'apto em viagem', 'inapto')."
+              "description": "Filtra pela situação operacional do motorista (campo legado). Valores em uso: 'em_praca_apto', 'em_praca', 'em_viagem_apto', 'inapto'."
             },
             "limite": {
               "type": "integer",
@@ -84,7 +84,7 @@
       {
         "name": "list_transportadores",
         "title": "Listar transportadores",
-        "description": "Lista transportadores cadastrados com razão social, CPF/CNPJ, situação operacional e documentos (ANTT, alvará, certificado). Suporta busca por razão social ou CPF/CNPJ, paginação por offset e retorna o total de registros encontrados.",
+        "description": "Lista transportadores cadastrados. Filtros: 'busca' (razão social ou CPF/CNPJ, parcial), 'limite' e 'offset'. Campo 'status': 'ativo' ou 'inativo'. Campo 'situacao_operacional' do transportador é a situação operacional oficial usada nos relatórios semanais; valores: 'em_praca_apto' (em praça, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. Documentos do transportador (ANTT, alvará e certificado de transporte) são retornados apenas como presença/ausência em 'tem_antt', 'tem_alvara' e 'tem_certificado' — sem o número. Atenção: esse 'certificado' é o documento do transportador e não se confunde com os certificados digitais da empresa, consultados por list_certificados_vencendo. O CPF/CNPJ é retornado mascarado (apenas os 4 últimos dígitos visíveis); a busca continua funcionando com o documento completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -95,7 +95,7 @@
           "properties": {
             "busca": {
               "type": "string",
-              "description": "Texto para buscar em razão social ou CPF/CNPJ."
+              "description": "Texto para buscar em razão social ou CPF/CNPJ (parcial)."
             },
             "limite": {
               "type": "integer",
@@ -119,7 +119,7 @@
       {
         "name": "list_contratos",
         "title": "Listar contratos",
-        "description": "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. O resultado é paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
+        "description": "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. Status em uso: 'pendente', 'enviado', 'assinado', 'recusado'. Campo 'tipo': 'contrato', 'distrato' ou 'adesao'. Campo 'modelo': 'Maiore', 'Start' ou 'Comodato'. O resultado é paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -130,7 +130,7 @@
           "properties": {
             "status": {
               "type": "string",
-              "description": "Filtra pelo status do contrato."
+              "description": "Filtra pelo status do contrato: 'pendente', 'enviado', 'assinado' ou 'recusado'."
             },
             "motorista_id": {
               "type": "string",
@@ -164,7 +164,7 @@
       {
         "name": "list_seguros",
         "title": "Listar seguros",
-        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou seguradora. Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
+        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou por seguradora (parcial). Status em uso: 'ativo', 'vencido' e 'cancelado'. A interface também sinaliza vencimento pela data 'vigencia_fim', então uma apólice com status 'ativo' e 'vigencia_fim' no passado deve ser tratada como vencida. Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -175,7 +175,7 @@
           "properties": {
             "status": {
               "type": "string",
-              "description": "Filtra pelo status da apólice."
+              "description": "Filtra pelo status da apólice: 'ativo', 'vencido' ou 'cancelado'."
             },
             "seguradora": {
               "type": "string",
@@ -203,7 +203,7 @@
       {
         "name": "list_certificados_vencendo",
         "title": "Certificados digitais a vencer",
-        "description": "Lista certificados digitais que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos.",
+        "description": "Lista certificados digitais DA EMPRESA (ex.: e-CNPJ/e-CPF, tabela de certificados) que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos. Não confundir com o 'certificado' do transportador (documento operacional exibido como 'tem_certificado' em list_transportadores).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

@@ -69,6 +69,24 @@ export function notAuthenticated() {
 }
 
 /**
+ * Mascara documentos (CPF ou CPF/CNPJ) mantendo apenas os 4 últimos dígitos
+ * visíveis e preservando a pontuação original. A busca continua sendo feita
+ * no banco pelo valor real, então a capacidade de localizar registros não muda.
+ */
+export function maskDocumento(value: string | null | undefined): string | null {
+  if (!value) return value ?? null;
+  const digitos = value.replace(/\D/g, "");
+  if (digitos.length <= 4) return value;
+  let restantes = digitos.length - 4;
+  return value.replace(/\d/g, (d) => (restantes-- > 0 ? "*" : d));
+}
+
+/** Presença/ausência de um documento, sem expor o número. */
+export function temDocumento(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+/**
  * Torna seguro um valor de usuário usado dentro de uma expressão PostgREST
  * (`.or(...)`). O valor é envolvido em aspas duplas — forma em que o PostgREST
  * trata vírgulas, parênteses e pontos como texto literal — com escape de

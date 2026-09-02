@@ -6,10 +6,16 @@ export default defineTool({
   name: "list_seguros",
   title: "Listar seguros",
   description:
-    "Lista apólices de seguro cadastradas, com filtro opcional por status ou seguradora. " +
+    "Lista apólices de seguro cadastradas, com filtro opcional por status ou por seguradora (parcial). " +
+    "Status em uso: 'ativo', 'vencido' e 'cancelado'. A interface também sinaliza vencimento pela data 'vigencia_fim', " +
+    "então uma apólice com status 'ativo' e 'vigencia_fim' no passado deve ser tratada como vencida. " +
     "Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
   inputSchema: {
-    status: z.string().trim().optional().describe("Filtra pelo status da apólice."),
+    status: z
+      .string()
+      .trim()
+      .optional()
+      .describe("Filtra pelo status da apólice: 'ativo', 'vencido' ou 'cancelado'."),
     seguradora: z.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
     limite: z.number().int().min(1).max(100).default(25).describe("Máximo de registros por página."),
     offset: z.number().int().min(0).default(0).describe("Deslocamento para paginação (padrão 0)."),

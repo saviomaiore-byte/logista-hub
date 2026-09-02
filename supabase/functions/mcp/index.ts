@@ -69,6 +69,9 @@ function maskDocumento(value) {
   let restantes = digitos.length - 4;
   return value.replace(/\d/g, (d) => restantes-- > 0 ? "*" : d);
 }
+function temDocumento(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
 function quoteFilterValue(value) {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
@@ -197,9 +200,9 @@ import { z as z3 } from "npm:zod@^3.25.76";
 var list_transportadores_default = defineTool3({
   name: "list_transportadores",
   title: "Listar transportadores",
-  description: "Lista transportadores cadastrados com raz\xE3o social, CPF/CNPJ, situa\xE7\xE3o operacional e documentos (ANTT, alvar\xE1, certificado). Suporta busca por raz\xE3o social ou CPF/CNPJ, pagina\xE7\xE3o por offset e retorna o total de registros encontrados.",
+  description: "Lista transportadores cadastrados. Filtros: 'busca' (raz\xE3o social ou CPF/CNPJ, parcial), 'limite' e 'offset'. Campo 'status': 'ativo' ou 'inativo'. Campo 'situacao_operacional' do transportador \xE9 a situa\xE7\xE3o operacional oficial usada nos relat\xF3rios semanais; valores: 'em_praca_apto' (em pra\xE7a, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. Documentos do transportador (ANTT, alvar\xE1 e certificado de transporte) s\xE3o retornados apenas como presen\xE7a/aus\xEAncia em 'tem_antt', 'tem_alvara' e 'tem_certificado' \u2014 sem o n\xFAmero. Aten\xE7\xE3o: esse 'certificado' \xE9 o documento do transportador e n\xE3o se confunde com os certificados digitais da empresa, consultados por list_certificados_vencendo. O CPF/CNPJ \xE9 retornado mascarado (apenas os 4 \xFAltimos d\xEDgitos vis\xEDveis); a busca continua funcionando com o documento completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
   inputSchema: {
-    busca: z3.string().trim().optional().describe("Texto para buscar em raz\xE3o social ou CPF/CNPJ."),
+    busca: z3.string().trim().optional().describe("Texto para buscar em raz\xE3o social ou CPF/CNPJ (parcial)."),
     limite: z3.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
     offset: z3.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },
@@ -218,7 +221,15 @@ var list_transportadores_default = defineTool3({
     }
     const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const transportadores = data ?? [];
+    const transportadores = (data ?? []).map(
+      ({ antt_numero, alvara_numero, certificado_numero, cpf_cnpj, ...t }) => ({
+        ...t,
+        cpf_cnpj: maskDocumento(cpf_cnpj),
+        tem_antt: temDocumento(antt_numero),
+        tem_alvara: temDocumento(alvara_numero),
+        tem_certificado: temDocumento(certificado_numero)
+      })
+    );
     const payload = {
       transportadores,
       ...paginationMeta(transportadores.length, count ?? null, limite, offset),

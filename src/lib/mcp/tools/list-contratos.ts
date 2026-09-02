@@ -7,9 +7,15 @@ export default defineTool({
   title: "Listar contratos",
   description:
     "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. " +
+    "Status em uso: 'pendente', 'enviado', 'assinado', 'recusado'. " +
+    "Campo 'tipo': 'contrato', 'distrato' ou 'adesao'. Campo 'modelo': 'Maiore', 'Start' ou 'Comodato'. " +
     "O resultado é paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
   inputSchema: {
-    status: z.string().trim().optional().describe("Filtra pelo status do contrato."),
+    status: z
+      .string()
+      .trim()
+      .optional()
+      .describe("Filtra pelo status do contrato: 'pendente', 'enviado', 'assinado' ou 'recusado'."),
     motorista_id: z
       .string()
       .uuid()

@@ -248,9 +248,9 @@ import { z as z4 } from "npm:zod@^3.25.76";
 var list_contratos_default = defineTool4({
   name: "list_contratos",
   title: "Listar contratos",
-  description: "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. O resultado \xE9 paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
+  description: "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. Status em uso: 'pendente', 'enviado', 'assinado', 'recusado'. Campo 'tipo': 'contrato', 'distrato' ou 'adesao'. Campo 'modelo': 'Maiore', 'Start' ou 'Comodato'. O resultado \xE9 paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
   inputSchema: {
-    status: z4.string().trim().optional().describe("Filtra pelo status do contrato."),
+    status: z4.string().trim().optional().describe("Filtra pelo status do contrato: 'pendente', 'enviado', 'assinado' ou 'recusado'."),
     motorista_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um motorista espec\xEDfico."),
     transportador_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um transportador espec\xEDfico."),
     limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),

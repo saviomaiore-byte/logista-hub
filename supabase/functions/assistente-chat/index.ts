@@ -51,7 +51,53 @@ FORMATO DA RESPOSTA
 - Use tabelas markdown para vários registros e listas curtas para poucos.
 - Quando o resultado for parcial, termine com uma linha começando por "⚠ Resultado parcial:".`;
 
+/**
+ * Traduz erros do AI Gateway/SDK em mensagens controladas.
+ * Usa somente propriedades realmente expostas pelo SDK (APICallError.statusCode,
+ * name/message padronizados) — nada é inventado e nada interno é vazado.
+ */
+function classificar(e: unknown): { status: number; codigo: string; mensagem: string } {
+  const err = e as { statusCode?: number; name?: string; message?: string } | null;
+  const statusCode = APICallError.isInstance(e) ? e.statusCode : err?.statusCode;
+  const nome = err?.name ?? "";
+
+  if (statusCode === 429) {
+    return {
+      status: 429,
+      codigo: "limite_temporario",
+      mensagem:
+        "O Assistente atingiu o limite de uso no momento. Aguarde alguns instantes e tente novamente.",
+    };
+  }
+  if (statusCode === 402) {
+    return {
+      status: 402,
+      codigo: "servico_indisponivel",
+      mensagem:
+        "O serviço de IA está temporariamente indisponível. Tente novamente mais tarde.",
+    };
+  }
+  if (
+    nome === "AbortError" ||
+    nome === "TimeoutError" ||
+    (e instanceof DOMException && e.name === "AbortError")
+  ) {
+    return {
+      status: 504,
+      codigo: "tempo_excedido",
+      mensagem:
+        "A geração demorou mais que o esperado e foi interrompida. Tente novamente.",
+    };
+  }
+  return {
+    status: 500,
+    codigo: "erro_temporario",
+    mensagem: "Não consegui concluir a consulta agora. Tente novamente em instantes.",
+  };
+}
+
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

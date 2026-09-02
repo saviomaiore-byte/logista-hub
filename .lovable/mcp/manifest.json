@@ -19,7 +19,7 @@
       {
         "name": "list_motoristas",
         "title": "Listar motoristas",
-        "description": "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situação operacional.",
+        "description": "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situação operacional. Suporta paginação por offset e retorna o total de registros encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -41,7 +41,13 @@
               "minimum": 1,
               "maximum": 100,
               "default": 25,
-              "description": "Máximo de registros."
+              "description": "Máximo de registros por página."
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Deslocamento para paginação (padrão 0)."
             }
           },
           "additionalProperties": false,
@@ -78,7 +84,7 @@
       {
         "name": "list_transportadores",
         "title": "Listar transportadores",
-        "description": "Lista transportadores cadastrados com razão social, CPF/CNPJ, situação operacional e documentos (ANTT, alvará, certificado).",
+        "description": "Lista transportadores cadastrados com razão social, CPF/CNPJ, situação operacional e documentos (ANTT, alvará, certificado). Suporta busca por razão social ou CPF/CNPJ, paginação por offset e retorna o total de registros encontrados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -96,7 +102,13 @@
               "minimum": 1,
               "maximum": 100,
               "default": 25,
-              "description": "Máximo de registros."
+              "description": "Máximo de registros por página."
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Deslocamento para paginação (padrão 0)."
             }
           },
           "additionalProperties": false,
@@ -107,7 +119,7 @@
       {
         "name": "list_contratos",
         "title": "Listar contratos",
-        "description": "Lista contratos cadastrados, com filtro opcional por status.",
+        "description": "Lista contratos cadastrados. Permite filtrar por motorista (motorista_id), por transportador (transportador_id) e por status. O resultado é paginado (limite/offset) e informa o total de contratos encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -135,7 +147,13 @@
               "minimum": 1,
               "maximum": 100,
               "default": 25,
-              "description": "Máximo de registros."
+              "description": "Máximo de registros por página."
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Deslocamento para paginação (padrão 0)."
             }
           },
           "additionalProperties": false,
@@ -146,7 +164,7 @@
       {
         "name": "list_seguros",
         "title": "Listar seguros",
-        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou seguradora.",
+        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou seguradora. Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -168,7 +186,13 @@
               "minimum": 1,
               "maximum": 100,
               "default": 25,
-              "description": "Máximo de registros."
+              "description": "Máximo de registros por página."
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Deslocamento para paginação (padrão 0)."
             }
           },
           "additionalProperties": false,

@@ -78,3 +78,41 @@ export function notAuthenticated() {
 export function quoteFilterValue(value: string): string {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
+
+/**
+ * Escapa curingas do ILIKE (`%` e `_`) para que sejam tratados como texto
+ * literal. O caractere de escape padrão do LIKE/ILIKE no Postgres é `\`.
+ */
+export function escapeLikeWildcards(value: string): string {
+  return value.replace(/([\\%_])/g, "\\$1");
+}
+
+/** Termo pronto para `ilike`, com curingas literais escapados e busca parcial. */
+export function likeTerm(value: string): string {
+  return quoteFilterValue(`%${escapeLikeWildcards(value)}%`);
+}
+
+/** Intervalo `[from, to]` para `.range()` a partir de limite/offset. */
+export function rangeFor(limite: number, offset: number): [number, number] {
+  return [offset, offset + limite - 1];
+}
+
+export function paginationMeta(returned: number, total: number | null, limite: number, offset: number) {
+  const total_encontrado = total ?? null;
+  const truncated =
+    total_encontrado !== null ? offset + returned < total_encontrado : returned >= limite;
+  return {
+    returned,
+    total_encontrado,
+    limite,
+    offset,
+    truncated,
+    aviso: truncated
+      ? `Resultado parcial: ${returned} registro(s) nesta página${
+          total_encontrado !== null ? ` de ${total_encontrado} encontrados` : ""
+        } (offset ${offset}). Existem mais registros — use offset para as próximas páginas e nunca conclua ausência ou totais a partir desta página.`
+      : `Resultado final da paginação: ${returned} registro(s) nesta página${
+          total_encontrado !== null ? ` de ${total_encontrado} encontrados` : ""
+        } (offset ${offset}).`,
+  };
+}

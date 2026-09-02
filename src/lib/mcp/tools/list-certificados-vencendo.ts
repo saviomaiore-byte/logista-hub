@@ -6,7 +6,8 @@ export default defineTool({
   name: "list_certificados_vencendo",
   title: "Certificados digitais a vencer",
   description:
-    "Lista certificados digitais que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos.",
+    "Lista certificados digitais DA EMPRESA (ex.: e-CNPJ/e-CPF, tabela de certificados) que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos. " +
+    "Não confundir com o 'certificado' do transportador (documento operacional exibido como 'tem_certificado' em list_transportadores).",
   inputSchema: {
     dias: z.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje."),
     limite: z.number().int().min(1).max(100).default(50).describe("Máximo de registros."),

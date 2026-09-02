@@ -164,7 +164,7 @@
       {
         "name": "list_seguros",
         "title": "Listar seguros",
-        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou seguradora. Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
+        "description": "Lista apólices de seguro cadastradas, com filtro opcional por status ou por seguradora (parcial). Status em uso: 'ativo', 'vencido' e 'cancelado'. A interface também sinaliza vencimento pela data 'vigencia_fim', então uma apólice com status 'ativo' e 'vigencia_fim' no passado deve ser tratada como vencida. Suporta paginação por offset e retorna o total de apólices encontradas para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -175,7 +175,7 @@
           "properties": {
             "status": {
               "type": "string",
-              "description": "Filtra pelo status da apólice."
+              "description": "Filtra pelo status da apólice: 'ativo', 'vencido' ou 'cancelado'."
             },
             "seguradora": {
               "type": "string",
@@ -203,7 +203,7 @@
       {
         "name": "list_certificados_vencendo",
         "title": "Certificados digitais a vencer",
-        "description": "Lista certificados digitais que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos.",
+        "description": "Lista certificados digitais DA EMPRESA (ex.: e-CNPJ/e-CPF, tabela de certificados) que vencem dentro de um número de dias (padrão 30), incluindo os já vencidos. Não confundir com o 'certificado' do transportador (documento operacional exibido como 'tem_certificado' em list_transportadores).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

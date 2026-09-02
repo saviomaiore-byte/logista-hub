@@ -293,9 +293,9 @@ import { z as z5 } from "npm:zod@^3.25.76";
 var list_seguros_default = defineTool5({
   name: "list_seguros",
   title: "Listar seguros",
-  description: "Lista ap\xF3lices de seguro cadastradas, com filtro opcional por status ou seguradora. Suporta pagina\xE7\xE3o por offset e retorna o total de ap\xF3lices encontradas para os filtros aplicados.",
+  description: "Lista ap\xF3lices de seguro cadastradas, com filtro opcional por status ou por seguradora (parcial). Status em uso: 'ativo', 'vencido' e 'cancelado'. A interface tamb\xE9m sinaliza vencimento pela data 'vigencia_fim', ent\xE3o uma ap\xF3lice com status 'ativo' e 'vigencia_fim' no passado deve ser tratada como vencida. Suporta pagina\xE7\xE3o por offset e retorna o total de ap\xF3lices encontradas para os filtros aplicados.",
   inputSchema: {
-    status: z5.string().trim().optional().describe("Filtra pelo status da ap\xF3lice."),
+    status: z5.string().trim().optional().describe("Filtra pelo status da ap\xF3lice: 'ativo', 'vencido' ou 'cancelado'."),
     seguradora: z5.string().trim().optional().describe("Filtra pelo nome da seguradora (busca parcial)."),
     limite: z5.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
     offset: z5.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
@@ -332,7 +332,7 @@ import { z as z6 } from "npm:zod@^3.25.76";
 var list_certificados_vencendo_default = defineTool6({
   name: "list_certificados_vencendo",
   title: "Certificados digitais a vencer",
-  description: "Lista certificados digitais que vencem dentro de um n\xFAmero de dias (padr\xE3o 30), incluindo os j\xE1 vencidos.",
+  description: "Lista certificados digitais DA EMPRESA (ex.: e-CNPJ/e-CPF, tabela de certificados) que vencem dentro de um n\xFAmero de dias (padr\xE3o 30), incluindo os j\xE1 vencidos. N\xE3o confundir com o 'certificado' do transportador (documento operacional exibido como 'tem_certificado' em list_transportadores).",
   inputSchema: {
     dias: z6.number().int().min(0).max(365).default(30).describe("Janela em dias a partir de hoje."),
     limite: z6.number().int().min(1).max(100).default(50).describe("M\xE1ximo de registros.")

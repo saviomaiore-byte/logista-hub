@@ -730,13 +730,137 @@ var analisar_vencimentos_default = defineTool8({
   }
 });
 
+// src/lib/mcp/tools/analisar-cruzamentos.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@1.0.0";
+import { z as z10 } from "npm:zod@^3.25.76";
+var analisar_cruzamentos_default = defineTool9({
+  name: "analisar_cruzamentos",
+  title: "Analisar cruzamentos de v\xEDnculos",
+  description: "Cruza os relacionamentos comprovados entre motoristas, transportadores e contratos. V\xEDnculo motorista \u2194 transportador vem da tabela de v\xEDnculos ('transportador_motoristas'); v\xEDnculo com contrato vem dos campos 'motorista_id' e 'transportador_id' do contrato. Nenhum v\xEDnculo \xE9 inferido: se n\xE3o existe registro, o relacionamento n\xE3o \xE9 retornado. Filtros opcionais: 'motorista_id', 'transportador_id' e 'limite'. Nenhum CPF/CNPJ ou n\xFAmero de documento \xE9 retornado. Ferramenta somente leitura.",
+  inputSchema: {
+    motorista_id: z10.string().uuid().optional().describe("Restringe os cruzamentos a um motorista espec\xEDfico."),
+    transportador_id: z10.string().uuid().optional().describe("Restringe os cruzamentos a um transportador espec\xEDfico."),
+    limite: z10.number().int().min(1).max(200).default(100).describe("M\xE1ximo de relacionamentos retornados por categoria (os totais consideram tudo).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  outputSchema: {
+    filtros_aplicados: z10.object({
+      motorista_id: z10.string().nullable(),
+      transportador_id: z10.string().nullable(),
+      limite: z10.number().int()
+    }),
+    totais: z10.object({
+      motorista_transportador: z10.number().int(),
+      motorista_contrato: z10.number().int(),
+      transportador_contrato: z10.number().int()
+    }),
+    truncated: z10.boolean(),
+    aviso: z10.string(),
+    motorista_transportador: z10.array(
+      z10.object({
+        motorista_id: z10.string(),
+        motorista_nome: z10.string().nullable(),
+        transportador_id: z10.string(),
+        transportador_nome: z10.string().nullable()
+      })
+    ),
+    motorista_contrato: z10.array(
+      z10.object({
+        motorista_id: z10.string(),
+        motorista_nome: z10.string().nullable(),
+        contrato_id: z10.string(),
+        contrato_tipo: z10.string().nullable(),
+        contrato_status: z10.string().nullable()
+      })
+    ),
+    transportador_contrato: z10.array(
+      z10.object({
+        transportador_id: z10.string(),
+        transportador_nome: z10.string().nullable(),
+        contrato_id: z10.string(),
+        contrato_tipo: z10.string().nullable(),
+        contrato_status: z10.string().nullable()
+      })
+    )
+  },
+  handler: async ({ motorista_id, transportador_id, limite }, ctx) => {
+    if (!ctx.isAuthenticated()) return notAuthenticated();
+    const supabase = supabaseForUser(ctx);
+    let linksQuery = supabase.from("transportador_motoristas").select("motorista_id, transportador_id");
+    if (motorista_id) linksQuery = linksQuery.eq("motorista_id", motorista_id);
+    if (transportador_id) linksQuery = linksQuery.eq("transportador_id", transportador_id);
+    let contratosQuery = supabase.from("contratos").select("id, tipo, status, motorista_id, transportador_id").order("created_at", { ascending: false });
+    if (motorista_id) contratosQuery = contratosQuery.eq("motorista_id", motorista_id);
+    if (transportador_id) contratosQuery = contratosQuery.eq("transportador_id", transportador_id);
+    const [linksRes, contratosRes, motoristasRes, transportadoresRes] = await Promise.all([
+      linksQuery,
+      contratosQuery,
+      supabase.from("motoristas").select("id, nome"),
+      supabase.from("transportadores").select("id, razao_social")
+    ]);
+    const err = linksRes.error || contratosRes.error || motoristasRes.error || transportadoresRes.error;
+    if (err) return { content: [{ type: "text", text: err.message }], isError: true };
+    const nomeMotorista = new Map((motoristasRes.data ?? []).map((m) => [m.id, m.nome]));
+    const nomeTransportador = new Map(
+      (transportadoresRes.data ?? []).map((t) => [t.id, t.razao_social])
+    );
+    const motorista_transportador = (linksRes.data ?? []).map((l) => ({
+      motorista_id: l.motorista_id,
+      motorista_nome: nomeMotorista.get(l.motorista_id) ?? null,
+      transportador_id: l.transportador_id,
+      transportador_nome: nomeTransportador.get(l.transportador_id) ?? null
+    }));
+    const contratos = contratosRes.data ?? [];
+    const motorista_contrato = contratos.filter((c) => !!c.motorista_id).map((c) => ({
+      motorista_id: c.motorista_id,
+      motorista_nome: nomeMotorista.get(c.motorista_id) ?? null,
+      contrato_id: c.id,
+      contrato_tipo: c.tipo ?? null,
+      contrato_status: c.status ?? null
+    }));
+    const transportador_contrato = contratos.filter((c) => !!c.transportador_id).map((c) => ({
+      transportador_id: c.transportador_id,
+      transportador_nome: nomeTransportador.get(c.transportador_id) ?? null,
+      contrato_id: c.id,
+      contrato_tipo: c.tipo ?? null,
+      contrato_status: c.status ?? null
+    }));
+    const totais = {
+      motorista_transportador: motorista_transportador.length,
+      motorista_contrato: motorista_contrato.length,
+      transportador_contrato: transportador_contrato.length
+    };
+    const listaMT = motorista_transportador.slice(0, limite);
+    const listaMC = motorista_contrato.slice(0, limite);
+    const listaTC = transportador_contrato.slice(0, limite);
+    const truncated = listaMT.length < totais.motorista_transportador || listaMC.length < totais.motorista_contrato || listaTC.length < totais.transportador_contrato;
+    const payload = {
+      filtros_aplicados: {
+        motorista_id: motorista_id ?? null,
+        transportador_id: transportador_id ?? null,
+        limite
+      },
+      totais,
+      truncated,
+      aviso: truncated ? "Resultado parcial: pelo menos uma das listas foi truncada pelo 'limite'. Aumente 'limite' antes de concluir qualquer coisa sobre o conjunto completo." : "Listas completas para os filtros aplicados. Apenas v\xEDnculos com registro existente s\xE3o retornados; aus\xEAncia na lista significa aus\xEAncia de registro de v\xEDnculo.",
+      motorista_transportador: listaMT,
+      motorista_contrato: listaMC,
+      transportador_contrato: listaTC
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "nfvokydyrklwvhqbavtx";
 var mcp_default = defineMcp({
   name: "pactum-logistica-hub",
   title: "Pactum Logista Hub",
   version: "0.1.0",
-  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal. Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa).",
+  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal. Para perguntas sobre documentos vencidos ou a vencer, use analisar_vencimentos (motoristas) ou list_certificados_vencendo (certificados digitais da empresa). Para perguntas sobre v\xEDnculos entre motoristas, transportadores e contratos, use analisar_cruzamentos, que retorna apenas relacionamentos comprovados por registro existente.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -749,7 +873,8 @@ var mcp_default = defineMcp({
     list_seguros_default,
     list_certificados_vencendo_default,
     analisar_pendencias_default,
-    analisar_vencimentos_default
+    analisar_vencimentos_default,
+    analisar_cruzamentos_default
   ]
 });
 

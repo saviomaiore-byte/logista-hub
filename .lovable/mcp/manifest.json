@@ -1412,6 +1412,221 @@
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         }
+      },
+      {
+        "name": "analisar_cruzamentos",
+        "title": "Analisar cruzamentos de vínculos",
+        "description": "Cruza os relacionamentos comprovados entre motoristas, transportadores e contratos. Vínculo motorista ↔ transportador vem da tabela de vínculos ('transportador_motoristas'); vínculo com contrato vem dos campos 'motorista_id' e 'transportador_id' do contrato. Nenhum vínculo é inferido: se não existe registro, o relacionamento não é retornado. Filtros opcionais: 'motorista_id', 'transportador_id' e 'limite'. Nenhum CPF/CNPJ ou número de documento é retornado. Ferramenta somente leitura.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "motorista_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Restringe os cruzamentos a um motorista específico."
+            },
+            "transportador_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Restringe os cruzamentos a um transportador específico."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100,
+              "description": "Máximo de relacionamentos retornados por categoria (os totais consideram tudo)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "filtros_aplicados": {
+              "type": "object",
+              "properties": {
+                "motorista_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "transportador_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "limite": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "motorista_id",
+                "transportador_id",
+                "limite"
+              ],
+              "additionalProperties": false
+            },
+            "totais": {
+              "type": "object",
+              "properties": {
+                "motorista_transportador": {
+                  "type": "integer"
+                },
+                "motorista_contrato": {
+                  "type": "integer"
+                },
+                "transportador_contrato": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "motorista_transportador",
+                "motorista_contrato",
+                "transportador_contrato"
+              ],
+              "additionalProperties": false
+            },
+            "truncated": {
+              "type": "boolean"
+            },
+            "aviso": {
+              "type": "string"
+            },
+            "motorista_transportador": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "motorista_id": {
+                    "type": "string"
+                  },
+                  "motorista_nome": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transportador_id": {
+                    "type": "string"
+                  },
+                  "transportador_nome": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "motorista_id",
+                  "motorista_nome",
+                  "transportador_id",
+                  "transportador_nome"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "motorista_contrato": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "motorista_id": {
+                    "type": "string"
+                  },
+                  "motorista_nome": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contrato_id": {
+                    "type": "string"
+                  },
+                  "contrato_tipo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contrato_status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "motorista_id",
+                  "motorista_nome",
+                  "contrato_id",
+                  "contrato_tipo",
+                  "contrato_status"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "transportador_contrato": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "transportador_id": {
+                    "type": "string"
+                  },
+                  "transportador_nome": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contrato_id": {
+                    "type": "string"
+                  },
+                  "contrato_tipo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contrato_status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "transportador_id",
+                  "transportador_nome",
+                  "contrato_id",
+                  "contrato_tipo",
+                  "contrato_status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "filtros_aplicados",
+            "totais",
+            "truncated",
+            "aviso",
+            "motorista_transportador",
+            "motorista_contrato",
+            "transportador_contrato"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
       }
     ]
   }

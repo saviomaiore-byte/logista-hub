@@ -63,6 +63,9 @@ function notAuthenticated() {
     isError: true
   };
 }
+function quoteFilterValue(value) {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
 
 // src/lib/mcp/tools/list-motoristas.ts
 var list_motoristas_default = defineTool({
@@ -81,13 +84,25 @@ var list_motoristas_default = defineTool({
     let query = supabase.from("motoristas").select(
       "id, nome, cpf, telefone, email, cidade, estado, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"
     ).order("nome", { ascending: true }).limit(limite);
-    if (busca) query = query.or(`nome.ilike.%${busca}%,cpf.ilike.%${busca}%`);
+    if (busca) {
+      const termo = quoteFilterValue(`%${busca}%`);
+      query = query.or(`nome.ilike.${termo},cpf.ilike.${termo}`);
+    }
     if (situacao_operacional) query = query.eq("situacao_operacional", situacao_operacional);
     const { data, error } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const motoristas = data ?? [];
+    const truncated = motoristas.length >= limite;
+    const payload = {
+      motoristas,
+      returned: motoristas.length,
+      limite,
+      truncated,
+      aviso: truncated ? "Resultado possivelmente truncado pelo limite. N\xE3o afirme aus\xEAncia nem totais a partir desta lista." : void 0
+    };
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { motoristas: data ?? [] }
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
     };
   }
 });
@@ -135,12 +150,24 @@ var list_transportadores_default = defineTool3({
     let query = supabase.from("transportadores").select(
       "id, razao_social, cpf_cnpj, contato, email, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero"
     ).order("razao_social", { ascending: true }).limit(limite);
-    if (busca) query = query.or(`razao_social.ilike.%${busca}%,cpf_cnpj.ilike.%${busca}%`);
+    if (busca) {
+      const termo = quoteFilterValue(`%${busca}%`);
+      query = query.or(`razao_social.ilike.${termo},cpf_cnpj.ilike.${termo}`);
+    }
     const { data, error } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const transportadores = data ?? [];
+    const truncated = transportadores.length >= limite;
+    const payload = {
+      transportadores,
+      returned: transportadores.length,
+      limite,
+      truncated,
+      aviso: truncated ? "Resultado possivelmente truncado pelo limite. N\xE3o afirme aus\xEAncia nem totais a partir desta lista." : void 0
+    };
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { transportadores: data ?? [] }
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
     };
   }
 });

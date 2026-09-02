@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { notAuthenticated, supabaseForUser } from "../supabase";
+import { notAuthenticated, quoteFilterValue, supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_transportadores",
@@ -23,13 +23,27 @@ export default defineTool({
       .order("razao_social", { ascending: true })
       .limit(limite);
 
-    if (busca) query = query.or(`razao_social.ilike.%${busca}%,cpf_cnpj.ilike.%${busca}%`);
+    if (busca) {
+      const termo = quoteFilterValue(`%${busca}%`);
+      query = query.or(`razao_social.ilike.${termo},cpf_cnpj.ilike.${termo}`);
+    }
 
     const { data, error } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const transportadores = data ?? [];
+    const truncated = transportadores.length >= limite;
+    const payload = {
+      transportadores,
+      returned: transportadores.length,
+      limite,
+      truncated,
+      aviso: truncated
+        ? "Resultado possivelmente truncado pelo limite. Não afirme ausência nem totais a partir desta lista."
+        : undefined,
+    };
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { transportadores: data ?? [] },
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload,
     };
   },
 });

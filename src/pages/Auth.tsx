@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem("rememberEmail") !== null);
   const [forgotPassword, setForgotPassword] = useState(false);
@@ -154,10 +157,10 @@ export default function Auth() {
             localStorage.removeItem("rememberEmail");
           }
           toast.success("Login realizado com sucesso!");
-          navigate("/");
+          navigate(nextPath);
         }
       } else {
-        const { error } = await signUp(email, password, nome);
+        const { error } = await signUp(email, password, nome, `${window.location.origin}${nextPath}`);
         if (error) {
           toast.error(error.message);
         } else {
@@ -174,7 +177,7 @@ export default function Auth() {
       <MfaVerify
         onVerified={() => {
           toast.success("Login realizado com sucesso!");
-          navigate("/");
+          navigate(nextPath);
         }}
       />
     );

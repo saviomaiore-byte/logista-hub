@@ -67,3 +67,14 @@ export function notAuthenticated() {
     isError: true,
   };
 }
+
+/**
+ * Torna seguro um valor de usuário usado dentro de uma expressão PostgREST
+ * (`.or(...)`). O valor é envolvido em aspas duplas — forma em que o PostgREST
+ * trata vírgulas, parênteses e pontos como texto literal — com escape de
+ * barras invertidas e aspas. Buscas normais (nome, nome com espaço, CPF/CNPJ)
+ * continuam funcionando exatamente como antes.
+ */
+export function quoteFilterValue(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}

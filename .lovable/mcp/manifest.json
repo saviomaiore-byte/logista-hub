@@ -120,6 +120,16 @@
               "type": "string",
               "description": "Filtra pelo status do contrato."
             },
+            "motorista_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filtra contratos vinculados a um motorista específico."
+            },
+            "transportador_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filtra contratos vinculados a um transportador específico."
+            },
             "limite": {
               "type": "integer",
               "minimum": 1,

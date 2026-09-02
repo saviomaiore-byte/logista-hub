@@ -98,8 +98,14 @@ Deno.serve(async (req) => {
       stopWhen: stepCountIs(8),
     });
 
-    return result.toUIMessageStreamResponse({ headers: corsHeaders });
-  } catch (_e) {
-    return Response.json({ error: "erro_temporario" }, { status: 500, headers: corsHeaders });
+    // Erros que ocorrem durante o stream viram mensagem amigável no fluxo.
+    return result.toUIMessageStreamResponse({
+      headers: corsHeaders,
+      onError: (error) => classificar(error).mensagem,
+    });
+  } catch (e) {
+    const { status, codigo, mensagem } = classificar(e);
+    return Response.json({ error: codigo, message: mensagem }, { status, headers: corsHeaders });
   }
 });
+

@@ -5,6 +5,7 @@ import listTransportadores from "./tools/list-transportadores";
 import listContratos from "./tools/list-contratos";
 import listSeguros from "./tools/list-seguros";
 import listCertificadosVencendo from "./tools/list-certificados-vencendo";
+import analisarPendencias from "./tools/analisar-pendencias";
 
 const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
 
@@ -18,7 +19,8 @@ export default defineMcp({
     "'total_encontrado' é o total de registros que atendem aos filtros aplicados; 'returned' é apenas a quantidade da página atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver disponível. " +
     "'truncated' = true significa que existem mais registros além da página atual: informe que o resultado é parcial e use 'offset' (offset + limite) para buscar as próximas páginas antes de concluir qualquer coisa. " +
     "NUNCA afirme que não existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de paginação e 'total_encontrado' antes de afirmar ausência — offset além do total também produz zero registros. " +
-    "Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem genérica.",
+    "Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem genérica. " +
+    "Para perguntas sobre pendências, inaptidão ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relatório semanal.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
@@ -30,5 +32,6 @@ export default defineMcp({
     listContratos,
     listSeguros,
     listCertificadosVencendo,
+    analisarPendencias,
   ],
 });

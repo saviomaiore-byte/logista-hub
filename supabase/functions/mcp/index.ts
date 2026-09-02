@@ -500,13 +500,136 @@ var list_certificados_vencendo_default = defineTool6({
   }
 });
 
+// src/lib/mcp/tools/analisar-pendencias.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@1.0.0";
+import { z as z8 } from "npm:zod@^3.25.76";
+
+// src/lib/aptidao.ts
+import { isPast, parseISO } from "npm:date-fns@^3.6.0";
+function checkMotoristaAptidao(m, temContrato, transportadora) {
+  const motivos = [];
+  if (!temContrato) motivos.push("Sem contrato assinado");
+  if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
+  if (!transportadora?.alvara_numero) motivos.push("Transportadora sem Alvar\xE1");
+  if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");
+  if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");
+  if (!m.mopp_vitalicio && m.mopp_vencimento && isPast(parseISO(m.mopp_vencimento))) {
+    motivos.push("MOPP vencido");
+  }
+  if (m.status === "inativo") motivos.push("Motorista inativo");
+  return { apto: motivos.length === 0, motivos };
+}
+
+// src/lib/mcp/tools/analisar-pendencias.ts
+function motivosTransportadora(t) {
+  return checkMotoristaAptidao({}, true, t).motivos.filter(
+    (m) => m.startsWith("Transportadora")
+  );
+}
+var analisar_pendencias_default = defineTool7({
+  name: "analisar_pendencias",
+  title: "Analisar pend\xEAncias operacionais",
+  description: "Analisa pend\xEAncias operacionais de transportadores ativos e dos motoristas vinculados, usando exatamente as mesmas regras de aptid\xE3o do relat\xF3rio semanal. Motivos poss\xEDveis para motorista: 'Sem contrato assinado', 'Transportadora sem ANTT', 'Transportadora sem Alvar\xE1', 'Transportadora sem Certificado', 'CNH vencida', 'MOPP vencido', 'Motorista inativo'. Motivos poss\xEDveis para transportador: 'Transportadora sem ANTT', 'Transportadora sem Alvar\xE1', 'Transportadora sem Certificado'. Somente transportadores com status 'ativo' s\xE3o analisados (mesmo crit\xE9rio do relat\xF3rio). Nenhum CPF/CNPJ ou n\xFAmero de documento \xE9 retornado. Ferramenta somente leitura.",
+  inputSchema: {
+    entidade: z8.enum(["ambos", "motorista", "transportador"]).default("ambos").describe("Restringe a an\xE1lise a um tipo de entidade. Padr\xE3o: 'ambos'."),
+    limite: z8.number().int().min(1).max(200).default(100).describe("M\xE1ximo de registros COM pend\xEAncia retornados na lista (os totais consideram tudo).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  outputSchema: {
+    total_analisado: z8.number().int().describe("Total de registros analisados (motoristas + transportadores conforme o filtro)."),
+    total_com_pendencias: z8.number().int(),
+    total_sem_pendencias: z8.number().int(),
+    returned: z8.number().int().describe("Quantidade de pend\xEAncias retornadas na lista."),
+    limite: z8.number().int(),
+    truncated: z8.boolean().describe("true quando h\xE1 mais pend\xEAncias do que o limite retornado."),
+    aviso: z8.string(),
+    filtros_aplicados: z8.object({ entidade: z8.string() }),
+    pendencias: z8.array(
+      z8.object({
+        entidade: z8.enum(["motorista", "transportador"]),
+        id: z8.string(),
+        nome: z8.string(),
+        situacao_operacional: z8.string().nullable().describe("Situa\xE7\xE3o operacional quando dispon\xEDvel; null caso contr\xE1rio."),
+        motivos: z8.array(z8.string())
+      })
+    )
+  },
+  handler: async ({ entidade, limite }, ctx) => {
+    if (!ctx.isAuthenticated()) return notAuthenticated();
+    const supabase = supabaseForUser(ctx);
+    const [transportadoresRes, linksRes, motoristasRes, contratosRes] = await Promise.all([
+      supabase.from("transportadores").select("id, razao_social, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero").eq("status", "ativo").order("razao_social", { ascending: true }),
+      supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+      supabase.from("motoristas").select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),
+      supabase.from("contratos").select("motorista_id, status").eq("status", "assinado")
+    ]);
+    const erro = transportadoresRes.error || linksRes.error || motoristasRes.error || contratosRes.error;
+    if (erro) return { content: [{ type: "text", text: erro.message }], isError: true };
+    const transportadores = transportadoresRes.data ?? [];
+    const links = linksRes.data ?? [];
+    const motoristas = motoristasRes.data ?? [];
+    const contratosSet = new Set((contratosRes.data ?? []).map((c) => c.motorista_id));
+    const motoristaPorId = new Map(motoristas.map((m) => [m.id, m]));
+    const pendencias = [];
+    let total_analisado = 0;
+    for (const t of transportadores) {
+      if (entidade !== "motorista") {
+        total_analisado++;
+        const motivos = motivosTransportadora(t);
+        if (motivos.length > 0) {
+          pendencias.push({
+            entidade: "transportador",
+            id: t.id,
+            nome: t.razao_social,
+            situacao_operacional: t.situacao_operacional ?? null,
+            motivos
+          });
+        }
+      }
+      if (entidade === "transportador") continue;
+      const vinculados = links.filter((l) => l.transportador_id === t.id).map((l) => motoristaPorId.get(l.motorista_id)).filter((m) => Boolean(m));
+      for (const m of vinculados) {
+        total_analisado++;
+        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t);
+        if (!apto) {
+          pendencias.push({
+            entidade: "motorista",
+            id: m.id,
+            nome: m.nome,
+            situacao_operacional: m.situacao_operacional ?? null,
+            motivos
+          });
+        }
+      }
+    }
+    const total_com_pendencias = pendencias.length;
+    const lista = pendencias.slice(0, limite);
+    const truncated = total_com_pendencias > lista.length;
+    const payload = {
+      total_analisado,
+      total_com_pendencias,
+      total_sem_pendencias: total_analisado - total_com_pendencias,
+      returned: lista.length,
+      limite,
+      truncated,
+      aviso: truncated ? `Resultado parcial: ${lista.length} de ${total_com_pendencias} pend\xEAncia(s) retornadas. Aumente 'limite' antes de concluir qualquer coisa sobre a lista completa.` : `Lista completa: ${lista.length} pend\xEAncia(s) de ${total_analisado} registro(s) analisados.`,
+      filtros_aplicados: { entidade },
+      pendencias: lista
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "nfvokydyrklwvhqbavtx";
 var mcp_default = defineMcp({
   name: "pactum-logistica-hub",
   title: "Pactum Logista Hub",
   version: "0.1.0",
-  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica.",
+  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. PAGINA\xC7\xC3O: as tools de listagem (list_motoristas, list_transportadores, list_contratos, list_seguros) aceitam 'limite' (1\u2013100, padr\xE3o 25) e 'offset' (padr\xE3o 0) e retornam 'returned', 'total_encontrado', 'limite', 'offset', 'truncated' e 'filtros_aplicados'. 'total_encontrado' \xE9 o total de registros que atendem aos filtros aplicados; 'returned' \xE9 apenas a quantidade da p\xE1gina atual. NUNCA trate 'returned' como total quando 'total_encontrado' estiver dispon\xEDvel. 'truncated' = true significa que existem mais registros al\xE9m da p\xE1gina atual: informe que o resultado \xE9 parcial e use 'offset' (offset + limite) para buscar as pr\xF3ximas p\xE1ginas antes de concluir qualquer coisa. NUNCA afirme que n\xE3o existem mais registros quando 'truncated' for true. Se 'returned' for 0, considere o contexto de pagina\xE7\xE3o e 'total_encontrado' antes de afirmar aus\xEAncia \u2014 offset al\xE9m do total tamb\xE9m produz zero registros. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de varrer a listagem gen\xE9rica. Para perguntas sobre pend\xEAncias, inaptid\xE3o ou documentos irregulares, use analisar_pendencias, que aplica as regras oficiais do relat\xF3rio semanal.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
@@ -517,7 +640,8 @@ var mcp_default = defineMcp({
     list_transportadores_default,
     list_contratos_default,
     list_seguros_default,
-    list_certificados_vencendo_default
+    list_certificados_vencendo_default,
+    analisar_pendencias_default
   ]
 });
 

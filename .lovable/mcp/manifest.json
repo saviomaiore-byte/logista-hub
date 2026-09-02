@@ -19,7 +19,7 @@
       {
         "name": "list_motoristas",
         "title": "Listar motoristas",
-        "description": "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situação operacional. Suporta paginação por offset e retorna o total de registros encontrados para os filtros aplicados.",
+        "description": "Lista motoristas cadastrados, com busca por nome ou CPF e filtro por situação operacional. Filtros: 'busca' (nome ou CPF, correspondência parcial), 'situacao_operacional', 'limite' e 'offset'. Campo 'status' do motorista (retornado, não filtrável): 'ativo', 'inativo' ou 'pendente'. Campo 'situacao_operacional' do motorista é um marcador operacional legado, não editado nas telas atuais; valores existentes: 'em_praca_apto' e 'em_praca' (em praça, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. A situação operacional usada oficialmente nos relatórios é a do TRANSPORTADOR vinculado (ver list_transportadores), não a do motorista. O CPF é retornado mascarado (apenas os 4 últimos dígitos visíveis); a busca continua funcionando com o CPF completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -30,11 +30,11 @@
           "properties": {
             "busca": {
               "type": "string",
-              "description": "Texto para buscar em nome ou CPF."
+              "description": "Texto para buscar em nome ou CPF (parcial)."
             },
             "situacao_operacional": {
               "type": "string",
-              "description": "Filtra pela situação operacional (ex.: 'apto em viagem', 'inapto')."
+              "description": "Filtra pela situação operacional do motorista (campo legado). Valores em uso: 'em_praca_apto', 'em_praca', 'em_viagem_apto', 'inapto'."
             },
             "limite": {
               "type": "integer",

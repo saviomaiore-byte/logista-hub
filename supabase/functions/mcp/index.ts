@@ -7,7 +7,6 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@1.0.0";
 
 // src/lib/mcp/tools/list-motoristas.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@1.0.0";
-import { z } from "npm:zod@^3.25.76";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.112.4";
@@ -89,13 +88,16 @@ function paginationMeta(returned, total, limite, offset) {
 }
 
 // src/lib/mcp/tools/list-motoristas.ts
+import { z } from "npm:zod@^3.25.76";
 var list_motoristas_default = defineTool({
   name: "list_motoristas",
   title: "Listar motoristas",
-  description: "Lista motoristas cadastrados, com busca opcional por nome ou CPF e filtro por situa\xE7\xE3o operacional. Suporta pagina\xE7\xE3o por offset e retorna o total de registros encontrados para os filtros aplicados.",
+  description: "Lista motoristas cadastrados, com busca por nome ou CPF e filtro por situa\xE7\xE3o operacional. Filtros: 'busca' (nome ou CPF, correspond\xEAncia parcial), 'situacao_operacional', 'limite' e 'offset'. Campo 'status' do motorista (retornado, n\xE3o filtr\xE1vel): 'ativo', 'inativo' ou 'pendente'. Campo 'situacao_operacional' do motorista \xE9 um marcador operacional legado, n\xE3o editado nas telas atuais; valores existentes: 'em_praca_apto' e 'em_praca' (em pra\xE7a, apto), 'em_viagem_apto' (em viagem, apto) e 'inapto'. A situa\xE7\xE3o operacional usada oficialmente nos relat\xF3rios \xE9 a do TRANSPORTADOR vinculado (ver list_transportadores), n\xE3o a do motorista. O CPF \xE9 retornado mascarado (apenas os 4 \xFAltimos d\xEDgitos vis\xEDveis); a busca continua funcionando com o CPF completo ou parcial. Resultado paginado com total de registros encontrados para os filtros aplicados.",
   inputSchema: {
-    busca: z.string().trim().optional().describe("Texto para buscar em nome ou CPF."),
-    situacao_operacional: z.string().trim().optional().describe("Filtra pela situa\xE7\xE3o operacional (ex.: 'apto em viagem', 'inapto')."),
+    busca: z.string().trim().optional().describe("Texto para buscar em nome ou CPF (parcial)."),
+    situacao_operacional: z.string().trim().optional().describe(
+      "Filtra pela situa\xE7\xE3o operacional do motorista (campo legado). Valores em uso: 'em_praca_apto', 'em_praca', 'em_viagem_apto', 'inapto'."
+    ),
     limite: z.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros por p\xE1gina."),
     offset: z.number().int().min(0).default(0).describe("Deslocamento para pagina\xE7\xE3o (padr\xE3o 0).")
   },

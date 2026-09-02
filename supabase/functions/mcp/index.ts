@@ -119,7 +119,33 @@ var get_motorista_default = defineTool2({
   handler: async ({ id }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
-    const { data: motorista, error } = await supabase.from("motoristas").select("*").eq("id", id).maybeSingle();
+    const { data: motorista, error } = await supabase.from("motoristas").select(
+      [
+        "id",
+        "nome",
+        "cpf",
+        "telefone",
+        "email",
+        "cidade",
+        "estado",
+        "status",
+        "situacao_operacional",
+        "is_transportador_proprio",
+        "cnh_numero",
+        "cnh_vencimento",
+        "mopp_numero",
+        "mopp_vencimento",
+        "mopp_vitalicio",
+        "antt_numero",
+        "antt_vencimento",
+        "alvara_numero",
+        "alvara_vencimento",
+        "certificado_numero",
+        "certificado_vencimento",
+        "created_at",
+        "updated_at"
+      ].join(", ")
+    ).eq("id", id).maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!motorista)
       return { content: [{ type: "text", text: "Motorista n\xE3o encontrado." }], isError: true };
@@ -181,21 +207,38 @@ var list_contratos_default = defineTool4({
   description: "Lista contratos cadastrados, com filtro opcional por status.",
   inputSchema: {
     status: z4.string().trim().optional().describe("Filtra pelo status do contrato."),
+    motorista_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um motorista espec\xEDfico."),
+    transportador_id: z4.string().uuid().optional().describe("Filtra contratos vinculados a um transportador espec\xEDfico."),
     limite: z4.number().int().min(1).max(100).default(25).describe("M\xE1ximo de registros.")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ status, limite }, ctx) => {
+  handler: async ({ status, motorista_id, transportador_id, limite }, ctx) => {
     if (!ctx.isAuthenticated()) return notAuthenticated();
     const supabase = supabaseForUser(ctx);
     let query = supabase.from("contratos").select(
-      "id, empresa, cnpj, tipo, modelo, status, data_envio, data_assinatura, motorista_id, transportador_id, observacoes"
+      "id, empresa, cnpj, tipo, modelo, status, data_envio, data_assinatura, motorista_id, transportador_id, observacoes",
+      { count: "exact" }
     ).order("created_at", { ascending: false }).limit(limite);
     if (status) query = query.eq("status", status);
-    const { data, error } = await query;
+    if (motorista_id) query = query.eq("motorista_id", motorista_id);
+    if (transportador_id) query = query.eq("transportador_id", transportador_id);
+    const { data, error, count } = await query;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const contratos = data ?? [];
+    const total_encontrado = count ?? null;
+    const truncated = total_encontrado !== null ? total_encontrado > contratos.length : contratos.length >= limite;
+    const payload = {
+      contratos,
+      returned: contratos.length,
+      total_encontrado,
+      limite,
+      truncated,
+      filtros_aplicados: { status: status ?? null, motorista_id: motorista_id ?? null, transportador_id: transportador_id ?? null },
+      aviso: truncated ? "Resultado truncado pelo limite: n\xE3o conclua aus\xEAncia de contratos nem totais a partir desta lista." : "Resultado completo para os filtros aplicados."
+    };
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { contratos: data ?? [] }
+      content: [{ type: "text", text: JSON.stringify(payload) }],
+      structuredContent: payload
     };
   }
 });
@@ -261,7 +304,7 @@ var mcp_default = defineMcp({
   name: "pactum-logistica-hub",
   title: "Pactum Logista Hub",
   version: "0.1.0",
-  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado.",
+  instructions: "Ferramentas de consulta do Pactum Log\xEDstica: motoristas, transportadores, contratos, seguros e certificados digitais. Todas as consultas respeitam as permiss\xF5es do usu\xE1rio autenticado. REGRA OBRIGAT\xD3RIA para as tools de listagem: nunca deduza aus\xEAncia, inexist\xEAncia ou contagem total de registros a partir de uma lista que possa estar truncada. As respostas trazem os campos 'returned', 'limite', 'truncated' e, quando dispon\xEDvel, 'total_encontrado'. Se 'truncated' for true, informe explicitamente que o resultado \xE9 parcial e n\xE3o afirme que n\xE3o existem outros registros. Se uma listagem retornar zero registros com filtros amplos ou truncamento poss\xEDvel, diga que nada foi encontrado no conjunto consultado, sem afirmar inexist\xEAncia. Para verificar contratos de um motorista ou transportador, use sempre list_contratos com motorista_id ou transportador_id em vez de procurar em uma listagem gen\xE9rica.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"

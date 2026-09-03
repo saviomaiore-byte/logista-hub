@@ -344,6 +344,9 @@ export default function Certificados() {
                       <span className="status-badge bg-primary/10 text-primary">{cert.tipo}</span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
+                      {cnpjPorEmpresa.get(cert.empresa) || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
                       {formatDateOnly(cert.data_renovacao_agendada)}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">

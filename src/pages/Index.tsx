@@ -1,12 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { AlertCard } from "@/components/dashboard/AlertCard";
+import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard";
+import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Users, FileText, AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { reportDbError } from "@/lib/dbError";
+import {
+  alertaKey,
+  useAlertasArquivados,
+  useArquivarAlerta,
+} from "@/hooks/useAlertasArquivados";
 
 export default function Index() {
   const [stats, setStats] = useState({
@@ -15,8 +21,21 @@ export default function Index() {
     docsVencidos: 0,
     certificados: 0,
   });
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [allAlerts, setAllAlerts] = useState<DashboardAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [arquivadosOpen, setArquivadosOpen] = useState(false);
+  const { data: arquivados = [] } = useAlertasArquivados();
+  const arquivarAlerta = useArquivarAlerta();
+
+  const alerts = useMemo(() => {
+    const arquivadosSet = new Set(
+      arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento))
+    );
+    return allAlerts.filter(
+      (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO))
+    );
+  }, [allAlerts, arquivados]);
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -42,32 +61,29 @@ export default function Index() {
       reportDbError("carregar indicadores do painel", motoristasError || contratosError || docsError);
 
       let docsVencidos = 0;
-      const alertsList: any[] = [];
+      const alertsList: DashboardAlert[] = [];
 
       motoristas?.forEach((m) => {
         const checkDoc = (tipo: string, vencimento: string | null) => {
           if (!vencimento) return;
           const venc = new Date(vencimento);
           const diff = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          const item: DashboardAlert = {
+            id: `${m.id}-${tipo}`,
+            type: tipo.toLowerCase(),
+            motorista: m.nome,
+            documento: tipo,
+            vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
+            vencimentoISO: String(vencimento).slice(0, 10),
+            entidade: "motorista",
+            entidadeId: m.id,
+            diasRestantes: diff,
+          };
           if (diff < 0) {
             docsVencidos++;
-            alertsList.push({
-              id: `${m.id}-${tipo}`,
-              type: tipo.toLowerCase(),
-              motorista: m.nome,
-              documento: tipo,
-              vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
-              diasRestantes: diff,
-            });
+            alertsList.push(item);
           } else if (diff <= 30) {
-            alertsList.push({
-              id: `${m.id}-${tipo}`,
-              type: tipo.toLowerCase(),
-              motorista: m.nome,
-              documento: tipo,
-              vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
-              diasRestantes: diff,
-            });
+            alertsList.push(item);
           }
         };
 
@@ -88,7 +104,8 @@ export default function Index() {
       });
 
       alertsList.sort((a, b) => a.diasRestantes - b.diasRestantes);
-      setAlerts(alertsList.slice(0, 5));
+      setAllAlerts(alertsList);
+
       setLoading(false);
     };
 
@@ -161,12 +178,31 @@ export default function Index() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             {alerts.length > 0 ? (
-              <AlertCard alerts={alerts} />
+              <AlertCard
+                alerts={alerts.slice(0, 5)}
+                arquivadosCount={arquivados.length}
+                onVerArquivados={() => setArquivadosOpen(true)}
+                onArquivar={(alert) =>
+                  arquivarAlerta.mutate({
+                    entidade: alert.entidade,
+                    entidade_id: alert.entidadeId,
+                    entidade_nome: alert.motorista,
+                    tipo_documento: alert.documento,
+                    vencimento: alert.vencimentoISO,
+                  })
+                }
+              />
             ) : (
               <div className="rounded-xl border border-border bg-card p-8 text-center">
                 <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-success" />
                 <h3 className="mb-2 font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="text-muted-foreground">Nenhum documento próximo do vencimento.</p>
+                <button
+                  className="mt-4 text-sm font-medium text-primary hover:underline"
+                  onClick={() => setArquivadosOpen(true)}
+                >
+                  Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
+                </button>
               </div>
             )}
           </div>
@@ -175,6 +211,9 @@ export default function Index() {
             <QuickActions />
           </div>
         </div>
+
+        <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
+
 
         <div>
           <RecentActivityCard activities={mockActivities} />

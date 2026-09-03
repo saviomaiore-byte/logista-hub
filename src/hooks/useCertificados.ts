@@ -134,8 +134,9 @@ export function useAtualizarCertificado() {
 
       if (reportDbError("atualizar certificado", error, toast.error)) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: certificadosKey });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: certificadosKey });
+      await queryClient.refetchQueries({ queryKey: certificadosKey });
     },
   });
 }

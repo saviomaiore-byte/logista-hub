@@ -17,7 +17,20 @@ import {
   Clock,
   AlertTriangle,
   CalendarCheck,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";

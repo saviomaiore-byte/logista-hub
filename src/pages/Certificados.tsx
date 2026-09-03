@@ -33,6 +33,8 @@ import {
 import { usePermissoes } from "@/hooks/usePermissoes";
 import { cn, formatDateOnly } from "@/lib/utils";
 import { applyMask } from "@/lib/masks";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";

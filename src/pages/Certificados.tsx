@@ -279,6 +279,9 @@ export default function Certificados() {
                   <div>
                     <p className="font-semibold text-foreground">{cert.empresa}</p>
                     <span className="status-badge mt-1 inline-block bg-primary/10 text-xs text-primary">{cert.tipo}</span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {cnpjPorEmpresa.get(cert.empresa) || "—"}
+                    </p>
                   </div>
                   {getStatusBadge(cert.status)}
                 </div>

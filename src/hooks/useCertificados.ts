@@ -18,6 +18,7 @@ export interface Certificado {
 export interface TransportadoraResumo {
   id: string;
   razao_social: string;
+  cpf_cnpj: string | null;
 }
 
 export interface NovoCertificado {
@@ -55,7 +56,7 @@ export function useTransportadorasResumo() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transportadores")
-        .select("id, razao_social")
+        .select("id, razao_social, cpf_cnpj")
         .order("razao_social", { ascending: true });
 
       if (reportDbError("carregar transportadoras", error, toast.error)) throw error;

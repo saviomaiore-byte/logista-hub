@@ -32,6 +32,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePermissoes } from "@/hooks/usePermissoes";
 import { cn, formatDateOnly } from "@/lib/utils";
+import { applyMask } from "@/lib/masks";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
@@ -53,6 +56,8 @@ import {
   type Certificado,
 } from "@/hooks/useCertificados";
 
+
+const TIPOS_CERTIFICADO = ["A1", "A3"] as const;
 
 const initialValues = {
   empresa: "",
@@ -78,6 +83,10 @@ export default function Certificados() {
   const excluirCertificado = useExcluirCertificado();
 
   const loading = loadingCertificados || loadingTransportadoras;
+
+  const cnpjPorEmpresa = new Map(
+    transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? applyMask(t.cpf_cnpj, "cnpj") : ""]),
+  );
 
   const formValues = editando
     ? {
@@ -201,12 +210,34 @@ export default function Certificados() {
                         </SelectContent>
                       </Select>
                     </FormSelectWrapper>
-                    <FormField
-                      name="tipo"
-                      label="Tipo de Certificado Digital"
-                      placeholder="e-CNPJ, e-CPF, NF-e, etc."
-                      required
-                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormSelectWrapper name="tipo" label="Tipo de Certificado Digital" required>
+                        <Select value={values.tipo} onValueChange={(value) => setFieldValue("tipo", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIPOS_CERTIFICADO.map((tipo) => (
+                              <SelectItem key={tipo} value={tipo}>
+                                {tipo}
+                              </SelectItem>
+                            ))}
+                            {values.tipo && !TIPOS_CERTIFICADO.includes(values.tipo as "A1" | "A3") && (
+                              <SelectItem value={values.tipo}>{values.tipo} (legado)</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <div className="space-y-2">
+                        <Label>CNPJ</Label>
+                        <Input
+                          value={cnpjPorEmpresa.get(values.empresa) || ""}
+                          readOnly
+                          placeholder="Selecione a transportadora"
+                          className="bg-muted"
+                        />
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="data_renovacao_agendada" label="Data de Renovação" type="date" />
                       <FormField name="vencimento" label="Data de Vencimento" type="date" required />
@@ -248,6 +279,9 @@ export default function Certificados() {
                   <div>
                     <p className="font-semibold text-foreground">{cert.empresa}</p>
                     <span className="status-badge mt-1 inline-block bg-primary/10 text-xs text-primary">{cert.tipo}</span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {cnpjPorEmpresa.get(cert.empresa) || "—"}
+                    </p>
                   </div>
                   {getStatusBadge(cert.status)}
                 </div>
@@ -298,6 +332,7 @@ export default function Certificados() {
                 <tr className="table-header">
                   <th className="px-6 py-4 text-left">Transportadora</th>
                   <th className="px-6 py-4 text-left">Tipo</th>
+                  <th className="px-6 py-4 text-left">CNPJ</th>
                   <th className="px-6 py-4 text-left">Data de Renovação</th>
                   <th className="px-6 py-4 text-left">Data de Vencimento</th>
                   <th className="px-6 py-4 text-left">Status</th>
@@ -310,6 +345,9 @@ export default function Certificados() {
                     <td className="px-6 py-4 font-medium">{cert.empresa}</td>
                     <td className="px-6 py-4">
                       <span className="status-badge bg-primary/10 text-primary">{cert.tipo}</span>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {cnpjPorEmpresa.get(cert.empresa) || "—"}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDateOnly(cert.data_renovacao_agendada)}

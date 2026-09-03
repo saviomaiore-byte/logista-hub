@@ -1,20 +1,38 @@
-import { AlertTriangle, Clock, FileWarning } from "lucide-react";
+import { AlertTriangle, Clock, FileWarning, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-interface Alert {
+export interface DashboardAlert {
   id: string;
-  type: "mopp" | "cnh" | "antt";
+  type: string;
   motorista: string;
   documento: string;
   vencimento: string;
+  vencimentoISO: string;
+  entidade: string;
+  entidadeId: string;
   diasRestantes: number;
 }
 
 interface AlertCardProps {
-  alerts: Alert[];
+  alerts: DashboardAlert[];
+  onArquivar?: (alert: DashboardAlert) => void;
+  onVerArquivados?: () => void;
+  arquivadosCount?: number;
 }
 
-export function AlertCard({ alerts }: AlertCardProps) {
+export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount = 0 }: AlertCardProps) {
   const getStatusColor = (dias: number) => {
     if (dias < 0) return "status-danger";
     if (dias <= 15) return "status-warning";
@@ -47,6 +65,12 @@ export function AlertCard({ alerts }: AlertCardProps) {
           <AlertTriangle className="h-5 w-5 text-warning" />
           <h3 className="font-semibold text-foreground">Documentos com Atenção</h3>
           <span className="status-badge status-warning sm:ml-auto">{alerts.length} alertas</span>
+          {onVerArquivados && (
+            <Button variant="ghost" size="sm" onClick={onVerArquivados}>
+              <Archive className="mr-1.5 h-4 w-4" />
+              Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
+            </Button>
+          )}
         </div>
       </div>
       <div className="divide-y divide-border">
@@ -62,9 +86,36 @@ export function AlertCard({ alerts }: AlertCardProps) {
                   {alert.documento} • Venc: {alert.vencimento}
                 </p>
               </div>
-              <span className={cn("status-badge w-fit", getStatusColor(alert.diasRestantes))}>
-                {getStatusText(alert.diasRestantes)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={cn("status-badge w-fit", getStatusColor(alert.diasRestantes))}>
+                  {getStatusText(alert.diasRestantes)}
+                </span>
+                {onArquivar && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" title="Arquivar alerta">
+                        <Archive className="h-4 w-4" />
+                        <span className="ml-1.5 sm:hidden">Arquivar</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Arquivar este alerta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Este documento continuará registrado e, caso esteja vencido, continuará
+                          vencido. Apenas o alerta será removido do Dashboard.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onArquivar(alert)}>
+                          Arquivar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </div>
           </div>
         ))}

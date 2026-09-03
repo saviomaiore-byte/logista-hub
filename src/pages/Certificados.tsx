@@ -17,7 +17,20 @@ import {
   Clock,
   AlertTriangle,
   CalendarCheck,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { usePermissoes } from "@/hooks/usePermissoes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
@@ -35,6 +48,9 @@ import {
   useTransportadorasResumo,
   useCriarCertificado,
   useAgendarRenovacao,
+  useAtualizarCertificado,
+  useExcluirCertificado,
+  type Certificado,
 } from "@/hooks/useCertificados";
 
 
@@ -49,25 +65,58 @@ const initialValues = {
 
 export default function Certificados() {
   const [open, setOpen] = useState(false);
+  const [editando, setEditando] = useState<Certificado | null>(null);
+  const [excluindo, setExcluindo] = useState<Certificado | null>(null);
   const isMobile = useIsMobile();
+  const { isAdmin, podeEditar } = usePermissoes();
 
   const { data: certificados = [], isLoading: loadingCertificados } = useCertificados();
   const { data: transportadoras = [], isLoading: loadingTransportadoras } = useTransportadorasResumo();
   const criarCertificado = useCriarCertificado();
   const agendarRenovacaoMutation = useAgendarRenovacao();
+  const atualizarCertificado = useAtualizarCertificado();
+  const excluirCertificado = useExcluirCertificado();
 
   const loading = loadingCertificados || loadingTransportadoras;
 
+  const formValues = editando
+    ? {
+        empresa: editando.empresa,
+        tipo: editando.tipo,
+        vencimento: editando.vencimento ?? "",
+        data_renovacao_agendada: editando.data_renovacao_agendada ?? "",
+        observacoes: editando.observacoes ?? "",
+        arquivo_url: editando.arquivo_url ?? "",
+      }
+    : initialValues;
+
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     try {
-      await criarCertificado.mutateAsync(values);
+      if (editando) {
+        await atualizarCertificado.mutateAsync({ id: editando.id, values });
+      } else {
+        await criarCertificado.mutateAsync(values);
+      }
     } catch {
       return;
     }
 
-    toast.success("Certificado adicionado!");
+    toast.success(editando ? "Certificado atualizado!" : "Certificado adicionado!");
     setOpen(false);
+    setEditando(null);
     resetForm();
+  };
+
+  const confirmarExclusao = async () => {
+    if (!excluindo) return;
+    try {
+      await excluirCertificado.mutateAsync(excluindo.id);
+      toast.success("Certificado excluído!");
+    } catch {
+      // erro já reportado
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   const agendarRenovacao = async (id: string) => {
@@ -108,19 +157,31 @@ export default function Certificados() {
               Gerencie certificados digitais e agendamentos de renovação
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setEditando(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button className="w-full bg-primary text-primary-foreground sm:w-auto">
+              <Button
+                className="w-full bg-primary text-primary-foreground sm:w-auto"
+                onClick={() => setEditando(null)}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Certificado Digital
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Certificado Digital</DialogTitle>
+                <DialogTitle>
+                  {editando ? "Editar Certificado Digital" : "Adicionar Certificado Digital"}
+                </DialogTitle>
               </DialogHeader>
               <Formik
-                initialValues={initialValues}
+                enableReinitialize
+                initialValues={formValues}
                 validationSchema={certificadoSchema}
                 onSubmit={handleSubmit}
               >
@@ -204,11 +265,31 @@ export default function Certificados() {
                     <p className="text-foreground">{new Date(cert.vencimento).toLocaleDateString("pt-BR")}</p>
                   </div>
                 </div>
-                {cert.status !== "renovacao_agendada" && (
-                  <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => agendarRenovacao(cert.id)}>
-                    <CalendarCheck className="h-3 w-3" /> Agendar Renovação
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
+                  {cert.status !== "renovacao_agendada" && (
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                      <CalendarCheck className="h-3 w-3" /> Agendar
+                    </Button>
+                  )}
+                  {podeEditar(cert) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        setEditando(cert);
+                        setOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setExcluindo(cert)}>
+                      <Trash2 className="h-3 w-3 text-destructive" /> Excluir
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -242,11 +323,31 @@ export default function Certificados() {
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">
-                      {cert.status !== "renovacao_agendada" && (
-                        <Button variant="ghost" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
-                          <CalendarCheck className="h-3 w-3" /> Agendar
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-1">
+                        {cert.status !== "renovacao_agendada" && (
+                          <Button variant="ghost" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                            <CalendarCheck className="h-3 w-3" /> Agendar
+                          </Button>
+                        )}
+                        {podeEditar(cert) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Editar"
+                            onClick={() => {
+                              setEditando(cert);
+                              setOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" title="Excluir" onClick={() => setExcluindo(cert)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -254,6 +355,22 @@ export default function Certificados() {
             </table>
           </div>
         )}
+
+        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir certificado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O certificado{" "}
+                {excluindo ? `${excluindo.tipo} — ${excluindo.empresa}` : ""} será removido permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmarExclusao}>Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );

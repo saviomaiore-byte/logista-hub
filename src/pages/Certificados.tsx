@@ -65,25 +65,58 @@ const initialValues = {
 
 export default function Certificados() {
   const [open, setOpen] = useState(false);
+  const [editando, setEditando] = useState<Certificado | null>(null);
+  const [excluindo, setExcluindo] = useState<Certificado | null>(null);
   const isMobile = useIsMobile();
+  const { isAdmin, podeEditar } = usePermissoes();
 
   const { data: certificados = [], isLoading: loadingCertificados } = useCertificados();
   const { data: transportadoras = [], isLoading: loadingTransportadoras } = useTransportadorasResumo();
   const criarCertificado = useCriarCertificado();
   const agendarRenovacaoMutation = useAgendarRenovacao();
+  const atualizarCertificado = useAtualizarCertificado();
+  const excluirCertificado = useExcluirCertificado();
 
   const loading = loadingCertificados || loadingTransportadoras;
 
+  const formValues = editando
+    ? {
+        empresa: editando.empresa,
+        tipo: editando.tipo,
+        vencimento: editando.vencimento ?? "",
+        data_renovacao_agendada: editando.data_renovacao_agendada ?? "",
+        observacoes: editando.observacoes ?? "",
+        arquivo_url: editando.arquivo_url ?? "",
+      }
+    : initialValues;
+
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
     try {
-      await criarCertificado.mutateAsync(values);
+      if (editando) {
+        await atualizarCertificado.mutateAsync({ id: editando.id, values });
+      } else {
+        await criarCertificado.mutateAsync(values);
+      }
     } catch {
       return;
     }
 
-    toast.success("Certificado adicionado!");
+    toast.success(editando ? "Certificado atualizado!" : "Certificado adicionado!");
     setOpen(false);
+    setEditando(null);
     resetForm();
+  };
+
+  const confirmarExclusao = async () => {
+    if (!excluindo) return;
+    try {
+      await excluirCertificado.mutateAsync(excluindo.id);
+      toast.success("Certificado excluído!");
+    } catch {
+      // erro já reportado
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   const agendarRenovacao = async (id: string) => {

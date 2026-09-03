@@ -1,12 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { AlertCard } from "@/components/dashboard/AlertCard";
+import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard";
+import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Users, FileText, AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { reportDbError } from "@/lib/dbError";
+import {
+  alertaKey,
+  useAlertasArquivados,
+  useArquivarAlerta,
+} from "@/hooks/useAlertasArquivados";
 
 export default function Index() {
   const [stats, setStats] = useState({
@@ -15,8 +21,21 @@ export default function Index() {
     docsVencidos: 0,
     certificados: 0,
   });
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [allAlerts, setAllAlerts] = useState<DashboardAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [arquivadosOpen, setArquivadosOpen] = useState(false);
+  const { data: arquivados = [] } = useAlertasArquivados();
+  const arquivarAlerta = useArquivarAlerta();
+
+  const alerts = useMemo(() => {
+    const arquivadosSet = new Set(
+      arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento))
+    );
+    return allAlerts.filter(
+      (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO))
+    );
+  }, [allAlerts, arquivados]);
+
 
   useEffect(() => {
     const fetchStats = async () => {

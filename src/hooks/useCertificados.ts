@@ -12,6 +12,7 @@ export interface Certificado {
   status: string;
   observacoes: string | null;
   arquivo_url: string | null;
+  created_by?: string | null;
 }
 
 export interface TransportadoraResumo {
@@ -105,6 +106,48 @@ export function useAgendarRenovacao() {
         .eq("id", id);
 
       if (reportDbError("agendar renovação", error, toast.error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: certificadosKey });
+    },
+  });
+}
+
+/** Atualização de certificado — mesmos campos do formulário de criação. */
+export function useAtualizarCertificado() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: NovoCertificado }) => {
+      const { error } = await supabase
+        .from("certificados")
+        .update({
+          empresa: values.empresa,
+          tipo: values.tipo,
+          vencimento: values.vencimento,
+          data_renovacao_agendada: values.data_renovacao_agendada || null,
+          observacoes: values.observacoes || null,
+          arquivo_url: values.arquivo_url || null,
+          status: values.data_renovacao_agendada ? "renovacao_agendada" : "ativo",
+        })
+        .eq("id", id);
+
+      if (reportDbError("atualizar certificado", error, toast.error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: certificadosKey });
+    },
+  });
+}
+
+/** Exclusão de certificado (somente admin, conforme policies). */
+export function useExcluirCertificado() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("certificados").delete().eq("id", id);
+      if (reportDbError("excluir certificado", error, toast.error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: certificadosKey });

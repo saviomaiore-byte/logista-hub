@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas_arquivados: {
+        Row: {
+          created_at: string
+          entidade: string
+          entidade_id: string
+          entidade_nome: string | null
+          id: string
+          tipo_documento: string
+          updated_at: string
+          user_id: string
+          vencimento: string
+        }
+        Insert: {
+          created_at?: string
+          entidade: string
+          entidade_id: string
+          entidade_nome?: string | null
+          id?: string
+          tipo_documento: string
+          updated_at?: string
+          user_id: string
+          vencimento: string
+        }
+        Update: {
+          created_at?: string
+          entidade?: string
+          entidade_id?: string
+          entidade_nome?: string | null
+          id?: string
+          tipo_documento?: string
+          updated_at?: string
+          user_id?: string
+          vencimento?: string
+        }
+        Relationships: []
+      }
       assistente_conversas: {
         Row: {
           created_at: string

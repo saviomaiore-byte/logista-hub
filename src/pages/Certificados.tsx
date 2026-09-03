@@ -81,6 +81,10 @@ export default function Certificados() {
 
   const loading = loadingCertificados || loadingTransportadoras;
 
+  const cnpjPorEmpresa = new Map(
+    transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? applyMask(t.cpf_cnpj, "cnpj") : ""]),
+  );
+
   const formValues = editando
     ? {
         empresa: editando.empresa,

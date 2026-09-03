@@ -329,6 +329,7 @@ export default function Certificados() {
                 <tr className="table-header">
                   <th className="px-6 py-4 text-left">Transportadora</th>
                   <th className="px-6 py-4 text-left">Tipo</th>
+                  <th className="px-6 py-4 text-left">CNPJ</th>
                   <th className="px-6 py-4 text-left">Data de Renovação</th>
                   <th className="px-6 py-4 text-left">Data de Vencimento</th>
                   <th className="px-6 py-4 text-left">Status</th>

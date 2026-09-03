@@ -18,6 +18,7 @@ export interface Certificado {
 export interface TransportadoraResumo {
   id: string;
   razao_social: string;
+  cpf_cnpj: string | null;
 }
 
 export interface NovoCertificado {

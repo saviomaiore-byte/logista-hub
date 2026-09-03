@@ -178,12 +178,31 @@ export default function Index() {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             {alerts.length > 0 ? (
-              <AlertCard alerts={alerts} />
+              <AlertCard
+                alerts={alerts.slice(0, 5)}
+                arquivadosCount={arquivados.length}
+                onVerArquivados={() => setArquivadosOpen(true)}
+                onArquivar={(alert) =>
+                  arquivarAlerta.mutate({
+                    entidade: alert.entidade,
+                    entidade_id: alert.entidadeId,
+                    entidade_nome: alert.motorista,
+                    tipo_documento: alert.documento,
+                    vencimento: alert.vencimentoISO,
+                  })
+                }
+              />
             ) : (
               <div className="rounded-xl border border-border bg-card p-8 text-center">
                 <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-success" />
                 <h3 className="mb-2 font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="text-muted-foreground">Nenhum documento próximo do vencimento.</p>
+                <button
+                  className="mt-4 text-sm font-medium text-primary hover:underline"
+                  onClick={() => setArquivadosOpen(true)}
+                >
+                  Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
+                </button>
               </div>
             )}
           </div>
@@ -192,6 +211,9 @@ export default function Index() {
             <QuickActions />
           </div>
         </div>
+
+        <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
+
 
         <div>
           <RecentActivityCard activities={mockActivities} />

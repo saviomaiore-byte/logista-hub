@@ -208,12 +208,34 @@ export default function Certificados() {
                         </SelectContent>
                       </Select>
                     </FormSelectWrapper>
-                    <FormField
-                      name="tipo"
-                      label="Tipo de Certificado Digital"
-                      placeholder="e-CNPJ, e-CPF, NF-e, etc."
-                      required
-                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormSelectWrapper name="tipo" label="Tipo de Certificado Digital" required>
+                        <Select value={values.tipo} onValueChange={(value) => setFieldValue("tipo", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIPOS_CERTIFICADO.map((tipo) => (
+                              <SelectItem key={tipo} value={tipo}>
+                                {tipo}
+                              </SelectItem>
+                            ))}
+                            {values.tipo && !TIPOS_CERTIFICADO.includes(values.tipo as "A1" | "A3") && (
+                              <SelectItem value={values.tipo}>{values.tipo} (legado)</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </FormSelectWrapper>
+                      <div className="space-y-2">
+                        <Label>CNPJ</Label>
+                        <Input
+                          value={cnpjPorEmpresa.get(values.empresa) || ""}
+                          readOnly
+                          placeholder="Selecione a transportadora"
+                          className="bg-muted"
+                        />
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="data_renovacao_agendada" label="Data de Renovação" type="date" />
                       <FormField name="vencimento" label="Data de Vencimento" type="date" required />

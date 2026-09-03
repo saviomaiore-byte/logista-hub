@@ -54,6 +54,8 @@ import {
 } from "@/hooks/useCertificados";
 
 
+const TIPOS_CERTIFICADO = ["A1", "A3"] as const;
+
 const initialValues = {
   empresa: "",
   tipo: "",

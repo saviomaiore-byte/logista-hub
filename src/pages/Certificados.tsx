@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePermissoes } from "@/hooks/usePermissoes";
 import { cn, formatDateOnly } from "@/lib/utils";
+import { applyMask } from "@/lib/masks";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";

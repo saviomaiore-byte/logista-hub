@@ -95,22 +95,20 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" title="Arquivar alerta">
                         <Archive className="h-4 w-4" />
-                        <span className="ml-1.5">Arquivar</span>
+                        <span className="ml-1.5"></span>
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Arquivar este alerta?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Este documento continuará registrado e, caso esteja vencido, continuará
-                          vencido. Apenas o alerta será removido do Dashboard.
+                          Este documento continuará registrado e, caso esteja vencido, continuará vencido. Apenas o
+                          alerta será removido do Dashboard.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onArquivar(alert)}>
-                          Arquivar
-                        </AlertDialogAction>
+                        <AlertDialogAction onClick={() => onArquivar(alert)}>Arquivar</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -122,9 +120,7 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
       </div>
       {alerts.length > 5 && (
         <div className="border-t border-border p-3 text-center">
-          <button className="text-sm font-medium text-primary hover:underline">
-            Ver todos os alertas
-          </button>
+          <button className="text-sm font-medium text-primary hover:underline">Ver todos os alertas</button>
         </div>
       )}
     </div>

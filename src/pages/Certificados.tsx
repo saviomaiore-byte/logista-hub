@@ -48,6 +48,9 @@ import {
   useTransportadorasResumo,
   useCriarCertificado,
   useAgendarRenovacao,
+  useAtualizarCertificado,
+  useExcluirCertificado,
+  type Certificado,
 } from "@/hooks/useCertificados";
 
 

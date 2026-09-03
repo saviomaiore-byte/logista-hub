@@ -61,32 +61,29 @@ export default function Index() {
       reportDbError("carregar indicadores do painel", motoristasError || contratosError || docsError);
 
       let docsVencidos = 0;
-      const alertsList: any[] = [];
+      const alertsList: DashboardAlert[] = [];
 
       motoristas?.forEach((m) => {
         const checkDoc = (tipo: string, vencimento: string | null) => {
           if (!vencimento) return;
           const venc = new Date(vencimento);
           const diff = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          const item: DashboardAlert = {
+            id: `${m.id}-${tipo}`,
+            type: tipo.toLowerCase(),
+            motorista: m.nome,
+            documento: tipo,
+            vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
+            vencimentoISO: String(vencimento).slice(0, 10),
+            entidade: "motorista",
+            entidadeId: m.id,
+            diasRestantes: diff,
+          };
           if (diff < 0) {
             docsVencidos++;
-            alertsList.push({
-              id: `${m.id}-${tipo}`,
-              type: tipo.toLowerCase(),
-              motorista: m.nome,
-              documento: tipo,
-              vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
-              diasRestantes: diff,
-            });
+            alertsList.push(item);
           } else if (diff <= 30) {
-            alertsList.push({
-              id: `${m.id}-${tipo}`,
-              type: tipo.toLowerCase(),
-              motorista: m.nome,
-              documento: tipo,
-              vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
-              diasRestantes: diff,
-            });
+            alertsList.push(item);
           }
         };
 
@@ -107,7 +104,8 @@ export default function Index() {
       });
 
       alertsList.sort((a, b) => a.diasRestantes - b.diasRestantes);
-      setAlerts(alertsList.slice(0, 5));
+      setAllAlerts(alertsList);
+
       setLoading(false);
     };
 

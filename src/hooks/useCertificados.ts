@@ -38,10 +38,7 @@ export function useCertificados() {
   return useQuery({
     queryKey: certificadosKey,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("certificados")
-        .select("*")
-        .order("vencimento", { ascending: true });
+      const { data, error } = await supabase.from("certificados").select("*").order("vencimento", { ascending: true });
 
       if (reportDbError("carregar certificados", error, toast.error)) throw error;
       return (data || []) as Certificado[];

@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePermissoes } from "@/hooks/usePermissoes";
-import { cn } from "@/lib/utils";
+import { cn, formatDateOnly } from "@/lib/utils";
 import { toast } from "sonner";
 import { certificadoSchema } from "@/lib/validationSchemas";
 import { FormField, FormSelectWrapper } from "@/components/form/FormField";
@@ -255,14 +255,12 @@ export default function Certificados() {
                   <div>
                     <p className="text-xs text-muted-foreground">Data de Renovação</p>
                     <p className="text-foreground">
-                      {cert.data_renovacao_agendada
-                        ? new Date(cert.data_renovacao_agendada).toLocaleDateString("pt-BR")
-                        : "-"}
+                      {formatDateOnly(cert.data_renovacao_agendada)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Data de Vencimento</p>
-                    <p className="text-foreground">{new Date(cert.vencimento).toLocaleDateString("pt-BR")}</p>
+                    <p className="text-foreground">{formatDateOnly(cert.vencimento)}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
@@ -314,12 +312,10 @@ export default function Certificados() {
                       <span className="status-badge bg-primary/10 text-primary">{cert.tipo}</span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
-                      {cert.data_renovacao_agendada
-                        ? new Date(cert.data_renovacao_agendada).toLocaleDateString("pt-BR")
-                        : "-"}
+                      {formatDateOnly(cert.data_renovacao_agendada)}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
-                      {new Date(cert.vencimento).toLocaleDateString("pt-BR")}
+                      {formatDateOnly(cert.vencimento)}
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">

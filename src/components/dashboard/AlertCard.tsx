@@ -95,7 +95,6 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" title="Arquivar alerta">
                         <Archive className="h-4 w-4" />
-                        <span className="ml-1.5"></span>
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

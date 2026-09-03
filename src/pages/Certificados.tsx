@@ -323,11 +323,31 @@ export default function Certificados() {
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">
-                      {cert.status !== "renovacao_agendada" && (
-                        <Button variant="ghost" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
-                          <CalendarCheck className="h-3 w-3" /> Agendar
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-1">
+                        {cert.status !== "renovacao_agendada" && (
+                          <Button variant="ghost" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                            <CalendarCheck className="h-3 w-3" /> Agendar
+                          </Button>
+                        )}
+                        {podeEditar(cert) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Editar"
+                            onClick={() => {
+                              setEditando(cert);
+                              setOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {isAdmin && (
+                          <Button variant="ghost" size="icon" title="Excluir" onClick={() => setExcluindo(cert)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -335,6 +355,22 @@ export default function Certificados() {
             </table>
           </div>
         )}
+
+        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir certificado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O certificado{" "}
+                {excluindo ? `${excluindo.tipo} — ${excluindo.empresa}` : ""} será removido permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmarExclusao}>Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );

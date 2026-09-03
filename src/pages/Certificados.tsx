@@ -157,19 +157,31 @@ export default function Certificados() {
               Gerencie certificados digitais e agendamentos de renovação
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setEditando(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button className="w-full bg-primary text-primary-foreground sm:w-auto">
+              <Button
+                className="w-full bg-primary text-primary-foreground sm:w-auto"
+                onClick={() => setEditando(null)}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Certificado Digital
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Certificado Digital</DialogTitle>
+                <DialogTitle>
+                  {editando ? "Editar Certificado Digital" : "Adicionar Certificado Digital"}
+                </DialogTitle>
               </DialogHeader>
               <Formik
-                initialValues={initialValues}
+                enableReinitialize
+                initialValues={formValues}
                 validationSchema={certificadoSchema}
                 onSubmit={handleSubmit}
               >

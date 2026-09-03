@@ -265,11 +265,31 @@ export default function Certificados() {
                     <p className="text-foreground">{new Date(cert.vencimento).toLocaleDateString("pt-BR")}</p>
                   </div>
                 </div>
-                {cert.status !== "renovacao_agendada" && (
-                  <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => agendarRenovacao(cert.id)}>
-                    <CalendarCheck className="h-3 w-3" /> Agendar Renovação
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
+                  {cert.status !== "renovacao_agendada" && (
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => agendarRenovacao(cert.id)}>
+                      <CalendarCheck className="h-3 w-3" /> Agendar
+                    </Button>
+                  )}
+                  {podeEditar(cert) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        setEditando(cert);
+                        setOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setExcluindo(cert)}>
+                      <Trash2 className="h-3 w-3 text-destructive" /> Excluir
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -68,6 +68,29 @@ type Ordenacao = (typeof ORDENACAO_OPCOES)[number]["value"];
 
 const TIPOS_CERTIFICADO = ["A1", "A3"] as const;
 
+/** Normaliza texto para pesquisa: minúsculas, sem acentos, sem espaços extras. */
+const normalizarBusca = (valor: string) =>
+  valor
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+
+/** Data local de hoje como YYYY-MM-DD, para comparação por string (sem timezone). */
+const hojeLocal = () => {
+  const agora = new Date();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${agora.getFullYear()}-${mes}-${dia}`;
+};
+
+/** Considera vencido somente quando a data (YYYY-MM-DD) é anterior a hoje. */
+const isVencido = (vencimento: string | null | undefined): boolean => {
+  if (!vencimento) return false;
+  const data = vencimento.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(data) && data < hojeLocal();
+};
+
 const initialValues = {
   empresa: "",
   tipo: "",
@@ -103,19 +126,25 @@ export default function Certificados() {
     transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? t.cpf_cnpj.replace(/\D/g, "") : ""]),
   );
 
-  const termoBusca = busca.trim().toLowerCase();
+  const termoBusca = normalizarBusca(busca);
   const termoBuscaNumerico = termoBusca.replace(/\D/g, "");
 
   const certificadosFiltrados = useMemo(() => {
     let lista = certificados.filter((cert) => {
       if (!termoBusca) return true;
-      const razao = cert.empresa.toLowerCase();
-      const cnpjMascarado = (cnpjPorEmpresa.get(cert.empresa) || "").toLowerCase();
-      const cnpjRaw = (cnpjRawPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      const razao = normalizarBusca(cert.empresa);
+      // Razão social real da transportadora relacionada (dados já carregados)
+      const transportadora = transportadoras.find(
+        (t) => normalizarBusca(t.razao_social) === razao
+      );
+      const razaoReal = transportadora ? normalizarBusca(transportadora.razao_social) : "";
+      const cnpjMascarado = normalizarBusca(cnpjPorEmpresa.get(cert.empresa) || "");
+      const cnpjRaw = cnpjRawPorEmpresa.get(cert.empresa) || "";
       return (
         razao.includes(termoBusca) ||
-        cnpjMascarado.includes(termoBusca) ||
-        cnpjRaw.includes(termoBuscaNumerico)
+        razaoReal.includes(termoBusca) ||
+        (termoBuscaNumerico !== "" && cnpjRaw.includes(termoBuscaNumerico)) ||
+        cnpjMascarado.includes(termoBusca)
       );
     });
 
@@ -132,7 +161,7 @@ export default function Certificados() {
     });
 
     return lista;
-  }, [certificados, termoBusca, termoBuscaNumerico, ordenacao]);
+  }, [certificados, transportadoras, termoBusca, termoBuscaNumerico, ordenacao]);
 
   const formValues = editando
     ? {
@@ -369,7 +398,13 @@ export default function Certificados() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Data de Vencimento</p>
-                    <p className="text-foreground">{formatDateOnly(cert.vencimento)}</p>
+                    {isVencido(cert.vencimento) ? (
+                      <p className="inline-flex items-center rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
+                        {formatDateOnly(cert.vencimento)}
+                      </p>
+                    ) : (
+                      <p className="text-foreground">{formatDateOnly(cert.vencimento)}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
@@ -427,8 +462,14 @@ export default function Certificados() {
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDateOnly(cert.data_renovacao_agendada)}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {formatDateOnly(cert.vencimento)}
+                    <td className="px-6 py-4">
+                      {isVencido(cert.vencimento) ? (
+                        <span className="inline-flex items-center rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
+                          {formatDateOnly(cert.vencimento)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">{formatDateOnly(cert.vencimento)}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">

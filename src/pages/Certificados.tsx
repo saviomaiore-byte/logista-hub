@@ -161,7 +161,7 @@ export default function Certificados() {
     });
 
     return lista;
-  }, [certificados, termoBusca, termoBuscaNumerico, ordenacao]);
+  }, [certificados, transportadoras, termoBusca, termoBuscaNumerico, ordenacao]);
 
   const formValues = editando
     ? {

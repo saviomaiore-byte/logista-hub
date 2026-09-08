@@ -126,6 +126,10 @@ export default function Certificados() {
     transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? t.cpf_cnpj.replace(/\D/g, "") : ""]),
   );
 
+  const regimePorEmpresa = new Map(
+    transportadoras.map((t) => [t.razao_social, t.inscricao_estadual || ""]),
+  );
+
   const termoBusca = normalizarBusca(busca);
   const termoBuscaNumerico = termoBusca.replace(/\D/g, "");
 
@@ -386,6 +390,9 @@ export default function Certificados() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {cnpjPorEmpresa.get(cert.empresa) || "—"}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      Regime Tributário: {regimePorEmpresa.get(cert.empresa) || "—"}
+                    </p>
                   </div>
                   {getStatusBadge(cert.status)}
                 </div>
@@ -443,6 +450,7 @@ export default function Certificados() {
                   <th className="px-6 py-4 text-left">Transportadora</th>
                   <th className="px-6 py-4 text-left">Tipo</th>
                   <th className="px-6 py-4 text-left">CNPJ</th>
+                  <th className="px-6 py-4 text-left">Regime Tributário</th>
                   <th className="px-6 py-4 text-left">Data de Renovação</th>
                   <th className="px-6 py-4 text-left">Data de Vencimento</th>
                   <th className="px-6 py-4 text-left">Status</th>
@@ -458,6 +466,9 @@ export default function Certificados() {
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {cnpjPorEmpresa.get(cert.empresa) || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {regimePorEmpresa.get(cert.empresa) || "—"}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDateOnly(cert.data_renovacao_agendada)}

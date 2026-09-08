@@ -140,6 +140,31 @@ export function useAtualizarCertificado() {
   });
 }
 
+/**
+ * Sincroniza o Regime Tributário (armazenado em transportadores.inscricao_estadual)
+ * da transportadora correspondente à razão social informada.
+ * Não faz nada quando não há correspondência exata.
+ */
+export function useAtualizarRegimeTransportadora() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transportadorId, regime }: { transportadorId: string; regime: string }) => {
+      const { error } = await supabase
+        .from("transportadores")
+        .update({ inscricao_estadual: regime || null })
+        .eq("id", transportadorId);
+
+      if (reportDbError("atualizar regime tributário da transportadora", error, toast.error)) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: transportadorasResumoKey });
+      await queryClient.refetchQueries({ queryKey: transportadorasResumoKey });
+      queryClient.invalidateQueries({ queryKey: ["transportadores"] });
+    },
+  });
+}
+
 /** Exclusão de certificado (somente admin, conforme policies). */
 export function useExcluirCertificado() {
   const queryClient = useQueryClient();

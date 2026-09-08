@@ -54,8 +54,10 @@ import {
   useAgendarRenovacao,
   useAtualizarCertificado,
   useExcluirCertificado,
+  useAtualizarRegimeTransportadora,
   type Certificado,
 } from "@/hooks/useCertificados";
+import { REGIME_TRIBUTARIO_OPTIONS } from "@/components/transportador/types";
 
 const ORDENACAO_OPCOES = [
   { value: "az", label: "Ordem alfabética (A → Z)" },

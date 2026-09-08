@@ -179,18 +179,44 @@ export default function Certificados() {
         data_renovacao_agendada: editando.data_renovacao_agendada ?? "",
         observacoes: editando.observacoes ?? "",
         arquivo_url: editando.arquivo_url ?? "",
+        regime_tributario: regimePorEmpresa.get(editando.empresa) || "",
       }
     : initialValues;
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
+    const { regime_tributario, ...certificadoValues } = values;
+
     try {
       if (editando) {
-        await atualizarCertificado.mutateAsync({ id: editando.id, values });
+        await atualizarCertificado.mutateAsync({ id: editando.id, values: certificadoValues });
       } else {
-        await criarCertificado.mutateAsync(values);
+        await criarCertificado.mutateAsync(certificadoValues);
       }
     } catch {
       return;
+    }
+
+    // Sincroniza o Regime Tributário na transportadora selecionada (fonte oficial do dado).
+    const transportadoraSelecionada = transportadoras.find((t) => t.razao_social === values.empresa);
+    if (
+      transportadoraSelecionada &&
+      regime_tributario &&
+      regime_tributario !== (transportadoraSelecionada.inscricao_estadual || "")
+    ) {
+      try {
+        await atualizarRegime.mutateAsync({
+          transportadorId: transportadoraSelecionada.id,
+          regime: regime_tributario,
+        });
+      } catch {
+        toast.error(
+          "Certificado salvo, mas não foi possível atualizar o Regime Tributário da transportadora.",
+        );
+        setOpen(false);
+        setEditando(null);
+        resetForm();
+        return;
+      }
     }
 
     toast.success(editando ? "Certificado atualizado!" : "Certificado adicionado!");

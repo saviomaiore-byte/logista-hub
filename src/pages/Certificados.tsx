@@ -81,6 +81,8 @@ export default function Certificados() {
   const [open, setOpen] = useState(false);
   const [editando, setEditando] = useState<Certificado | null>(null);
   const [excluindo, setExcluindo] = useState<Certificado | null>(null);
+  const [busca, setBusca] = useState("");
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("vencimento-proximo");
   const isMobile = useIsMobile();
   const { isAdmin, podeEditar } = usePermissoes();
 
@@ -96,6 +98,41 @@ export default function Certificados() {
   const cnpjPorEmpresa = new Map(
     transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? applyMask(t.cpf_cnpj, "cnpj") : ""]),
   );
+
+  const cnpjRawPorEmpresa = new Map(
+    transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? t.cpf_cnpj.replace(/\D/g, "") : ""]),
+  );
+
+  const termoBusca = busca.trim().toLowerCase();
+  const termoBuscaNumerico = termoBusca.replace(/\D/g, "");
+
+  const certificadosFiltrados = useMemo(() => {
+    let lista = certificados.filter((cert) => {
+      if (!termoBusca) return true;
+      const razao = cert.empresa.toLowerCase();
+      const cnpjMascarado = (cnpjPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      const cnpjRaw = (cnpjRawPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      return (
+        razao.includes(termoBusca) ||
+        cnpjMascarado.includes(termoBusca) ||
+        cnpjRaw.includes(termoBuscaNumerico)
+      );
+    });
+
+    lista = [...lista].sort((a, b) => {
+      if (ordenacao === "az") {
+        return a.empresa.localeCompare(b.empresa, "pt-BR", { sensitivity: "base" });
+      }
+      const dataA = a.vencimento || "";
+      const dataB = b.vencimento || "";
+      if (ordenacao === "vencimento-proximo") {
+        return dataA.localeCompare(dataB);
+      }
+      return dataB.localeCompare(dataA);
+    });
+
+    return lista;
+  }, [certificados, termoBusca, termoBuscaNumerico, ordenacao]);
 
   const formValues = editando
     ? {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -19,6 +19,7 @@ import {
   CalendarCheck,
   Pencil,
   Trash2,
+  Search,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -55,6 +56,14 @@ import {
   useExcluirCertificado,
   type Certificado,
 } from "@/hooks/useCertificados";
+
+const ORDENACAO_OPCOES = [
+  { value: "az", label: "Ordem alfabética (A → Z)" },
+  { value: "vencimento-proximo", label: "Vencimento mais próximo" },
+  { value: "vencimento-distante", label: "Vencimento mais distante" },
+] as const;
+
+type Ordenacao = (typeof ORDENACAO_OPCOES)[number]["value"];
 
 
 const TIPOS_CERTIFICADO = ["A1", "A3"] as const;

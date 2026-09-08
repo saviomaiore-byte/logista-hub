@@ -100,6 +100,7 @@ const initialValues = {
   data_renovacao_agendada: "",
   observacoes: "",
   arquivo_url: "",
+  regime_tributario: "",
 };
 
 export default function Certificados() {
@@ -117,6 +118,7 @@ export default function Certificados() {
   const agendarRenovacaoMutation = useAgendarRenovacao();
   const atualizarCertificado = useAtualizarCertificado();
   const excluirCertificado = useExcluirCertificado();
+  const atualizarRegime = useAtualizarRegimeTransportadora();
 
   const loading = loadingCertificados || loadingTransportadoras;
 

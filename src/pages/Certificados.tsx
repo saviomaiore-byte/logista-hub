@@ -310,12 +310,41 @@ export default function Certificados() {
           </Dialog>
         </div>
 
+        {!loading && (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Pesquisar por nome ou CNPJ..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={ordenacao} onValueChange={(value) => setOrdenacao(value as Ordenacao)}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                {ORDENACAO_OPCOES.map((opcao) => (
+                  <SelectItem key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-12 text-center text-muted-foreground">Carregando...</div>
-        ) : certificados.length === 0 ? (
+        ) : certificadosFiltrados.length === 0 ? (
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">Nenhum certificado cadastrado</p>
+            <p className="text-muted-foreground">
+              {termoBusca ? "Nenhum certificado encontrado para a pesquisa" : "Nenhum certificado cadastrado"}
+            </p>
           </div>
         ) : isMobile ? (
           <div className="space-y-3">

@@ -306,7 +306,13 @@ export default function Certificados() {
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
                     <FormSelectWrapper name="empresa" label="Transportadora" required>
-                      <Select value={values.empresa} onValueChange={(value) => setFieldValue("empresa", value)}>
+                        <Select
+                          value={values.empresa}
+                          onValueChange={(value) => {
+                            setFieldValue("empresa", value);
+                            setFieldValue("regime_tributario", regimePorEmpresa.get(value) || "");
+                          }}
+                        >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a transportadora" />
                         </SelectTrigger>

@@ -398,7 +398,13 @@ export default function Certificados() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Data de Vencimento</p>
-                    <p className="text-foreground">{formatDateOnly(cert.vencimento)}</p>
+                    {isVencido(cert.vencimento) ? (
+                      <p className="inline-flex items-center rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
+                        {formatDateOnly(cert.vencimento)}
+                      </p>
+                    ) : (
+                      <p className="text-foreground">{formatDateOnly(cert.vencimento)}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2">
@@ -456,8 +462,14 @@ export default function Certificados() {
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDateOnly(cert.data_renovacao_agendada)}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {formatDateOnly(cert.vencimento)}
+                    <td className="px-6 py-4">
+                      {isVencido(cert.vencimento) ? (
+                        <span className="inline-flex items-center rounded-md bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
+                          {formatDateOnly(cert.vencimento)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">{formatDateOnly(cert.vencimento)}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(cert.status)}</td>
                     <td className="px-6 py-4 text-right">

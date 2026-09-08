@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Formik, Form } from "formik";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -19,6 +19,7 @@ import {
   CalendarCheck,
   Pencil,
   Trash2,
+  Search,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -56,6 +57,14 @@ import {
   type Certificado,
 } from "@/hooks/useCertificados";
 
+const ORDENACAO_OPCOES = [
+  { value: "az", label: "Ordem alfabética (A → Z)" },
+  { value: "vencimento-proximo", label: "Vencimento mais próximo" },
+  { value: "vencimento-distante", label: "Vencimento mais distante" },
+] as const;
+
+type Ordenacao = (typeof ORDENACAO_OPCOES)[number]["value"];
+
 
 const TIPOS_CERTIFICADO = ["A1", "A3"] as const;
 
@@ -72,6 +81,8 @@ export default function Certificados() {
   const [open, setOpen] = useState(false);
   const [editando, setEditando] = useState<Certificado | null>(null);
   const [excluindo, setExcluindo] = useState<Certificado | null>(null);
+  const [busca, setBusca] = useState("");
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("vencimento-proximo");
   const isMobile = useIsMobile();
   const { isAdmin, podeEditar } = usePermissoes();
 
@@ -87,6 +98,41 @@ export default function Certificados() {
   const cnpjPorEmpresa = new Map(
     transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? applyMask(t.cpf_cnpj, "cnpj") : ""]),
   );
+
+  const cnpjRawPorEmpresa = new Map(
+    transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? t.cpf_cnpj.replace(/\D/g, "") : ""]),
+  );
+
+  const termoBusca = busca.trim().toLowerCase();
+  const termoBuscaNumerico = termoBusca.replace(/\D/g, "");
+
+  const certificadosFiltrados = useMemo(() => {
+    let lista = certificados.filter((cert) => {
+      if (!termoBusca) return true;
+      const razao = cert.empresa.toLowerCase();
+      const cnpjMascarado = (cnpjPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      const cnpjRaw = (cnpjRawPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      return (
+        razao.includes(termoBusca) ||
+        cnpjMascarado.includes(termoBusca) ||
+        cnpjRaw.includes(termoBuscaNumerico)
+      );
+    });
+
+    lista = [...lista].sort((a, b) => {
+      if (ordenacao === "az") {
+        return a.empresa.localeCompare(b.empresa, "pt-BR", { sensitivity: "base" });
+      }
+      const dataA = a.vencimento || "";
+      const dataB = b.vencimento || "";
+      if (ordenacao === "vencimento-proximo") {
+        return dataA.localeCompare(dataB);
+      }
+      return dataB.localeCompare(dataA);
+    });
+
+    return lista;
+  }, [certificados, termoBusca, termoBuscaNumerico, ordenacao]);
 
   const formValues = editando
     ? {
@@ -264,16 +310,45 @@ export default function Certificados() {
           </Dialog>
         </div>
 
+        {!loading && (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Pesquisar por nome ou CNPJ..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={ordenacao} onValueChange={(value) => setOrdenacao(value as Ordenacao)}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                {ORDENACAO_OPCOES.map((opcao) => (
+                  <SelectItem key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-12 text-center text-muted-foreground">Carregando...</div>
-        ) : certificados.length === 0 ? (
+        ) : certificadosFiltrados.length === 0 ? (
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">Nenhum certificado cadastrado</p>
+            <p className="text-muted-foreground">
+              {termoBusca ? "Nenhum certificado encontrado para a pesquisa" : "Nenhum certificado cadastrado"}
+            </p>
           </div>
         ) : isMobile ? (
           <div className="space-y-3">
-            {certificados.map((cert) => (
+            {certificadosFiltrados.map((cert) => (
               <div key={cert.id} className="space-y-3 rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -340,7 +415,7 @@ export default function Certificados() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {certificados.map((cert) => (
+                {certificadosFiltrados.map((cert) => (
                   <tr key={cert.id} className="transition-colors hover:bg-muted/30">
                     <td className="px-6 py-4 font-medium">{cert.empresa}</td>
                     <td className="px-6 py-4">

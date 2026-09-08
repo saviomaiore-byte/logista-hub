@@ -348,7 +348,7 @@ export default function Certificados() {
           </div>
         ) : isMobile ? (
           <div className="space-y-3">
-            {certificados.map((cert) => (
+            {certificadosFiltrados.map((cert) => (
               <div key={cert.id} className="space-y-3 rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -415,7 +415,7 @@ export default function Certificados() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {certificados.map((cert) => (
+                {certificadosFiltrados.map((cert) => (
                   <tr key={cert.id} className="transition-colors hover:bg-muted/30">
                     <td className="px-6 py-4 font-medium">{cert.empresa}</td>
                     <td className="px-6 py-4">

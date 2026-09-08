@@ -54,8 +54,10 @@ import {
   useAgendarRenovacao,
   useAtualizarCertificado,
   useExcluirCertificado,
+  useAtualizarRegimeTransportadora,
   type Certificado,
 } from "@/hooks/useCertificados";
+import { REGIME_TRIBUTARIO_OPTIONS } from "@/components/transportador/types";
 
 const ORDENACAO_OPCOES = [
   { value: "az", label: "Ordem alfabética (A → Z)" },
@@ -98,6 +100,7 @@ const initialValues = {
   data_renovacao_agendada: "",
   observacoes: "",
   arquivo_url: "",
+  regime_tributario: "",
 };
 
 export default function Certificados() {
@@ -115,6 +118,7 @@ export default function Certificados() {
   const agendarRenovacaoMutation = useAgendarRenovacao();
   const atualizarCertificado = useAtualizarCertificado();
   const excluirCertificado = useExcluirCertificado();
+  const atualizarRegime = useAtualizarRegimeTransportadora();
 
   const loading = loadingCertificados || loadingTransportadoras;
 
@@ -175,18 +179,44 @@ export default function Certificados() {
         data_renovacao_agendada: editando.data_renovacao_agendada ?? "",
         observacoes: editando.observacoes ?? "",
         arquivo_url: editando.arquivo_url ?? "",
+        regime_tributario: regimePorEmpresa.get(editando.empresa) || "",
       }
     : initialValues;
 
   const handleSubmit = async (values: typeof initialValues, { resetForm }: any) => {
+    const { regime_tributario, ...certificadoValues } = values;
+
     try {
       if (editando) {
-        await atualizarCertificado.mutateAsync({ id: editando.id, values });
+        await atualizarCertificado.mutateAsync({ id: editando.id, values: certificadoValues });
       } else {
-        await criarCertificado.mutateAsync(values);
+        await criarCertificado.mutateAsync(certificadoValues);
       }
     } catch {
       return;
+    }
+
+    // Sincroniza o Regime Tributário na transportadora selecionada (fonte oficial do dado).
+    const transportadoraSelecionada = transportadoras.find((t) => t.razao_social === values.empresa);
+    if (
+      transportadoraSelecionada &&
+      regime_tributario &&
+      regime_tributario !== (transportadoraSelecionada.inscricao_estadual || "")
+    ) {
+      try {
+        await atualizarRegime.mutateAsync({
+          transportadorId: transportadoraSelecionada.id,
+          regime: regime_tributario,
+        });
+      } catch {
+        toast.error(
+          "Certificado salvo, mas não foi possível atualizar o Regime Tributário da transportadora.",
+        );
+        setOpen(false);
+        setEditando(null);
+        resetForm();
+        return;
+      }
     }
 
     toast.success(editando ? "Certificado atualizado!" : "Certificado adicionado!");
@@ -276,7 +306,13 @@ export default function Certificados() {
                 {({ isSubmitting, setFieldValue, values }) => (
                   <Form className="space-y-4">
                     <FormSelectWrapper name="empresa" label="Transportadora" required>
-                      <Select value={values.empresa} onValueChange={(value) => setFieldValue("empresa", value)}>
+                        <Select
+                          value={values.empresa}
+                          onValueChange={(value) => {
+                            setFieldValue("empresa", value);
+                            setFieldValue("regime_tributario", regimePorEmpresa.get(value) || "");
+                          }}
+                        >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a transportadora" />
                         </SelectTrigger>
@@ -317,6 +353,26 @@ export default function Certificados() {
                         />
                       </div>
                     </div>
+                    <FormSelectWrapper name="regime_tributario" label="Regime Tributário">
+                      <Select
+                        value={values.regime_tributario}
+                        onValueChange={(value) => setFieldValue("regime_tributario", value)}
+                        disabled={!values.empresa}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={values.empresa ? "Selecione o regime" : "Selecione a transportadora"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {REGIME_TRIBUTARIO_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="data_renovacao_agendada" label="Data de Renovação" type="date" />
                       <FormField name="vencimento" label="Data de Vencimento" type="date" required />

@@ -126,19 +126,25 @@ export default function Certificados() {
     transportadoras.map((t) => [t.razao_social, t.cpf_cnpj ? t.cpf_cnpj.replace(/\D/g, "") : ""]),
   );
 
-  const termoBusca = busca.trim().toLowerCase();
+  const termoBusca = normalizarBusca(busca);
   const termoBuscaNumerico = termoBusca.replace(/\D/g, "");
 
   const certificadosFiltrados = useMemo(() => {
     let lista = certificados.filter((cert) => {
       if (!termoBusca) return true;
-      const razao = cert.empresa.toLowerCase();
-      const cnpjMascarado = (cnpjPorEmpresa.get(cert.empresa) || "").toLowerCase();
-      const cnpjRaw = (cnpjRawPorEmpresa.get(cert.empresa) || "").toLowerCase();
+      const razao = normalizarBusca(cert.empresa);
+      // Razão social real da transportadora relacionada (dados já carregados)
+      const transportadora = transportadoras.find(
+        (t) => normalizarBusca(t.razao_social) === razao
+      );
+      const razaoReal = transportadora ? normalizarBusca(transportadora.razao_social) : "";
+      const cnpjMascarado = normalizarBusca(cnpjPorEmpresa.get(cert.empresa) || "");
+      const cnpjRaw = cnpjRawPorEmpresa.get(cert.empresa) || "";
       return (
         razao.includes(termoBusca) ||
-        cnpjMascarado.includes(termoBusca) ||
-        cnpjRaw.includes(termoBuscaNumerico)
+        razaoReal.includes(termoBusca) ||
+        (termoBuscaNumerico !== "" && cnpjRaw.includes(termoBuscaNumerico)) ||
+        cnpjMascarado.includes(termoBusca)
       );
     });
 

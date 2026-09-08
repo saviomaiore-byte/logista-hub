@@ -68,6 +68,29 @@ type Ordenacao = (typeof ORDENACAO_OPCOES)[number]["value"];
 
 const TIPOS_CERTIFICADO = ["A1", "A3"] as const;
 
+/** Normaliza texto para pesquisa: minúsculas, sem acentos, sem espaços extras. */
+const normalizarBusca = (valor: string) =>
+  valor
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+
+/** Data local de hoje como YYYY-MM-DD, para comparação por string (sem timezone). */
+const hojeLocal = () => {
+  const agora = new Date();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${agora.getFullYear()}-${mes}-${dia}`;
+};
+
+/** Considera vencido somente quando a data (YYYY-MM-DD) é anterior a hoje. */
+const isVencido = (vencimento: string | null | undefined): boolean => {
+  if (!vencimento) return false;
+  const data = vencimento.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(data) && data < hojeLocal();
+};
+
 const initialValues = {
   empresa: "",
   tipo: "",

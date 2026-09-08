@@ -353,6 +353,26 @@ export default function Certificados() {
                         />
                       </div>
                     </div>
+                    <FormSelectWrapper name="regime_tributario" label="Regime Tributário">
+                      <Select
+                        value={values.regime_tributario}
+                        onValueChange={(value) => setFieldValue("regime_tributario", value)}
+                        disabled={!values.empresa}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={values.empresa ? "Selecione o regime" : "Selecione a transportadora"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {REGIME_TRIBUTARIO_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormSelectWrapper>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField name="data_renovacao_agendada" label="Data de Renovação" type="date" />
                       <FormField name="vencimento" label="Data de Vencimento" type="date" required />

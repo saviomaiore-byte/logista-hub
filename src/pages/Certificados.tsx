@@ -20,6 +20,7 @@ import {
   Pencil,
   Trash2,
   Search,
+  Upload,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -58,6 +59,7 @@ import {
   type Certificado,
 } from "@/hooks/useCertificados";
 import { REGIME_TRIBUTARIO_OPTIONS } from "@/components/transportador/types";
+import { ImportarCertificadosDialog } from "@/components/certificado/ImportarCertificadosDialog";
 
 const ORDENACAO_OPCOES = [
   { value: "az", label: "Ordem alfabética (A → Z)" },

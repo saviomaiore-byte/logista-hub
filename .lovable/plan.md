@@ -1,38 +1,58 @@
-# Diagnóstico: por que o preview mostrou 53 "já existentes" com 54 certificados
+# Importar Certificados — Etapa 2: gravação segura
 
-Análise somente de leitura. Nada foi alterado no banco.
+## Ponto de partida confirmado
 
-## Resposta direta
+- Conferência atual da planilha: 141 linhas válidas, 54 já existentes, 81 novos, 4 sem transportadora, 2 requerem revisão, 0 duplicidades.
+- A diferença anterior (53 x 54) era o certificado de Danilo da Silva Rosa com ano digitado errado, já corrigido. Não há falha na regra de correspondência.
+- Todos os 54 certificados cadastrados hoje estão com situação "renovação agendada", porque a regra atual do sistema define a situação automaticamente: com data de renovação preenchida vira "renovação agendada", sem data vira "ativo".
+- A autoria do registro já é preenchida automaticamente pelo banco com o usuário logado, então a importação feita pela tela mantém exatamente a mesma regra da criação manual, sem nenhum atalho de permissão.
 
-O certificado que faltava é o de **Danilo da Silva Rosa**.
+## Fluxo que será construído no modal
 
-- Empresa no certificado: DANILO DA SILVA ROSA
-- Transportadora encontrada: DANILO DA SILVA ROSA
-- CNPJ: 57.598.982/0001-82
-- Vencimento na planilha: 03/10/2026
-- Empresa na planilha: Danilo da Silva Rosa (mesmo CNPJ)
-- Vencimento que estava gravado quando o preview rodou: **03/10/0006** (ano digitado errado)
-- Motivo: com o ano errado, a data do cadastro não batia com a data da planilha, então a linha foi contada como "Novo" e não como "Já existente".
+1. Selecionar planilha → preview atual (resumo + tabela + avisos + divergências de regime), sem nenhuma alteração visual.
+2. Botão "Prosseguir com importação" no lugar do botão desativado. Só fica ativo quando existe pelo menos um registro novo.
+3. Ao clicar: o sistema busca de novo os dados atuais do banco (transportadoras e certificados) e refaz toda a conferência.
+4. Tela de confirmação final, com números calculados na hora:
+   - registros elegíveis no preview
+   - prontos para importar após a revalidação
+   - já existentes detectados agora
+   - sem transportadora
+   - com erro de dados / requer revisão
+   - lista das alterações de Regime Tributário que serão feitas (transportadora, valor atual, novo valor)
+5. Botões [Cancelar] e [Confirmar importação de XX certificados].
+6. Gravação e relatório final.
 
-Esse registro foi corrigido no sistema hoje às 13:40 (horário de Brasília), poucos minutos antes desta verificação. O histórico de auditoria mostra a alteração de `0006-10-03` para `2026-10-03`.
+## Regras da gravação
 
-Conclusão: não há erro na regra de correspondência e não há certificado ausente da planilha. Era apenas um dado com ano digitado errado.
+- Só entram os registros classificados como "Novo - pronto para importação" na revalidação feita no momento da confirmação.
+- Correspondência sempre por CNPJ da planilha → transportadora cadastrada → razão social → campo empresa do certificado. Nome da planilha nunca decide.
+- CNPJ que passe a corresponder a mais de uma transportadora: não importa, vira "Requer revisão".
+- Já existe certificado da mesma transportadora com o mesmo vencimento: não importa, resultado "Ignorado — já existente".
+- Mesma transportadora com vencimento diferente: continua elegível, com aviso no relatório.
+- Tipo gravado: A1 para todos.
+- Renovação → data de renovação agendada; Vencimento → vencimento; Observações → observações (vazio continua sendo gravado como vazio/nulo, igual ao formulário manual).
+- Situação do certificado: mantida a regra atual do sistema (com data de renovação → "renovação agendada"; sem data → "ativo"). "OK" e "VENCIDO" da planilha não são situações existentes no sistema e não serão inventadas; qualquer valor diferente de OK/VENCIDO na coluna STATUS marca a linha como "Requer revisão" em vez de ser gravada.
+- Regime Tributário: só é atualizado para as transportadoras efetivamente importadas nesta operação e apenas quando o regime da planilha está na lista oficial do sistema. Regime fora da lista (por exemplo "MEI" sem "caminhoneiro") impede a importação daquela linha, que vira "Requer revisão".
 
-## Conferência dos demais
+## Segurança contra duplicação e falha parcial
 
-Refazendo a mesma classificação com os dados atuais:
+- A conferência de duplicidade é refeita contra o banco imediatamente antes de gravar; o resultado do preview nunca é usado sozinho.
+- Todos os certificados aprovados são gravados em uma única operação, o que é tratado pelo banco como tudo-ou-nada: ou entram todos, ou nenhum entra.
+- As atualizações de regime acontecem depois da gravação dos certificados; se alguma falhar, o relatório informa explicitamente quais transportadoras não tiveram o regime atualizado.
+- Botão fica bloqueado durante o processamento e a confirmação é de uso único, então clicar duas vezes não duplica nada. Mesmo que a operação seja repetida, a revalidação detecta os registros já existentes e não insere de novo.
+- Se houver qualquer falha, a mensagem nunca será "Importação concluída"; será informado o que falhou e o motivo.
 
-- Linhas válidas na planilha: 141
-- Já existentes: **54** (todos os certificados do sistema têm correspondência inequívoca por CNPJ + vencimento)
-- Novos: 81
-- Transportadora não encontrada: 4
-- Requer revisão: 2 (CNPJ que corresponde a mais de uma transportadora cadastrada)
-- Duplicidades dentro da planilha: 0
+## Relatório final
 
-Soma: 141. Nenhum certificado do sistema ficou sem linha correspondente na planilha.
+Resumo com: linhas válidas na planilha, já existentes antes, novos elegíveis inicialmente, importados, ignorados por já existirem, transportadoras não encontradas, registros que requeriam revisão, falhas e alterações de regime. Abaixo, tabela com Empresa, CNPJ, Transportadora, Vencimento, Tipo, Regime e Resultado/Motivo ("Importado", "Ignorado — já existente", "Não importado — transportadora não encontrada", "Não importado — requer revisão", "Falha na importação").
 
-## Próximo passo sugerido
+Depois de uma importação bem-sucedida, a lista de Certificados Digitais e os dados de transportadoras são recarregados automaticamente.
 
-Basta reabrir o preview de "Importar Certificados" e selecionar a planilha novamente: o resumo passará a mostrar 54 já existentes e 81 novos. Nenhuma alteração de código é necessária para isso.
+## Detalhes técnicos
 
-Se quiser, o passo seguinte seria planejar a Etapa 2 (gravação dos novos), que exigirá antes decidir o Tipo (A1/A3) dos registros novos, já que a planilha não traz essa informação.
+- `src/lib/importacaoCertificados.ts`: acrescentar validação de regime oficial e de STATUS como critério de bloqueio ("requer revisão"), e uma função pura que monta as linhas a gravar e as atualizações de regime a partir de uma análise. Funções e classificações atuais permanecem.
+- `src/hooks/useCertificados.ts`: novo hook `useImportarCertificados` que (1) refaz `select` de `transportadores` e `certificados`, (2) reexecuta `analisarImportacao`, (3) faz um único `insert` em lote de `certificados` (status pela regra atual, `created_by` pelo default `auth.uid()`), (4) atualiza `inscricao_estadual` somente das transportadoras importadas com regime válido divergente, (5) invalida/refetch de `["certificados"]` e `["transportadores","resumo"]`. Erros passam por `reportDbError`, como nos demais hooks.
+- `src/components/certificado/ImportarCertificadosDialog.tsx`: estados `preview | confirmacao | processando | resultado`, substituindo apenas o rodapé e acrescentando as telas de confirmação e relatório. Preview atual intacto.
+- `src/pages/Certificados.tsx`: sem mudanças além das já existentes (botão e render do modal).
+- Sem migration, sem novas colunas, sem alteração de RLS, schema, MCP, Assistente, ou do restante da tela. Auditoria continua sendo a dos triggers existentes.
+- Testes novos no Vitest para: elegibilidade após revalidação, bloqueio por regime inválido, bloqueio por status desconhecido, CNPJ ambíguo, mesmo vencimento (ignorado) e vencimento diferente (elegível com aviso). Validação final com typecheck, build e Vitest.

@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { reportDbError } from "@/lib/dbError";
+import {
+  analisarImportacao,
+  montarPayloadImportacao,
+  type AnaliseImportacao,
+  type LinhaPlanilha,
+} from "@/lib/importacaoCertificados";
 
 export interface Certificado {
   id: string;

@@ -185,3 +185,50 @@ export function useExcluirCertificado() {
     },
   });
 }
+
+export interface ResultadoGravacao {
+  inseridos: { cnpj: string; empresa: string; vencimento: string }[];
+  ignorados: { cnpj: string; motivo: string }[];
+  regimes: { transportadora: string; anterior: string | null; novo: string }[];
+}
+
+/** Relê os dados atuais do banco e refaz a análise da planilha (revalidação). */
+export async function revalidarImportacao(linhas: LinhaPlanilha[]): Promise<AnaliseImportacao> {
+  const [certRes, transRes] = await Promise.all([
+    supabase.from("certificados").select("id, empresa, vencimento"),
+    supabase.from("transportadores").select("id, razao_social, cpf_cnpj, inscricao_estadual"),
+  ]);
+
+  if (reportDbError("revalidar certificados", certRes.error, toast.error)) throw certRes.error;
+  if (reportDbError("revalidar transportadoras", transRes.error, toast.error)) throw transRes.error;
+
+  return analisarImportacao(linhas, transRes.data || [], (certRes.data || []) as never);
+}
+
+/**
+ * Gravação transacional: a função do banco insere os certificados e atualiza os
+ * regimes na mesma transação. Nada é gravado se qualquer passo falhar.
+ */
+export function useImportarCertificados() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (analise: AnaliseImportacao): Promise<ResultadoGravacao> => {
+      const payload = montarPayloadImportacao(analise);
+      const { data, error } = await supabase.rpc("importar_certificados", {
+        payload: payload as unknown as never,
+      });
+
+      if (reportDbError("importar certificados", error, toast.error)) throw error;
+      return data as unknown as ResultadoGravacao;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: certificadosKey });
+      await queryClient.invalidateQueries({ queryKey: transportadorasResumoKey });
+      await queryClient.refetchQueries({ queryKey: certificadosKey });
+      await queryClient.refetchQueries({ queryKey: transportadorasResumoKey });
+      queryClient.invalidateQueries({ queryKey: ["transportadores"] });
+    },
+  });
+}
+

@@ -37,10 +37,22 @@
 ## Segurança contra duplicação e falha parcial
 
 - A conferência de duplicidade é refeita contra o banco imediatamente antes de gravar; o resultado do preview nunca é usado sozinho.
-- Todos os certificados aprovados são gravados em uma única operação, o que é tratado pelo banco como tudo-ou-nada: ou entram todos, ou nenhum entra.
-- As atualizações de regime acontecem depois da gravação dos certificados; se alguma falhar, o relatório informa explicitamente quais transportadoras não tiveram o regime atualizado.
+- Certificados e alterações de Regime Tributário são gravados em **uma única transação no banco**: ou tudo é gravado, ou nada é. Detalhes abaixo.
 - Botão fica bloqueado durante o processamento e a confirmação é de uso único, então clicar duas vezes não duplica nada. Mesmo que a operação seja repetida, a revalidação detecta os registros já existentes e não insere de novo.
-- Se houver qualquer falha, a mensagem nunca será "Importação concluída"; será informado o que falhou e o motivo.
+- A mensagem "Importação concluída" só aparece depois que o banco confirma a gravação completa. Qualquer falha resulta em "Importação não realizada" com o motivo, e nada terá sido alterado.
+
+## Estratégia transacional (ajuste solicitado)
+
+1. **Onde a transação roda:** dentro do banco, em uma função de importação criada por migration. O navegador não consegue abrir uma transação com várias operações; por isso a operação inteira (todos os certificados + todos os regimes) é enviada em uma única chamada autenticada, e o banco executa tudo dentro da mesma transação. Toda função no Postgres roda em uma transação: se qualquer passo levantar erro, tudo é desfeito automaticamente.
+2. **Identificação do usuário:** a chamada sai do próprio aplicativo com a sessão do usuário logado, então `auth.uid()` dentro da função é o usuário atual. A função é criada como *security invoker*, ou seja, roda com as permissões de quem chamou e continua sujeita às políticas de acesso existentes. Não há uso de service role nem de chave administrativa.
+3. **Autoria (`created_by`):** os certificados são inseridos sem informar autoria, exatamente como no formulário manual, e o banco preenche o campo com o usuário logado através do valor padrão já existente. A política de inserção atual (autoria precisa ser o próprio usuário) continua valendo e é respeitada.
+4. **Regimes na mesma transação:** as atualizações de `transportadores.inscricao_estadual` acontecem dentro da mesma função, depois dos certificados, apenas para as transportadoras efetivamente importadas e com regime válido. Estão portanto no mesmo commit.
+5. **Se um certificado falhar:** a função levanta erro, a transação é desfeita e nenhum certificado novo permanece no banco. O aplicativo mostra "Importação não realizada" e o motivo retornado.
+6. **Se uma atualização de regime falhar:** mesmo comportamento — desfaz também os certificados já inseridos naquela execução. Nunca fica um estado meio gravado.
+7. **Revalidação dentro da transação:** além da revalidação feita antes da confirmação, a própria função reconfere, no momento da gravação, que cada linha tem transportadora única pelo CNPJ e que ainda não existe certificado da mesma transportadora com o mesmo vencimento. Linhas que deixarem de ser elegíveis são simplesmente puladas e devolvidas como "Ignorado — já existente" no relatório, sem abortar as demais; erros reais (permissão, dado inválido) abortam tudo.
+8. **Auditoria:** os gatilhos de auditoria já existentes registram cada inserção e atualização normalmente, inclusive as feitas pela função. Nenhum mecanismo paralelo é criado.
+9. **Retorno:** a função devolve, em uma resposta única, quantos foram inseridos, quais foram ignorados e quais regimes foram atualizados — é essa resposta, já pós-commit, que alimenta o relatório final.
+
 
 ## Relatório final
 

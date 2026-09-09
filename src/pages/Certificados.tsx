@@ -405,7 +405,15 @@ export default function Certificados() {
               </Formik>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
+
+        <ImportarCertificadosDialog
+          open={importando}
+          onOpenChange={setImportando}
+          certificados={certificados}
+          transportadoras={transportadoras}
+        />
 
         {!loading && (
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">

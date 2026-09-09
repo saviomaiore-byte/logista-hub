@@ -326,12 +326,6 @@ export const analisarImportacao = (
         avisos.push("Será importado com tipo A1");
       }
     }
-
-
-    if (linha.renovacaoOriginal && !linha.renovacao) {
-      avisos.push(`Data de renovação inválida ("${linha.renovacaoOriginal}")`);
-    }
-
     return {
       ...linha,
       classificacao,
@@ -340,7 +334,9 @@ export const analisarImportacao = (
       transportadoraEncontrada,
       regimeCadastrado,
       regimeDivergente,
+      regimeConvertido,
     };
+
   });
 
   const resumo: ResumoImportacao = {

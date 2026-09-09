@@ -261,17 +261,20 @@ export const analisarImportacao = (
     const cnpjValido = linha.cnpjNumeros.length === 14;
     const correspondencias = cnpjValido ? porCnpj.get(linha.cnpjNumeros) || [] : [];
 
+    let regimeConvertido: string | null = null;
+    const statusValido = !linha.status || STATUS_PLANILHA_VALIDOS.includes(normalizarTexto(linha.status));
+    const regimeInvalido = Boolean(linha.regime) && regimeOficial(linha.regime) === null;
+
     if (correspondencias.length === 1) {
       const t = correspondencias[0];
       transportadoraEncontrada = t.razao_social;
       regimeCadastrado = t.inscricao_estadual || null;
 
       if (linha.regime) {
-        const regimePlanilha = normalizarTexto(linha.regime);
-        if (!REGIMES_VALIDOS.includes(regimePlanilha)) {
-          avisos.push(`Regime "${linha.regime}" não está na lista oficial`);
-        }
-        if (normalizarTexto(regimeCadastrado || "") !== regimePlanilha) {
+        regimeConvertido = regimeOficial(linha.regime);
+        if (!regimeConvertido) {
+          motivos.push(`Regime "${linha.regime}" não está na lista oficial`);
+        } else if (normalizarTexto(regimeCadastrado || "") !== normalizarTexto(regimeConvertido)) {
           regimeDivergente = true;
           avisos.push("Regime diferente — requer atualização");
         }
@@ -294,6 +297,14 @@ export const analisarImportacao = (
           ? `Data de vencimento inválida ("${linha.vencimentoOriginal}")`
           : "Data de vencimento ausente",
       );
+    } else if (linha.renovacaoOriginal && !linha.renovacao) {
+      classificacao = "requer_revisao";
+      motivos.push(`Data de renovação inválida ("${linha.renovacaoOriginal}")`);
+    } else if (!statusValido) {
+      classificacao = "requer_revisao";
+      motivos.push(`Situação "${linha.status}" não é reconhecida pelo sistema`);
+    } else if (regimeInvalido) {
+      classificacao = "requer_revisao";
     } else if (duplicadaNaPlanilha) {
       classificacao = "requer_revisao";
       motivos.push("Mesmo CNPJ aparece mais de uma vez na planilha");
@@ -312,9 +323,10 @@ export const analisarImportacao = (
             "Já existe outro certificado desta transportadora com vencimento diferente — conferir antes de importar",
           );
         }
-        avisos.push("Tipo não informado — precisará ser definido antes da gravação");
+        avisos.push("Será importado com tipo A1");
       }
     }
+
 
     if (linha.renovacaoOriginal && !linha.renovacao) {
       avisos.push(`Data de renovação inválida ("${linha.renovacaoOriginal}")`);

@@ -59,7 +59,19 @@ export interface AnaliseImportacao {
   resumo: ResumoImportacao;
 }
 
-const REGIMES_VALIDOS = ["simples nacional", "lucro presumido", "lucro real", "mei caminhoneiro"];
+const REGIMES_OFICIAIS: Record<string, string> = {
+  "simples nacional": "Simples nacional",
+  "lucro presumido": "Lucro presumido",
+  "lucro real": "Lucro real",
+  "mei caminhoneiro": "MEI caminhoneiro",
+};
+
+const STATUS_PLANILHA_VALIDOS = ["ok", "vencido"];
+
+/** Converte o regime da planilha no valor oficial do sistema, ou null quando não reconhecido. */
+export const regimeOficial = (valor: string): string | null =>
+  REGIMES_OFICIAIS[normalizarTexto(valor)] ?? null;
+
 
 /** Normaliza texto: minúsculas, sem acentos, sem espaços extras. */
 export const normalizarTexto = (valor: string): string =>

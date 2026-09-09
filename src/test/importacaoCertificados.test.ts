@@ -4,6 +4,9 @@ import {
   parseDataBR,
   parsePlanilhaCertificados,
   somenteNumeros,
+  montarPayloadImportacao,
+  alteracoesDeRegime,
+  regimeOficial,
 } from "@/lib/importacaoCertificados";
 
 const CSV = [
@@ -82,5 +85,47 @@ describe("importacaoCertificados", () => {
     const { linhas, resumo } = analisarImportacao(parsePlanilhaCertificados(dup), transportadoras, certificados);
     expect(linhas.every((l) => l.classificacao === "requer_revisao")).toBe(true);
     expect(resumo.duplicidadesPlanilha).toBe(2);
+  });
+});
+
+describe("importacaoCertificados — etapa 2", () => {
+  const linhas = parsePlanilhaCertificados(CSV);
+  const analise = analisarImportacao(linhas, transportadoras, certificados);
+
+  it("monta payload somente com linhas novas e sem empresa/tipo do navegador", () => {
+    const payload = montarPayloadImportacao(analise);
+    expect(payload.length).toBe(analise.resumo.novos);
+    for (const item of payload) {
+      expect(Object.keys(item).sort()).toEqual(
+        ["cnpj", "observacoes", "regime", "renovacao", "status", "vencimento"],
+      );
+      expect(item.cnpj).toMatch(/^\d{14}$/);
+    }
+  });
+
+  it("converte o regime da planilha para o valor oficial", () => {
+    expect(regimeOficial("MEI CAMINHONEIRO")).toBe("MEI caminhoneiro");
+    expect(regimeOficial("Lucro Presumido")).toBe("Lucro presumido");
+    expect(regimeOficial("MEI")).toBeNull();
+  });
+
+  it("classifica regime fora da lista oficial como requer revisão", () => {
+    const linha = analise.linhas.find((l) => l.cnpjNumeros === "22222222000122");
+    expect(linha?.classificacao).toBe("requer_revisao");
+  });
+
+  it("lista somente alterações de regime das linhas elegíveis", () => {
+    const alteracoes = alteracoesDeRegime(analise);
+    expect(alteracoes.every((a) => a.transportadora && a.novo)).toBe(true);
+    expect(alteracoes.some((a) => a.novo === "MEI caminhoneiro")).toBe(true);
+  });
+
+  it("classifica status desconhecido como requer revisão", () => {
+    const csv = [
+      "elcim;CNPJ;Regime de Tributação;Renovação;Vencimento;STATUS;OBSERVAÇÕES",
+      "Adalberto de Souza;57.396.373/0001-40;MEI CAMINHONEIRO;25/09/2025;25/09/2026;PENDENTE;",
+    ].join("\r\n");
+    const res = analisarImportacao(parsePlanilhaCertificados(csv), transportadoras, certificados);
+    expect(res.linhas[0].classificacao).toBe("requer_revisao");
   });
 });

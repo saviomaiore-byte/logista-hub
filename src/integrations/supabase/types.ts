@@ -961,6 +961,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      importar_certificados: { Args: { payload: Json }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

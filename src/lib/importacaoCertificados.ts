@@ -43,6 +43,8 @@ export interface ResultadoLinha extends LinhaPlanilha {
   transportadoraEncontrada: string | null;
   regimeCadastrado: string | null;
   regimeDivergente: boolean;
+  /** Regime da planilha convertido para o valor oficial do sistema (null quando ausente/inválido). */
+  regimeConvertido: string | null;
 }
 
 export interface ResumoImportacao {
@@ -59,7 +61,19 @@ export interface AnaliseImportacao {
   resumo: ResumoImportacao;
 }
 
-const REGIMES_VALIDOS = ["simples nacional", "lucro presumido", "lucro real", "mei caminhoneiro"];
+const REGIMES_OFICIAIS: Record<string, string> = {
+  "simples nacional": "Simples nacional",
+  "lucro presumido": "Lucro presumido",
+  "lucro real": "Lucro real",
+  "mei caminhoneiro": "MEI caminhoneiro",
+};
+
+const STATUS_PLANILHA_VALIDOS = ["ok", "vencido"];
+
+/** Converte o regime da planilha no valor oficial do sistema, ou null quando não reconhecido. */
+export const regimeOficial = (valor: string): string | null =>
+  REGIMES_OFICIAIS[normalizarTexto(valor)] ?? null;
+
 
 /** Normaliza texto: minúsculas, sem acentos, sem espaços extras. */
 export const normalizarTexto = (valor: string): string =>
@@ -249,17 +263,20 @@ export const analisarImportacao = (
     const cnpjValido = linha.cnpjNumeros.length === 14;
     const correspondencias = cnpjValido ? porCnpj.get(linha.cnpjNumeros) || [] : [];
 
+    let regimeConvertido: string | null = null;
+    const statusValido = !linha.status || STATUS_PLANILHA_VALIDOS.includes(normalizarTexto(linha.status));
+    const regimeInvalido = Boolean(linha.regime) && regimeOficial(linha.regime) === null;
+
     if (correspondencias.length === 1) {
       const t = correspondencias[0];
       transportadoraEncontrada = t.razao_social;
       regimeCadastrado = t.inscricao_estadual || null;
 
       if (linha.regime) {
-        const regimePlanilha = normalizarTexto(linha.regime);
-        if (!REGIMES_VALIDOS.includes(regimePlanilha)) {
-          avisos.push(`Regime "${linha.regime}" não está na lista oficial`);
-        }
-        if (normalizarTexto(regimeCadastrado || "") !== regimePlanilha) {
+        regimeConvertido = regimeOficial(linha.regime);
+        if (!regimeConvertido) {
+          motivos.push(`Regime "${linha.regime}" não está na lista oficial`);
+        } else if (normalizarTexto(regimeCadastrado || "") !== normalizarTexto(regimeConvertido)) {
           regimeDivergente = true;
           avisos.push("Regime diferente — requer atualização");
         }
@@ -282,6 +299,14 @@ export const analisarImportacao = (
           ? `Data de vencimento inválida ("${linha.vencimentoOriginal}")`
           : "Data de vencimento ausente",
       );
+    } else if (linha.renovacaoOriginal && !linha.renovacao) {
+      classificacao = "requer_revisao";
+      motivos.push(`Data de renovação inválida ("${linha.renovacaoOriginal}")`);
+    } else if (!statusValido) {
+      classificacao = "requer_revisao";
+      motivos.push(`Situação "${linha.status}" não é reconhecida pelo sistema`);
+    } else if (regimeInvalido) {
+      classificacao = "requer_revisao";
     } else if (duplicadaNaPlanilha) {
       classificacao = "requer_revisao";
       motivos.push("Mesmo CNPJ aparece mais de uma vez na planilha");
@@ -300,14 +325,9 @@ export const analisarImportacao = (
             "Já existe outro certificado desta transportadora com vencimento diferente — conferir antes de importar",
           );
         }
-        avisos.push("Tipo não informado — precisará ser definido antes da gravação");
+        avisos.push("Será importado com tipo A1");
       }
     }
-
-    if (linha.renovacaoOriginal && !linha.renovacao) {
-      avisos.push(`Data de renovação inválida ("${linha.renovacaoOriginal}")`);
-    }
-
     return {
       ...linha,
       classificacao,
@@ -316,7 +336,9 @@ export const analisarImportacao = (
       transportadoraEncontrada,
       regimeCadastrado,
       regimeDivergente,
+      regimeConvertido,
     };
+
   });
 
   const resumo: ResumoImportacao = {
@@ -339,3 +361,46 @@ export const LABEL_CLASSIFICACAO: Record<ClassificacaoImportacao, string> = {
   transportadora_nao_encontrada: "Transportadora não encontrada",
   requer_revisao: "Requer revisão",
 };
+
+export interface ItemImportacao {
+  cnpj: string;
+  vencimento: string;
+  renovacao: string;
+  status: string;
+  regime: string;
+  observacoes: string;
+}
+
+export interface AlteracaoRegime {
+  transportadora: string;
+  atual: string | null;
+  novo: string;
+}
+
+/**
+ * Monta o payload enviado ao banco a partir de uma análise já revalidada.
+ * Somente linhas "novo" entram; nome da empresa e tipo NÃO são enviados —
+ * o banco deriva a razão social pelo CNPJ e grava sempre tipo A1.
+ */
+export const montarPayloadImportacao = (analise: AnaliseImportacao): ItemImportacao[] =>
+  analise.linhas
+    .filter((l) => l.classificacao === "novo")
+    .map((l) => ({
+      cnpj: l.cnpjNumeros,
+      vencimento: l.vencimento || "",
+      renovacao: l.renovacao || "",
+      status: l.status,
+      regime: l.regimeConvertido || "",
+      observacoes: l.observacoes,
+    }));
+
+/** Alterações de Regime Tributário que a importação fará (somente linhas elegíveis). */
+export const alteracoesDeRegime = (analise: AnaliseImportacao): AlteracaoRegime[] =>
+  analise.linhas
+    .filter((l) => l.classificacao === "novo" && l.regimeDivergente && l.regimeConvertido)
+    .map((l) => ({
+      transportadora: l.transportadoraEncontrada || "",
+      atual: l.regimeCadastrado,
+      novo: l.regimeConvertido as string,
+    }));
+

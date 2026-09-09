@@ -361,3 +361,46 @@ export const LABEL_CLASSIFICACAO: Record<ClassificacaoImportacao, string> = {
   transportadora_nao_encontrada: "Transportadora não encontrada",
   requer_revisao: "Requer revisão",
 };
+
+export interface ItemImportacao {
+  cnpj: string;
+  vencimento: string;
+  renovacao: string;
+  status: string;
+  regime: string;
+  observacoes: string;
+}
+
+export interface AlteracaoRegime {
+  transportadora: string;
+  atual: string | null;
+  novo: string;
+}
+
+/**
+ * Monta o payload enviado ao banco a partir de uma análise já revalidada.
+ * Somente linhas "novo" entram; nome da empresa e tipo NÃO são enviados —
+ * o banco deriva a razão social pelo CNPJ e grava sempre tipo A1.
+ */
+export const montarPayloadImportacao = (analise: AnaliseImportacao): ItemImportacao[] =>
+  analise.linhas
+    .filter((l) => l.classificacao === "novo")
+    .map((l) => ({
+      cnpj: l.cnpjNumeros,
+      vencimento: l.vencimento || "",
+      renovacao: l.renovacao || "",
+      status: l.status,
+      regime: l.regimeConvertido || "",
+      observacoes: l.observacoes,
+    }));
+
+/** Alterações de Regime Tributário que a importação fará (somente linhas elegíveis). */
+export const alteracoesDeRegime = (analise: AnaliseImportacao): AlteracaoRegime[] =>
+  analise.linhas
+    .filter((l) => l.classificacao === "novo" && l.regimeDivergente && l.regimeConvertido)
+    .map((l) => ({
+      transportadora: l.transportadoraEncontrada || "",
+      atual: l.regimeCadastrado,
+      novo: l.regimeConvertido as string,
+    }));
+

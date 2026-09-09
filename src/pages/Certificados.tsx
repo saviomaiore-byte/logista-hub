@@ -278,6 +278,11 @@ export default function Certificados() {
               Gerencie certificados digitais e agendamentos de renovação
             </p>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setImportando(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar Certificados
+          </Button>
           <Dialog
             open={open}
             onOpenChange={(v) => {

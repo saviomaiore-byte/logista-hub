@@ -43,6 +43,8 @@ export interface ResultadoLinha extends LinhaPlanilha {
   transportadoraEncontrada: string | null;
   regimeCadastrado: string | null;
   regimeDivergente: boolean;
+  /** Regime da planilha convertido para o valor oficial do sistema (null quando ausente/inválido). */
+  regimeConvertido: string | null;
 }
 
 export interface ResumoImportacao {

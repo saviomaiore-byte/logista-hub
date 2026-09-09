@@ -110,6 +110,7 @@ export default function Certificados() {
   const [editando, setEditando] = useState<Certificado | null>(null);
   const [excluindo, setExcluindo] = useState<Certificado | null>(null);
   const [busca, setBusca] = useState("");
+  const [importando, setImportando] = useState(false);
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("vencimento-proximo");
   const isMobile = useIsMobile();
   const { isAdmin, podeEditar } = usePermissoes();

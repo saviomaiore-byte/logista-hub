@@ -20,6 +20,7 @@ import {
   Pencil,
   Trash2,
   Search,
+  Upload,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -58,6 +59,7 @@ import {
   type Certificado,
 } from "@/hooks/useCertificados";
 import { REGIME_TRIBUTARIO_OPTIONS } from "@/components/transportador/types";
+import { ImportarCertificadosDialog } from "@/components/certificado/ImportarCertificadosDialog";
 
 const ORDENACAO_OPCOES = [
   { value: "az", label: "Ordem alfabética (A → Z)" },
@@ -108,6 +110,7 @@ export default function Certificados() {
   const [editando, setEditando] = useState<Certificado | null>(null);
   const [excluindo, setExcluindo] = useState<Certificado | null>(null);
   const [busca, setBusca] = useState("");
+  const [importando, setImportando] = useState(false);
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("vencimento-proximo");
   const isMobile = useIsMobile();
   const { isAdmin, podeEditar } = usePermissoes();
@@ -275,6 +278,11 @@ export default function Certificados() {
               Gerencie certificados digitais e agendamentos de renovação
             </p>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setImportando(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar Certificados
+          </Button>
           <Dialog
             open={open}
             onOpenChange={(v) => {
@@ -397,7 +405,15 @@ export default function Certificados() {
               </Formik>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
+
+        <ImportarCertificadosDialog
+          open={importando}
+          onOpenChange={setImportando}
+          certificados={certificados}
+          transportadoras={transportadoras}
+        />
 
         {!loading && (
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">

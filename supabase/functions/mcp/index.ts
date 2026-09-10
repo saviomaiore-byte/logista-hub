@@ -506,37 +506,10 @@ import { z as z8 } from "npm:zod@^3.25.76";
 
 // src/lib/aptidao.ts
 import { isPast, parseISO } from "npm:date-fns@^3.6.0";
-var SUFIXOS_SOCIETARIOS = ["me", "mei", "epp", "eireli", "ltda", "sa", "s a", "eirelli"];
-function normalizarNome(valor) {
-  if (!valor) return "";
-  let base = valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
-  let mudou = true;
-  while (mudou) {
-    mudou = false;
-    for (const sufixo of SUFIXOS_SOCIETARIOS) {
-      if (base === sufixo) continue;
-      if (base.endsWith(` ${sufixo}`)) {
-        base = base.slice(0, -(sufixo.length + 1)).trim();
-        mudou = true;
-      }
-    }
-  }
-  return base;
-}
-function isMotoristaProprioTransportador(nomeMotorista, razaoSocial) {
-  const a = normalizarNome(nomeMotorista);
-  const b = normalizarNome(razaoSocial);
-  if (!a || !b) return false;
-  return a === b;
-}
-function checkMotoristaAptidao(m, documentos, transportadora) {
+function checkMotoristaAptidao(m, documentos, transportadora, motoristaProprio = false) {
   const motivos = [];
   const docs = typeof documentos === "boolean" ? { contrato: documentos, adesao: documentos } : documentos;
-  const proprioTransportador = isMotoristaProprioTransportador(
-    m.nome,
-    transportadora?.razao_social
-  );
-  if (!proprioTransportador) {
+  if (!motoristaProprio) {
     if (!docs.contrato) motivos.push("Sem contrato assinado");
     if (!docs.adesao) motivos.push("Sem Termo de Ades\xE3o");
   }
@@ -589,7 +562,7 @@ var analisar_pendencias_default = defineTool7({
     const supabase = supabaseForUser(ctx);
     const [transportadoresRes, linksRes, motoristasRes, contratosRes] = await Promise.all([
       supabase.from("transportadores").select("id, razao_social, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero").eq("status", "ativo").order("razao_social", { ascending: true }),
-      supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+      supabase.from("transportador_motoristas").select("transportador_id, motorista_id, motorista_proprio"),
       supabase.from("motoristas").select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),
       supabase.from("contratos").select("motorista_id, status").eq("status", "assinado")
     ]);
@@ -617,10 +590,12 @@ var analisar_pendencias_default = defineTool7({
         }
       }
       if (entidade === "transportador") continue;
-      const vinculados = links.filter((l) => l.transportador_id === t.id).map((l) => motoristaPorId.get(l.motorista_id)).filter((m) => Boolean(m));
-      for (const m of vinculados) {
+      const vinculados = links.filter((l) => l.transportador_id === t.id).map((l) => ({ motorista: motoristaPorId.get(l.motorista_id), proprio: l.motorista_proprio === true })).filter(
+        (v) => Boolean(v.motorista)
+      );
+      for (const { motorista: m, proprio } of vinculados) {
         total_analisado++;
-        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t);
+        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t, proprio);
         if (!apto) {
           pendencias.push({
             entidade: "motorista",

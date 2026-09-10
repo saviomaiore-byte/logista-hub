@@ -144,98 +144,74 @@ describe("checkMotoristaAptidao", () => {
   });
 });
 
-describe("exceção motorista que também é transportadora", () => {
+describe("motorista próprio (marcação explícita do vínculo)", () => {
   const semDocs = { contrato: false, adesao: false };
-  const propria = { ...transportadoraOk, razao_social: "João da Silva" };
-  const motorista = { ...motoristaOk, nome: "João da Silva" };
 
-  it("motorista comum sem contrato e sem adesão → dois motivos", () => {
-    const r = checkMotoristaAptidao(
-      { ...motoristaOk, nome: "João da Silva" },
-      semDocs,
-      { ...transportadoraOk, razao_social: "Transportes ABC" },
-    );
+  it("vínculo comum (false) sem contrato e sem adesão → dois motivos", () => {
+    const r = checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, false);
     expect(r.motivos).toEqual(["Sem contrato assinado", "Sem Termo de Adesão"]);
   });
 
-  it("nome igual à razão social → apto mesmo sem contrato e sem adesão", () => {
-    const r = checkMotoristaAptidao(motorista, semDocs, propria);
+  it("motorista próprio → apto mesmo sem contrato e sem adesão", () => {
+    const r = checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, true);
     expect(r.apto).toBe(true);
     expect(r.motivos).toEqual([]);
   });
 
-  it("própria transportadora com CNH vencida → apenas CNH vencida", () => {
+  it("motorista próprio com CNH vencida → apenas CNH vencida", () => {
     const r = checkMotoristaAptidao(
-      { ...motorista, cnh_vencimento: "2020-01-01" },
+      { ...motoristaOk, cnh_vencimento: "2020-01-01" },
       semDocs,
-      propria,
+      transportadoraOk,
+      true,
     );
     expect(r.apto).toBe(false);
     expect(r.motivos).toEqual(["CNH vencida"]);
   });
 
-  it("própria transportadora sem ANTT → apenas motivo de ANTT", () => {
-    const r = checkMotoristaAptidao(motorista, semDocs, { ...propria, antt_numero: null });
+  it("motorista próprio sem ANTT → apenas motivo de ANTT", () => {
+    const r = checkMotoristaAptidao(motoristaOk, semDocs, { ...transportadoraOk, antt_numero: null }, true);
     expect(r.motivos).toEqual(["Transportadora sem ANTT"]);
   });
 
-  it("própria transportadora sem Certificado → apenas motivo de Certificado", () => {
-    const r = checkMotoristaAptidao(motorista, semDocs, { ...propria, certificado_numero: null });
+  it("motorista próprio sem Certificado → apenas motivo de Certificado", () => {
+    const r = checkMotoristaAptidao(
+      motoristaOk,
+      semDocs,
+      { ...transportadoraOk, certificado_numero: null },
+      true,
+    );
     expect(r.motivos).toEqual(["Transportadora sem Certificado"]);
   });
 
-  it("ignora acentos, caixa, espaços, pontuação e sufixos societários", () => {
-    const variacoes = [
-      "JOAO DA SILVA",
-      "  joão   da silva  ",
-      "João da Silva ME",
-      "JOÃO DA SILVA LTDA",
-      "JOAO DA SILVA LTDA ME",
-      "João D'a Silva".replace("D'a", "da"),
-      "João da Silva - EIRELI",
-    ];
-    for (const razao of variacoes) {
-      expect(
-        checkMotoristaAptidao(motorista, semDocs, { ...transportadoraOk, razao_social: razao }).apto,
-      ).toBe(true);
-    }
+  it("motorista próprio inativo continua inapto", () => {
+    const r = checkMotoristaAptidao({ ...motoristaOk, status: "inativo" }, semDocs, transportadoraOk, true);
+    expect(r.motivos).toEqual(["Motorista inativo"]);
   });
 
-  it("nomes vazios nunca ativam a exceção", () => {
-    expect(
-      checkMotoristaAptidao({ ...motoristaOk, nome: "" }, semDocs, { ...transportadoraOk, razao_social: "" }).motivos,
-    ).toContain("Sem contrato assinado");
-    expect(
-      checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk).motivos,
-    ).toContain("Sem Termo de Adesão");
-  });
-
-  it("nome igual ao de outra transportadora não avaliada não dispensa nada", () => {
-    const r = checkMotoristaAptidao(motorista, semDocs, {
-      ...transportadoraOk,
-      razao_social: "Transportes XYZ",
-    });
-    expect(r.motivos).toEqual(["Sem contrato assinado", "Sem Termo de Adesão"]);
-  });
-
-  it("motorista em duas transportadoras: exceção vale só na própria", () => {
-    const naPropria = checkMotoristaAptidao(motorista, semDocs, propria);
-    const naOutra = checkMotoristaAptidao(motorista, semDocs, {
-      ...transportadoraOk,
-      razao_social: "Transportes ABC Ltda",
-    });
+  it("mesmo motorista: próprio em uma transportadora, comum em outra", () => {
+    const naPropria = checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, true);
+    const naOutra = checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, false);
     expect(naPropria.apto).toBe(true);
     expect(naOutra.apto).toBe(false);
     expect(naOutra.motivos).toEqual(["Sem contrato assinado", "Sem Termo de Adesão"]);
   });
 
-  it("distrato não satisfaz contrato nem adesão para motorista comum", () => {
+  it("desligar a marcação volta a exigir contrato e adesão", () => {
+    expect(checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, true).apto).toBe(true);
+    expect(checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk, false).apto).toBe(false);
+  });
+
+  it("ausência do parâmetro equivale a vínculo comum", () => {
+    expect(checkMotoristaAptidao(motoristaOk, semDocs, transportadoraOk).motivos).toEqual([
+      "Sem contrato assinado",
+      "Sem Termo de Adesão",
+    ]);
+  });
+
+  it("distrato não satisfaz contrato nem adesão em vínculo comum", () => {
     const docs = derivarDocs([{ tipo: "distrato", arquivo_url: "d.pdf" }]);
-    const r = checkMotoristaAptidao(
-      { ...motoristaOk, nome: "João da Silva" },
-      docs,
-      { ...transportadoraOk, razao_social: "Transportes ABC" },
-    );
+    const r = checkMotoristaAptidao(motoristaOk, docs, transportadoraOk, false);
     expect(r.motivos).toEqual(["Sem contrato assinado", "Sem Termo de Adesão"]);
   });
 
@@ -244,24 +220,15 @@ describe("exceção motorista que também é transportadora", () => {
       { tipo: "contrato", arquivo_url: "a.pdf", status: "pendente" },
       { tipo: "adesao", arquivo_url: "b.pdf", status: "pendente" },
     ]);
-    expect(
-      checkMotoristaAptidao({ ...motoristaOk, nome: "Maria" }, docs, {
-        ...transportadoraOk,
-        razao_social: "Transportes ABC",
-      }).apto,
-    ).toBe(true);
+    expect(checkMotoristaAptidao(motoristaOk, docs, transportadoraOk, false).apto).toBe(true);
   });
 
-  it("alvará ausente não deixa inapto (comum ou próprio transportador)", () => {
+  it("alvará ausente não deixa inapto (próprio ou comum)", () => {
     expect(
-      checkMotoristaAptidao(motorista, semDocs, { ...propria, alvara_numero: null }).apto,
+      checkMotoristaAptidao(motoristaOk, semDocs, { ...transportadoraOk, alvara_numero: null }, true).apto,
     ).toBe(true);
     expect(
-      checkMotoristaAptidao({ ...motoristaOk, nome: "Maria" }, docsOk, {
-        ...transportadoraOk,
-        alvara_numero: null,
-        razao_social: "Transportes ABC",
-      }).apto,
+      checkMotoristaAptidao(motoristaOk, docsOk, { ...transportadoraOk, alvara_numero: null }, false).apto,
     ).toBe(true);
   });
 });

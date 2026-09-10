@@ -194,7 +194,7 @@ export default function Relatorios() {
 
       const { data: links, error: linksError } = await supabase
         .from("transportador_motoristas")
-        .select("transportador_id, motorista_id");
+        .select("transportador_id, motorista_id, motorista_proprio");
 
       const { data: motoristas, error: motoristasError } = await supabase
         .from("motoristas")
@@ -222,6 +222,13 @@ export default function Relatorios() {
           .map((c) => c.motorista_id)
       );
 
+      // Marcação explícita "motorista próprio", sempre por par transportadora + motorista.
+      const propriosSet = new Set(
+        (links || [])
+          .filter((l) => l.motorista_proprio === true)
+          .map((l) => `${l.transportador_id}:${l.motorista_id}`),
+      );
+
       const result: TransportadorComMotoristas[] = (transportadores || []).map((t) => {
         const motoristaIds = (links || [])
           .filter((l) => l.transportador_id === t.id)
@@ -236,6 +243,7 @@ export default function Relatorios() {
               m,
               { contrato: temContrato, adesao: temAdesao },
               t,
+              propriosSet.has(`${t.id}:${m.id}`),
             );
             return {
               id: m.id,

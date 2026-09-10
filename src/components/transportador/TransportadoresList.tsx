@@ -14,6 +14,7 @@ type Props = {
   onDelete: (id: string) => void;
   onVincular: (transpId: string) => void;
   onRemoveVinculo: (vinculoId: string) => void;
+  onToggleMotoristaProprio: (vinculoId: string, motoristaProprio: boolean) => void;
   onVerDocs: (t: Transportador) => void;
   onVerContratos: (t: Transportador) => void;
 };
@@ -26,6 +27,7 @@ export function TransportadoresList({
   onDelete,
   onVincular,
   onRemoveVinculo,
+  onToggleMotoristaProprio,
   onVerDocs,
   onVerContratos,
 }: Props) {
@@ -60,8 +62,23 @@ export function TransportadoresList({
                   <span className="text-xs text-muted-foreground">Nenhum</span>
                 ) : (
                   mots.map((v: any) => (
-                    <div key={v.id} className="flex items-center gap-1">
+                    <div key={v.id} className="flex items-center gap-1 flex-wrap">
                       <span className="text-xs">{v.motoristas?.nome}</span>
+                      {v.motorista_proprio && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">
+                          Motorista Próprio
+                        </Badge>
+                      )}
+                      {podeEditar(t) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1 text-[10px]"
+                          onClick={() => onToggleMotoristaProprio(v.id, !v.motorista_proprio)}
+                        >
+                          {v.motorista_proprio ? "Desmarcar próprio" : "Marcar próprio"}
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onRemoveVinculo(v.id)}>
                         <Unlink className="h-3 w-3" />
                       </Button>
@@ -134,8 +151,23 @@ export function TransportadoresList({
                         <span className="text-xs text-muted-foreground">Nenhum</span>
                       ) : (
                         mots.map((v: any) => (
-                          <div key={v.id} className="flex items-center gap-1">
+                          <div key={v.id} className="flex items-center gap-1 flex-wrap">
                             <span className="text-xs">{v.motoristas?.nome}</span>
+                            {v.motorista_proprio && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">
+                                Motorista Próprio
+                              </Badge>
+                            )}
+                            {podeEditar(t) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 px-1 text-[10px]"
+                                onClick={() => onToggleMotoristaProprio(v.id, !v.motorista_proprio)}
+                              >
+                                {v.motorista_proprio ? "Desmarcar próprio" : "Marcar próprio"}
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onRemoveVinculo(v.id)}>
                               <Unlink className="h-3 w-3" />
                             </Button>

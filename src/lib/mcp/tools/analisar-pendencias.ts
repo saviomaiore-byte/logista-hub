@@ -71,7 +71,9 @@ export default defineTool({
         .select("id, razao_social, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo")
         .order("razao_social", { ascending: true }),
-      supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+      supabase
+        .from("transportador_motoristas")
+        .select("transportador_id, motorista_id, motorista_proprio"),
       supabase
         .from("motoristas")
         .select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),
@@ -118,12 +120,14 @@ export default defineTool({
 
       const vinculados = links
         .filter((l) => l.transportador_id === t.id)
-        .map((l) => motoristaPorId.get(l.motorista_id))
-        .filter((m): m is NonNullable<typeof m> => Boolean(m));
+        .map((l) => ({ motorista: motoristaPorId.get(l.motorista_id), proprio: l.motorista_proprio === true }))
+        .filter((v): v is { motorista: NonNullable<typeof v.motorista>; proprio: boolean } =>
+          Boolean(v.motorista),
+        );
 
-      for (const m of vinculados) {
+      for (const { motorista: m, proprio } of vinculados) {
         total_analisado++;
-        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t);
+        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t, proprio);
         if (!apto) {
           pendencias.push({
             entidade: "motorista",

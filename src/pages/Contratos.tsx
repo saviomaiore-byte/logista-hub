@@ -311,7 +311,6 @@ export default function Contratos() {
                 <td className="px-6 py-4 text-muted-foreground">
                   {contrato.data_envio ? new Date(contrato.data_envio).toLocaleDateString("pt-BR") : "-"}
                 </td>
-                <td className="px-6 py-4">{getStatusBadge(contrato.status)}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     {contrato.arquivo_url && (

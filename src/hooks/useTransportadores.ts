@@ -226,11 +226,22 @@ export function useMarcarMotoristaProprio() {
 
   return useMutation({
     mutationFn: async ({ id, motorista_proprio }: { id: string; motorista_proprio: boolean }) => {
-      const { error } = await supabase
+      // `id` é sempre transportador_motoristas.id (a linha do vínculo).
+      // O `select` devolve a linha afetada: sem retorno, o UPDATE não gravou
+      // (tipicamente permissão), e falhamos em vez de fingir sucesso na UI.
+      const { data, error } = await supabase
         .from("transportador_motoristas")
         .update({ motorista_proprio })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id, motorista_proprio");
       if (reportDbError("atualizar motorista próprio", error)) throw error;
+      if (!data || data.length === 0) {
+        const err = new Error(
+          "Não foi possível salvar a marcação de motorista próprio (vínculo não encontrado ou sem permissão).",
+        );
+        console.error("[motorista_proprio] UPDATE sem linhas afetadas", { vinculoId: id, motorista_proprio });
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: transportadorVinculosKey });

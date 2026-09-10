@@ -84,8 +84,17 @@ export function checkMotoristaAptidao(
   const docs: DocumentosContratuais =
     typeof documentos === "boolean" ? { contrato: documentos, adesao: documentos } : documentos;
 
-  if (!docs.contrato) motivos.push("Sem contrato assinado");
-  if (!docs.adesao) motivos.push("Sem Termo de Adesão");
+  // Exceção: quando o motorista é a própria transportadora avaliada, Contrato e
+  // Termo de Adesão não são exigidos. Vale apenas para essa transportadora.
+  const proprioTransportador = isMotoristaProprioTransportador(
+    m.nome,
+    transportadora?.razao_social,
+  );
+
+  if (!proprioTransportador) {
+    if (!docs.contrato) motivos.push("Sem contrato assinado");
+    if (!docs.adesao) motivos.push("Sem Termo de Adesão");
+  }
   if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
   if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");
   if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");

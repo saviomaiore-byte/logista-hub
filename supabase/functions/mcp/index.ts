@@ -506,11 +506,40 @@ import { z as z8 } from "npm:zod@^3.25.76";
 
 // src/lib/aptidao.ts
 import { isPast, parseISO } from "npm:date-fns@^3.6.0";
+var SUFIXOS_SOCIETARIOS = ["me", "mei", "epp", "eireli", "ltda", "sa", "s a", "eirelli"];
+function normalizarNome(valor) {
+  if (!valor) return "";
+  let base = valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    for (const sufixo of SUFIXOS_SOCIETARIOS) {
+      if (base === sufixo) continue;
+      if (base.endsWith(` ${sufixo}`)) {
+        base = base.slice(0, -(sufixo.length + 1)).trim();
+        mudou = true;
+      }
+    }
+  }
+  return base;
+}
+function isMotoristaProprioTransportador(nomeMotorista, razaoSocial) {
+  const a = normalizarNome(nomeMotorista);
+  const b = normalizarNome(razaoSocial);
+  if (!a || !b) return false;
+  return a === b;
+}
 function checkMotoristaAptidao(m, documentos, transportadora) {
   const motivos = [];
   const docs = typeof documentos === "boolean" ? { contrato: documentos, adesao: documentos } : documentos;
-  if (!docs.contrato) motivos.push("Sem contrato assinado");
-  if (!docs.adesao) motivos.push("Sem Termo de Ades\xE3o");
+  const proprioTransportador = isMotoristaProprioTransportador(
+    m.nome,
+    transportadora?.razao_social
+  );
+  if (!proprioTransportador) {
+    if (!docs.contrato) motivos.push("Sem contrato assinado");
+    if (!docs.adesao) motivos.push("Sem Termo de Ades\xE3o");
+  }
   if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
   if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");
   if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");

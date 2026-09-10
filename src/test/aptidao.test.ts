@@ -100,7 +100,7 @@ describe("checkMotoristaAptidao", () => {
     ]);
   });
 
-  it("inapto quando a transportadora não tem ANTT, Alvará ou Certificado", () => {
+  it("inapto quando a transportadora não tem ANTT ou Certificado (Alvará não é obrigatório)", () => {
     const r = checkMotoristaAptidao(motoristaOk, docsOk, {
       antt_numero: null,
       alvara_numero: null,
@@ -108,7 +108,6 @@ describe("checkMotoristaAptidao", () => {
     });
     expect(r.motivos).toEqual([
       "Transportadora sem ANTT",
-      "Transportadora sem Alvará",
       "Transportadora sem Certificado",
     ]);
   });

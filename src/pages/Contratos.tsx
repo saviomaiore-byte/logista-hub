@@ -22,9 +22,6 @@ import {
   FileText,
   Send,
   Download,
-  Clock,
-  CheckCircle,
-  XCircle,
   Plus,
   Pencil,
   Trash2,
@@ -32,7 +29,6 @@ import {
   Building2,
   Filter,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
 import { contratoSchema } from "@/lib/validationSchemas";
@@ -178,24 +174,6 @@ export default function Contratos() {
   };
 
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {
-      enviado: { class: "status-warning", label: "Enviado", icon: Clock },
-      assinado: { class: "status-success", label: "Assinado", icon: CheckCircle },
-      pendente: { class: "bg-muted text-muted-foreground", label: "Pendente", icon: Clock },
-      recusado: { class: "status-danger", label: "Recusado", icon: XCircle },
-    };
-
-    const { class: className, label, icon: Icon } = config[status] || config.pendente;
-
-    return (
-      <span className={cn("status-badge inline-flex items-center gap-1", className)}>
-        <Icon className="h-3 w-3" />
-        {label}
-      </span>
-    );
-  };
-
   const getTipoBadge = (tipo: string) => {
     const labels: Record<string, string> = {
       contrato: "Contrato",
@@ -230,12 +208,11 @@ export default function Contratos() {
       ) : (
         contratos.map((contrato) => (
           <div key={contrato.id} className="space-y-3 rounded-xl border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">{contrato.empresa}</p>
                 {contrato.cnpj && <p className="text-sm text-muted-foreground">{contrato.cnpj}</p>}
               </div>
-              <div className="flex items-center gap-2">{getStatusBadge(contrato.status)}</div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -303,7 +280,6 @@ export default function Contratos() {
               <th className="px-6 py-4 text-left">Vinculado a</th>
               <th className="px-6 py-4 text-left">CNPJ</th>
               <th className="px-6 py-4 text-left">Data Envio</th>
-              <th className="px-6 py-4 text-left">Status</th>
               <th className="px-6 py-4 text-right">Ações</th>
             </tr>
           </thead>
@@ -334,7 +310,6 @@ export default function Contratos() {
                 <td className="px-6 py-4 text-muted-foreground">
                   {contrato.data_envio ? new Date(contrato.data_envio).toLocaleDateString("pt-BR") : "-"}
                 </td>
-                <td className="px-6 py-4">{getStatusBadge(contrato.status)}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     {contrato.arquivo_url && (

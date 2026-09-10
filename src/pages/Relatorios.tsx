@@ -201,8 +201,7 @@ export default function Relatorios() {
 
       const { data: contratos, error: contratosError } = await supabase
         .from("contratos")
-        .select("motorista_id, status")
-        .eq("status", "assinado");
+        .select("motorista_id, arquivo_url, tipo");
 
       const primeiroErro = transportadoresError || linksError || motoristasError || contratosError;
       if (reportDbError("carregar dados do relatório", primeiroErro, (m) => toast({ title: m, variant: "destructive" }))) {

@@ -62,19 +62,63 @@ function vencida(data?: string | null): boolean {
   return dias !== null && dias < 0;
 }
 
+/** Sufixos societários ignorados na comparação nome ↔ razão social. */
+const SUFIXOS_SOCIETARIOS = ["me", "mei", "epp", "eireli", "ltda", "sa", "s a", "eirelli"];
+
+function normalizarNome(valor?: string | null): string {
+  if (!valor) return "";
+  let base = valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    for (const sufixo of SUFIXOS_SOCIETARIOS) {
+      if (base === sufixo) continue;
+      if (base.endsWith(` ${sufixo}`)) {
+        base = base.slice(0, -(sufixo.length + 1)).trim();
+        mudou = true;
+      }
+    }
+  }
+  return base;
+}
+
+/** Idêntico a src/lib/aptidao.ts: motorista que é a própria transportadora avaliada. */
+function isMotoristaProprioTransportador(
+  nomeMotorista?: string | null,
+  razaoSocial?: string | null,
+): boolean {
+  const a = normalizarNome(nomeMotorista);
+  const b = normalizarNome(razaoSocial);
+  if (!a || !b) return false;
+  return a === b;
+}
+
 /** Regras de aptidão do relatório semanal (idênticas a src/lib/aptidao.ts). */
 function checkMotoristaAptidao(
   m: {
+    nome?: string | null;
     status?: string | null;
     cnh_vencimento?: string | null;
     mopp_vencimento?: string | null;
     mopp_vitalicio?: boolean | null;
   },
   temContrato: boolean,
-  t: { antt_numero?: string | null; alvara_numero?: string | null; certificado_numero?: string | null },
+  t: {
+    razao_social?: string | null;
+    antt_numero?: string | null;
+    alvara_numero?: string | null;
+    certificado_numero?: string | null;
+  },
 ) {
   const motivos: string[] = [];
-  if (!temContrato) motivos.push("Sem contrato assinado");
+  const proprioTransportador = isMotoristaProprioTransportador(m.nome, t?.razao_social);
+  if (!temContrato && !proprioTransportador) motivos.push("Sem contrato assinado");
   if (!t?.antt_numero) motivos.push("Transportadora sem ANTT");
   if (!t?.alvara_numero) motivos.push("Transportadora sem Alvará");
   if (!t?.certificado_numero) motivos.push("Transportadora sem Certificado");

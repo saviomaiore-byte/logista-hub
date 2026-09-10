@@ -34,6 +34,8 @@ export interface TransportadorVinculo {
   id: string;
   transportador_id: string;
   motorista_id: string;
+  /** Marcação explícita e manual: motorista próprio desta transportadora. */
+  motorista_proprio: boolean;
   motoristas?: { id: string; nome: string; cpf: string } | null;
 }
 
@@ -214,6 +216,29 @@ export function useDesvincularMotorista() {
     },
   });
 }
+
+/**
+ * Marca/desmarca manualmente o motorista próprio de um vínculo.
+ * Única forma de alterar `motorista_proprio` — nunca é inferido automaticamente.
+ */
+export function useMarcarMotoristaProprio() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, motorista_proprio }: { id: string; motorista_proprio: boolean }) => {
+      const { error } = await supabase
+        .from("transportador_motoristas")
+        .update({ motorista_proprio })
+        .eq("id", id);
+      if (reportDbError("atualizar motorista próprio", error)) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transportadorVinculosKey });
+      queryClient.invalidateQueries({ queryKey: motoristaVinculosKey });
+    },
+  });
+}
+
 
 interface VeiculoPayload {
   transportador_id: string;

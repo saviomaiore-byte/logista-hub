@@ -101,7 +101,7 @@ describe("checkMotoristaAptidao", () => {
   });
 
   it("inapto quando a transportadora não tem ANTT, Alvará ou Certificado", () => {
-    const r = checkMotoristaAptidao(motoristaOk, true, {
+    const r = checkMotoristaAptidao(motoristaOk, docsOk, {
       antt_numero: null,
       alvara_numero: null,
       certificado_numero: null,

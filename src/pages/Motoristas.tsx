@@ -41,6 +41,7 @@ export default function Motoristas() {
   // mesmos campos e mesma ordenação) em vez de duplicar a query.
   const { data: transportadoras = [], isLoading: loadingTransportadoras } =
     useTransportadoresOpcoes();
+  const { data: transportadorasCompletas = [] } = useTransportadores();
   const { data: motoristaTransportadoras = {}, isLoading: loadingVinculos } =
     useMotoristaVinculos();
 

@@ -209,7 +209,11 @@ export default function Relatorios() {
         return;
       }
 
-      const contratosSet = new Set((contratos || []).map((c) => c.motorista_id));
+      const contratosSet = new Set(
+        (contratos || [])
+          .filter((c) => !!c.arquivo_url && c.tipo === "contrato")
+          .map((c) => c.motorista_id)
+      );
 
       const result: TransportadorComMotoristas[] = (transportadores || []).map((t) => {
         const motoristaIds = (links || [])

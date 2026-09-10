@@ -201,8 +201,7 @@ export default function Relatorios() {
 
       const { data: contratos, error: contratosError } = await supabase
         .from("contratos")
-        .select("motorista_id, status")
-        .eq("status", "assinado");
+        .select("motorista_id, arquivo_url, tipo");
 
       const primeiroErro = transportadoresError || linksError || motoristasError || contratosError;
       if (reportDbError("carregar dados do relatório", primeiroErro, (m) => toast({ title: m, variant: "destructive" }))) {
@@ -210,7 +209,11 @@ export default function Relatorios() {
         return;
       }
 
-      const contratosSet = new Set((contratos || []).map((c) => c.motorista_id));
+      const contratosSet = new Set(
+        (contratos || [])
+          .filter((c) => !!c.arquivo_url && c.tipo === "contrato")
+          .map((c) => c.motorista_id)
+      );
 
       const result: TransportadorComMotoristas[] = (transportadores || []).map((t) => {
         const motoristaIds = (links || [])
@@ -267,12 +270,12 @@ export default function Relatorios() {
 
     dados.forEach((t) => {
       const sit = t.situacao_operacional || "em_praca_apto";
-      if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
-      if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       t.motoristas.forEach((m) => {
         totalMotoristas++;
         if (m.apto) aptos++;
         else inaptos++;
+        if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
+        if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       });
     });
 

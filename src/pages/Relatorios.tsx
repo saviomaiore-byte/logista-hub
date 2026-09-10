@@ -480,7 +480,7 @@ export default function Relatorios() {
 
           {/* Data preview tab */}
           <TabsContent value="preview" className="mt-4 space-y-6">
-            <RelatorioDadosTab dados={dados} loading={loading} />
+            <RelatorioDadosTab dados={dadosFiltrados} loading={loading} />
           </TabsContent>
 
           {/* PDF Preview tab */}

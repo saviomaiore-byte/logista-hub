@@ -71,7 +71,9 @@ export default defineTool({
         .select("id, razao_social, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero")
         .eq("status", "ativo")
         .order("razao_social", { ascending: true }),
-      supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+      supabase
+        .from("transportador_motoristas")
+        .select("transportador_id, motorista_id, motorista_proprio"),
       supabase
         .from("motoristas")
         .select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),

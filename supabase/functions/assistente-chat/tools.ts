@@ -307,7 +307,9 @@ export function buildTools(supabase: SupabaseClient) {
             .select("id, razao_social, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero")
             .eq("status", "ativo")
             .order("razao_social", { ascending: true }),
-          supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+          supabase
+            .from("transportador_motoristas")
+            .select("transportador_id, motorista_id, motorista_proprio"),
           supabase
             .from("motoristas")
             .select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),
@@ -347,7 +349,12 @@ export function buildTools(supabase: SupabaseClient) {
             const m = porId.get(link.motorista_id);
             if (!m) continue;
             total_analisado++;
-            const { apto, motivos } = checkMotoristaAptidao(m, comContrato.has(m.id), t);
+            const { apto, motivos } = checkMotoristaAptidao(
+              m,
+              comContrato.has(m.id),
+              t,
+              link.motorista_proprio === true,
+            );
             if (!apto) {
               pendencias.push({
                 entidade: "motorista",
@@ -560,7 +567,9 @@ export function buildTools(supabase: SupabaseClient) {
             .from("transportadores")
             .select("id, razao_social, status, antt_numero, alvara_numero, certificado_numero")
             .eq("status", "ativo"),
-          supabase.from("transportador_motoristas").select("transportador_id, motorista_id"),
+          supabase
+            .from("transportador_motoristas")
+            .select("transportador_id, motorista_id, motorista_proprio"),
           supabase
             .from("motoristas")
             .select("id, nome, status, cnh_vencimento, mopp_vencimento, mopp_vitalicio"),

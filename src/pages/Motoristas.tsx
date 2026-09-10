@@ -11,6 +11,7 @@ import {
   useExcluirMotorista,
 } from "@/hooks/useMotoristas";
 import { useTransportadoresOpcoes } from "@/hooks/useContratos";
+import { useTransportadores } from "@/hooks/useTransportadores";
 import { MotoristasHeader } from "@/components/motorista/MotoristasHeader";
 import { MotoristasFilters } from "@/components/motorista/MotoristasFilters";
 import { MotoristasList } from "@/components/motorista/MotoristasList";
@@ -40,6 +41,7 @@ export default function Motoristas() {
   // mesmos campos e mesma ordenação) em vez de duplicar a query.
   const { data: transportadoras = [], isLoading: loadingTransportadoras } =
     useTransportadoresOpcoes();
+  const { data: transportadorasCompletas = [] } = useTransportadores();
   const { data: motoristaTransportadoras = {}, isLoading: loadingVinculos } =
     useMotoristaVinculos();
 
@@ -118,6 +120,12 @@ export default function Motoristas() {
     return matchesSearch && matchesStatus && matchesTransportadora;
   });
 
+  const transportadoraDoMotoristaEmDocs = docsMotorista
+    ? transportadorasCompletas.find((t) =>
+        (motoristaTransportadoras[docsMotorista.id] || []).includes(t.id)
+      ) || null
+    : null;
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
@@ -159,7 +167,11 @@ export default function Motoristas() {
           <p>Mostrando {filteredMotoristas.length} de {motoristas.length} motoristas</p>
         </div>
 
-        <MotoristaDocsDialog motorista={docsMotorista} onClose={() => setDocsMotorista(null)} />
+        <MotoristaDocsDialog
+          motorista={docsMotorista}
+          transportadora={transportadoraDoMotoristaEmDocs}
+          onClose={() => setDocsMotorista(null)}
+        />
 
         <MotoristaFormDialog
           open={open}

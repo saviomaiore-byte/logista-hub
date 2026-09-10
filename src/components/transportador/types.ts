@@ -14,6 +14,9 @@ export type Transportador = {
   rg: string | null;
   status: string;
   situacao_operacional: string | null;
+  antt_numero: string | null;
+  alvara_numero: string | null;
+  certificado_numero: string | null;
   created_at: string;
   motorista_id: string | null;
 };

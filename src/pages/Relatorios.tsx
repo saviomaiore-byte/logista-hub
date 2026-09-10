@@ -194,7 +194,7 @@ export default function Relatorios() {
 
       const { data: links, error: linksError } = await supabase
         .from("transportador_motoristas")
-        .select("transportador_id, motorista_id");
+        .select("transportador_id, motorista_id, motorista_proprio");
 
       const { data: motoristas, error: motoristasError } = await supabase
         .from("motoristas")

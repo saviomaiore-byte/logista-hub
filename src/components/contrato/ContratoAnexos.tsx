@@ -5,7 +5,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Trash2, Plus, Clock, CheckCircle, XCircle } from "lucide-react";
+import { FileText, Download, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { openSignedFile } from "@/lib/storage";
@@ -111,23 +111,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
     toast.success("Contrato excluído!");
   };
 
-
-  const getStatusBadge = (status: string | null) => {
-    const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {
-      enviado: { class: "status-warning", label: "Enviado", icon: Clock },
-      assinado: { class: "status-success", label: "Assinado", icon: CheckCircle },
-      pendente: { class: "bg-muted text-muted-foreground", label: "Pendente", icon: Clock },
-      recusado: { class: "status-danger", label: "Recusado", icon: XCircle },
-    };
-    const s = status || "pendente";
-    const { class: className, label, icon: Icon } = config[s] || config.pendente;
-    return (
-      <span className={cn("status-badge inline-flex items-center gap-1 text-xs", className)}>
-        <Icon className="h-3 w-3" />
-        {label}
-      </span>
-    );
-  };
 
   if (loading) return <p className="py-4 text-sm text-muted-foreground">Carregando contratos...</p>;
 

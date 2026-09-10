@@ -209,12 +209,11 @@ export default function Contratos() {
       ) : (
         contratos.map((contrato) => (
           <div key={contrato.id} className="space-y-3 rounded-xl border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">{contrato.empresa}</p>
                 {contrato.cnpj && <p className="text-sm text-muted-foreground">{contrato.cnpj}</p>}
               </div>
-              <div className="flex items-center gap-2">{getStatusBadge(contrato.status)}</div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -282,7 +281,6 @@ export default function Contratos() {
               <th className="px-6 py-4 text-left">Vinculado a</th>
               <th className="px-6 py-4 text-left">CNPJ</th>
               <th className="px-6 py-4 text-left">Data Envio</th>
-              <th className="px-6 py-4 text-left">Status</th>
               <th className="px-6 py-4 text-right">Ações</th>
             </tr>
           </thead>

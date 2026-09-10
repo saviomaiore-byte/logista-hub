@@ -270,12 +270,14 @@ export default function Relatorios() {
 
     dados.forEach((t) => {
       const sit = t.situacao_operacional || "em_praca_apto";
+      if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
+      if (sit === "em_viagem" || sit === "em_viagem_apto") {
+        emViagem += t.motoristas.length;
+      }
       t.motoristas.forEach((m) => {
         totalMotoristas++;
         if (m.apto) aptos++;
         else inaptos++;
-        if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
-        if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       });
     });
 

@@ -590,10 +590,12 @@ var analisar_pendencias_default = defineTool7({
         }
       }
       if (entidade === "transportador") continue;
-      const vinculados = links.filter((l) => l.transportador_id === t.id).map((l) => motoristaPorId.get(l.motorista_id)).filter((m) => Boolean(m));
-      for (const m of vinculados) {
+      const vinculados = links.filter((l) => l.transportador_id === t.id).map((l) => ({ motorista: motoristaPorId.get(l.motorista_id), proprio: l.motorista_proprio === true })).filter(
+        (v) => Boolean(v.motorista)
+      );
+      for (const { motorista: m, proprio } of vinculados) {
         total_analisado++;
-        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t);
+        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t, proprio);
         if (!apto) {
           pendencias.push({
             entidade: "motorista",

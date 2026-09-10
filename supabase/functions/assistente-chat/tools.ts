@@ -604,7 +604,12 @@ export function buildTools(supabase: SupabaseClient) {
             const m = porId.get(link.motorista_id);
             if (!m) continue;
             analisados++;
-            const { apto, motivos: mm } = checkMotoristaAptidao(m, comContrato.has(m.id), t);
+            const { apto, motivos: mm } = checkMotoristaAptidao(
+              m,
+              comContrato.has(m.id),
+              t,
+              link.motorista_proprio === true,
+            );
             if (!apto) {
               comPendencia++;
               mm.forEach((x) => motivos.set(x, (motivos.get(x) ?? 0) + 1));

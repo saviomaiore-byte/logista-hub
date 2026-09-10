@@ -120,12 +120,14 @@ export default defineTool({
 
       const vinculados = links
         .filter((l) => l.transportador_id === t.id)
-        .map((l) => motoristaPorId.get(l.motorista_id))
-        .filter((m): m is NonNullable<typeof m> => Boolean(m));
+        .map((l) => ({ motorista: motoristaPorId.get(l.motorista_id), proprio: l.motorista_proprio === true }))
+        .filter((v): v is { motorista: NonNullable<typeof v.motorista>; proprio: boolean } =>
+          Boolean(v.motorista),
+        );
 
-      for (const m of vinculados) {
+      for (const { motorista: m, proprio } of vinculados) {
         total_analisado++;
-        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t);
+        const { apto, motivos } = checkMotoristaAptidao(m, contratosSet.has(m.id), t, proprio);
         if (!apto) {
           pendencias.push({
             entidade: "motorista",

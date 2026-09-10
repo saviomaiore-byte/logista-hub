@@ -237,7 +237,6 @@ export function ContratoAnexos({ motorista_id, transportador_id, nome }: Contrat
                   {c.modelo && (
                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{c.modelo}</span>
                   )}
-                  {getStatusBadge(c.status)}
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {c.empresa}

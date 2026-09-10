@@ -55,6 +55,7 @@ export default function Relatorios() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [dados, setDados] = useState<TransportadorComMotoristas[]>([]);
+  const [filtro, setFiltro] = useState<FiltroRelatorio>("todos");
   const [activeTab, setActiveTab] = useState("preview");
 
   // Preview state

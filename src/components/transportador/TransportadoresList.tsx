@@ -14,6 +14,7 @@ type Props = {
   onDelete: (id: string) => void;
   onVincular: (transpId: string) => void;
   onRemoveVinculo: (vinculoId: string) => void;
+  onToggleMotoristaProprio: (vinculoId: string, motoristaProprio: boolean) => void;
   onVerDocs: (t: Transportador) => void;
   onVerContratos: (t: Transportador) => void;
 };
@@ -26,6 +27,7 @@ export function TransportadoresList({
   onDelete,
   onVincular,
   onRemoveVinculo,
+  onToggleMotoristaProprio,
   onVerDocs,
   onVerContratos,
 }: Props) {

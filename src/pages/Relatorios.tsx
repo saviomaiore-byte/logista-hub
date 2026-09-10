@@ -231,7 +231,12 @@ export default function Relatorios() {
           .filter((m) => motoristaIds.includes(m.id))
           .map((m) => {
             const temContrato = contratosSet.has(m.id);
-            const { apto, motivos } = checkMotoristaAptidao(m, temContrato, t);
+            const temAdesao = adesoesSet.has(m.id);
+            const { apto, motivos } = checkMotoristaAptidao(
+              m,
+              { contrato: temContrato, adesao: temAdesao },
+              t,
+            );
             return {
               id: m.id,
               nome: m.nome,

@@ -289,6 +289,32 @@ export default function Relatorios() {
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
 
+  const dadosFiltrados = useMemo(() => {
+    if (filtro === "todos") return dados;
+
+    return dados
+      .map((t) => {
+        const sit = t.situacao_operacional || "em_praca_apto";
+
+        if (filtro === "em_praca") {
+          if (sit === "em_praca" || sit === "em_praca_apto") return t;
+          return null;
+        }
+
+        if (filtro === "em_viagem") {
+          if (sit === "em_viagem" || sit === "em_viagem_apto") return t;
+          return null;
+        }
+
+        const motoristasFiltrados = t.motoristas.filter((m) =>
+          filtro === "aptos" ? m.apto : !m.apto
+        );
+        if (motoristasFiltrados.length === 0) return null;
+        return { ...t, motoristas: motoristasFiltrados };
+      })
+      .filter((t): t is TransportadorComMotoristas => t !== null);
+  }, [dados, filtro]);
+
   function gerarPDF() {
     const doc = buildPdfDoc(dados, resumo);
     doc.save(`relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.pdf`);

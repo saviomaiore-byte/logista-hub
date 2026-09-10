@@ -175,24 +175,6 @@ export default function Contratos() {
   };
 
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { class: string; label: string; icon: typeof CheckCircle }> = {
-      enviado: { class: "status-warning", label: "Enviado", icon: Clock },
-      assinado: { class: "status-success", label: "Assinado", icon: CheckCircle },
-      pendente: { class: "bg-muted text-muted-foreground", label: "Pendente", icon: Clock },
-      recusado: { class: "status-danger", label: "Recusado", icon: XCircle },
-    };
-
-    const { class: className, label, icon: Icon } = config[status] || config.pendente;
-
-    return (
-      <span className={cn("status-badge inline-flex items-center gap-1", className)}>
-        <Icon className="h-3 w-3" />
-        {label}
-      </span>
-    );
-  };
-
   const getTipoBadge = (tipo: string) => {
     const labels: Record<string, string> = {
       contrato: "Contrato",

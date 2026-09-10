@@ -42,7 +42,7 @@ import { buildPdfDoc } from "@/components/relatorio/relatorioPdf";
 import { buildExcelWorkbook } from "@/components/relatorio/relatorioExcel";
 import { SITUACAO_LABELS, SITUACAO_ICONS, DIAS_SEMANA, formatDate, docStatus, type TransportadorComMotoristas, type MotoristaRelatorio } from "@/components/relatorio/types";
 import { RelatoriosHeader } from "@/components/relatorio/RelatoriosHeader";
-import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCards";
+import { RelatorioResumoCards, type FiltroRelatorio } from "@/components/relatorio/RelatorioResumoCards";
 import { RelatorioDadosTab } from "@/components/relatorio/RelatorioDadosTab";
 import { PdfPreviewTab } from "@/components/relatorio/PdfPreviewTab";
 import { ExcelPreviewTab } from "@/components/relatorio/ExcelPreviewTab";

@@ -11,6 +11,7 @@ import {
   useExcluirMotorista,
 } from "@/hooks/useMotoristas";
 import { useTransportadoresOpcoes } from "@/hooks/useContratos";
+import { useTransportadores } from "@/hooks/useTransportadores";
 import { MotoristasHeader } from "@/components/motorista/MotoristasHeader";
 import { MotoristasFilters } from "@/components/motorista/MotoristasFilters";
 import { MotoristasList } from "@/components/motorista/MotoristasList";

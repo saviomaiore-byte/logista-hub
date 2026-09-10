@@ -211,7 +211,11 @@ export default function Relatorios() {
 
       const contratosSet = new Set(
         (contratos || [])
-          .filter((c) => !!c.arquivo_url && c.tipo === "contrato")
+          .filter(
+            (c) =>
+              !!c.arquivo_url &&
+              (c.tipo === "contrato" || c.tipo === "adesao")
+          )
           .map((c) => c.motorista_id)
       );
 

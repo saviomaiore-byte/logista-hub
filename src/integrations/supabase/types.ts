@@ -823,18 +823,21 @@ export type Database = {
           created_at: string
           id: string
           motorista_id: string
+          motorista_proprio: boolean
           transportador_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           motorista_id: string
+          motorista_proprio?: boolean
           transportador_id: string
         }
         Update: {
           created_at?: string
           id?: string
           motorista_id?: string
+          motorista_proprio?: boolean
           transportador_id?: string
         }
         Relationships: [

@@ -455,7 +455,7 @@ export default function Relatorios() {
         />
 
         {/* Summary Cards */}
-        <RelatorioResumoCards resumo={resumo} />
+        <RelatorioResumoCards resumo={resumo} filtro={filtro} onFiltroChange={setFiltro} />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>

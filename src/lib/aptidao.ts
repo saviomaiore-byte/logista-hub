@@ -1,6 +1,7 @@
 import { isPast, parseISO } from "date-fns";
 
 export interface MotoristaAptidaoInput {
+  nome?: string | null;
   status?: string | null;
   cnh_vencimento?: string | null;
   mopp_vencimento?: string | null;
@@ -8,9 +9,54 @@ export interface MotoristaAptidaoInput {
 }
 
 export interface TransportadoraAptidaoInput {
+  razao_social?: string | null;
   antt_numero?: string | null;
   alvara_numero?: string | null;
   certificado_numero?: string | null;
+}
+
+/** Sufixos societários ignorados na comparação nome ↔ razão social. */
+const SUFIXOS_SOCIETARIOS = ["me", "mei", "epp", "eireli", "ltda", "sa", "s a", "eirelli"];
+
+function normalizarNome(valor?: string | null): string {
+  if (!valor) return "";
+  let base = valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+
+  // Remove sufixos societários no final (podem estar encadeados: "... ltda me").
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    for (const sufixo of SUFIXOS_SOCIETARIOS) {
+      if (base === sufixo) continue;
+      if (base.endsWith(` ${sufixo}`)) {
+        base = base.slice(0, -(sufixo.length + 1)).trim();
+        mudou = true;
+      }
+    }
+  }
+
+  return base;
+}
+
+/**
+ * Identifica o caso especial "motorista que também é a transportadora avaliada".
+ * Comparação por igualdade exata após normalização (sem correspondência parcial
+ * ou aproximada). Nomes vazios nunca ativam a exceção.
+ */
+export function isMotoristaProprioTransportador(
+  nomeMotorista?: string | null,
+  razaoSocial?: string | null,
+): boolean {
+  const a = normalizarNome(nomeMotorista);
+  const b = normalizarNome(razaoSocial);
+  if (!a || !b) return false;
+  return a === b;
 }
 
 export interface AptidaoResult {

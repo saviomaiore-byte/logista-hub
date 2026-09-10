@@ -68,6 +68,7 @@ export default function Transportadores() {
   const deleteTransp = useExcluirTransportador();
   const addVinculo = useVincularMotorista();
   const removeVinculo = useDesvincularMotorista();
+  const marcarProprio = useMarcarMotoristaProprio();
   const saveCavalo = useSalvarCavalo();
   const deleteCavalo = useExcluirCavalo();
   const saveReboque = useSalvarReboque();
@@ -106,7 +107,31 @@ export default function Transportadores() {
   };
 
   const handleRemoveVinculo = (id: string) => {
+    const vinculo = (vinculos as any[]).find((v) => v.id === id);
+    if (
+      vinculo?.motorista_proprio &&
+      !confirm(
+        "Este motorista está marcado como Motorista Próprio desta transportadora. Ao remover o vínculo, a marcação será perdida e o motorista voltará a exigir Contrato e Termo de Adesão. Deseja remover mesmo assim?",
+      )
+    ) {
+      return;
+    }
     removeVinculo.mutate(id, { onSuccess: () => toast({ title: "Motorista desvinculado" }) });
+  };
+
+  const handleToggleMotoristaProprio = (id: string, motorista_proprio: boolean) => {
+    marcarProprio.mutate(
+      { id, motorista_proprio },
+      {
+        onSuccess: () =>
+          toast({
+            title: motorista_proprio
+              ? "Marcado como motorista próprio"
+              : "Marcação de motorista próprio removida",
+          }),
+        onError: errorToast,
+      },
+    );
   };
 
   const handleSaveCavalo = (values: any) => {

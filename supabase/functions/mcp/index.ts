@@ -506,9 +506,11 @@ import { z as z8 } from "npm:zod@^3.25.76";
 
 // src/lib/aptidao.ts
 import { isPast, parseISO } from "npm:date-fns@^3.6.0";
-function checkMotoristaAptidao(m, temContrato, transportadora) {
+function checkMotoristaAptidao(m, documentos, transportadora) {
   const motivos = [];
-  if (!temContrato) motivos.push("Sem contrato assinado");
+  const docs = typeof documentos === "boolean" ? { contrato: documentos, adesao: documentos } : documentos;
+  if (!docs.contrato) motivos.push("Sem contrato assinado");
+  if (!docs.adesao) motivos.push("Sem Termo de Ades\xE3o");
   if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
   if (!transportadora?.alvara_numero) motivos.push("Transportadora sem Alvar\xE1");
   if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");

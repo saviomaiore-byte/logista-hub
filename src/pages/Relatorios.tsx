@@ -212,11 +212,13 @@ export default function Relatorios() {
 
       const contratosSet = new Set(
         (contratos || [])
-          .filter(
-            (c) =>
-              !!c.arquivo_url &&
-              (c.tipo === "contrato" || c.tipo === "adesao")
-          )
+          .filter((c) => !!c.arquivo_url && c.tipo === "contrato")
+          .map((c) => c.motorista_id)
+      );
+
+      const adesoesSet = new Set(
+        (contratos || [])
+          .filter((c) => !!c.arquivo_url && c.tipo === "adesao")
           .map((c) => c.motorista_id)
       );
 
@@ -229,7 +231,12 @@ export default function Relatorios() {
           .filter((m) => motoristaIds.includes(m.id))
           .map((m) => {
             const temContrato = contratosSet.has(m.id);
-            const { apto, motivos } = checkMotoristaAptidao(m, temContrato, t);
+            const temAdesao = adesoesSet.has(m.id);
+            const { apto, motivos } = checkMotoristaAptidao(
+              m,
+              { contrato: temContrato, adesao: temAdesao },
+              t,
+            );
             return {
               id: m.id,
               nome: m.nome,

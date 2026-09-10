@@ -512,7 +512,6 @@ function checkMotoristaAptidao(m, documentos, transportadora) {
   if (!docs.contrato) motivos.push("Sem contrato assinado");
   if (!docs.adesao) motivos.push("Sem Termo de Ades\xE3o");
   if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
-  if (!transportadora?.alvara_numero) motivos.push("Transportadora sem Alvar\xE1");
   if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");
   if (m.cnh_vencimento && isPast(parseISO(m.cnh_vencimento))) motivos.push("CNH vencida");
   if (!m.mopp_vitalicio && m.mopp_vencimento && isPast(parseISO(m.mopp_vencimento))) {

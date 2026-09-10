@@ -42,7 +42,7 @@ import { buildPdfDoc } from "@/components/relatorio/relatorioPdf";
 import { buildExcelWorkbook } from "@/components/relatorio/relatorioExcel";
 import { SITUACAO_LABELS, SITUACAO_ICONS, DIAS_SEMANA, formatDate, docStatus, type TransportadorComMotoristas, type MotoristaRelatorio } from "@/components/relatorio/types";
 import { RelatoriosHeader } from "@/components/relatorio/RelatoriosHeader";
-import { RelatorioResumoCards } from "@/components/relatorio/RelatorioResumoCards";
+import { RelatorioResumoCards, type FiltroRelatorio } from "@/components/relatorio/RelatorioResumoCards";
 import { RelatorioDadosTab } from "@/components/relatorio/RelatorioDadosTab";
 import { PdfPreviewTab } from "@/components/relatorio/PdfPreviewTab";
 import { ExcelPreviewTab } from "@/components/relatorio/ExcelPreviewTab";
@@ -55,6 +55,7 @@ export default function Relatorios() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [dados, setDados] = useState<TransportadorComMotoristas[]>([]);
+  const [filtro, setFiltro] = useState<FiltroRelatorio>("todos");
   const [activeTab, setActiveTab] = useState("preview");
 
   // Preview state
@@ -288,6 +289,32 @@ export default function Relatorios() {
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
 
+  const dadosFiltrados = useMemo(() => {
+    if (filtro === "todos") return dados;
+
+    return dados
+      .map((t) => {
+        const sit = t.situacao_operacional || "em_praca_apto";
+
+        if (filtro === "em_praca") {
+          if (sit === "em_praca" || sit === "em_praca_apto") return t;
+          return null;
+        }
+
+        if (filtro === "em_viagem") {
+          if (sit === "em_viagem" || sit === "em_viagem_apto") return t;
+          return null;
+        }
+
+        const motoristasFiltrados = t.motoristas.filter((m) =>
+          filtro === "aptos" ? m.apto : !m.apto
+        );
+        if (motoristasFiltrados.length === 0) return null;
+        return { ...t, motoristas: motoristasFiltrados };
+      })
+      .filter((t): t is TransportadorComMotoristas => t !== null);
+  }, [dados, filtro]);
+
   function gerarPDF() {
     const doc = buildPdfDoc(dados, resumo);
     doc.save(`relatorio-motoristas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
@@ -428,7 +455,7 @@ export default function Relatorios() {
         />
 
         {/* Summary Cards */}
-        <RelatorioResumoCards resumo={resumo} />
+        <RelatorioResumoCards resumo={resumo} filtro={filtro} onFiltroChange={setFiltro} />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -453,7 +480,7 @@ export default function Relatorios() {
 
           {/* Data preview tab */}
           <TabsContent value="preview" className="mt-4 space-y-6">
-            <RelatorioDadosTab dados={dados} loading={loading} />
+            <RelatorioDadosTab dados={dadosFiltrados} loading={loading} />
           </TabsContent>
 
           {/* PDF Preview tab */}

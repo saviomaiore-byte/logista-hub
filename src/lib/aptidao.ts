@@ -18,18 +18,28 @@ export interface AptidaoResult {
   motivos: string[];
 }
 
+/** Documentos contratuais obrigatórios (ambos com arquivo anexado). */
+export interface DocumentosContratuais {
+  contrato: boolean;
+  adesao: boolean;
+}
+
 /**
  * Regras de aptidão do relatório semanal.
  * O motorista é apto quando não há nenhum motivo de inaptidão.
+ * `documentos` aceita boolean por compatibilidade (aplica-se aos dois documentos).
  */
 export function checkMotoristaAptidao(
   m: MotoristaAptidaoInput,
-  temContrato: boolean,
+  documentos: DocumentosContratuais | boolean,
   transportadora: TransportadoraAptidaoInput,
 ): AptidaoResult {
   const motivos: string[] = [];
+  const docs: DocumentosContratuais =
+    typeof documentos === "boolean" ? { contrato: documentos, adesao: documentos } : documentos;
 
-  if (!temContrato) motivos.push("Sem contrato assinado");
+  if (!docs.contrato) motivos.push("Sem contrato assinado");
+  if (!docs.adesao) motivos.push("Sem Termo de Adesão");
   if (!transportadora?.antt_numero) motivos.push("Transportadora sem ANTT");
   if (!transportadora?.alvara_numero) motivos.push("Transportadora sem Alvará");
   if (!transportadora?.certificado_numero) motivos.push("Transportadora sem Certificado");

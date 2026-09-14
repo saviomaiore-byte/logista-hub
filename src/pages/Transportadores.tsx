@@ -227,7 +227,6 @@ export default function Transportadores() {
               onVincular={(id) => { setVinculoTranspId(id); setShowVinculoDialog(true); }}
               onRemoveVinculo={handleRemoveVinculo}
               onToggleMotoristaProprio={handleToggleMotoristaProprio}
-              onVerDocs={(t) => { setDocsTransp(t); setDocsTab("anexos"); }}
               onVerContratos={(t) => { setDocsTransp(t); setDocsTab("contratos"); }}
             />
           </TabsContent>

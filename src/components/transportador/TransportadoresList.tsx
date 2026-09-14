@@ -15,7 +15,6 @@ type Props = {
   onVincular: (transpId: string) => void;
   onRemoveVinculo: (vinculoId: string) => void;
   onToggleMotoristaProprio: (vinculoId: string, motoristaProprio: boolean) => void;
-  onVerDocs: (t: Transportador) => void;
   onVerContratos: (t: Transportador) => void;
 };
 
@@ -28,7 +27,6 @@ export function TransportadoresList({
   onVincular,
   onRemoveVinculo,
   onToggleMotoristaProprio,
-  onVerDocs,
   onVerContratos,
 }: Props) {
   const { isAdmin, podeEditar } = usePermissoes();
@@ -90,9 +88,6 @@ export function TransportadoresList({
                 </Button>
               </div>
               <div className="flex items-center gap-1 pt-1 border-t border-border flex-wrap">
-                <Button variant="ghost" size="sm" onClick={() => onVerDocs(t)}>
-                  <FileText className="h-4 w-4 mr-1" /> Ver docs
-                </Button>
                 <Button variant="ghost" size="sm" onClick={() => onVerContratos(t)}>
                   <FileText className="h-4 w-4 mr-1" /> Ver contratos
                 </Button>
@@ -186,9 +181,6 @@ export function TransportadoresList({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1 flex-wrap">
-                      <Button variant="ghost" size="sm" onClick={() => onVerDocs(t)} title="Ver docs">
-                        <FileText className="h-4 w-4 mr-1" /> Ver docs
-                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => onVerContratos(t)} title="Ver contratos">
                         <FileText className="h-4 w-4 mr-1" /> Ver contratos
                       </Button>

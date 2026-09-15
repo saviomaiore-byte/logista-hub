@@ -1,10 +1,11 @@
+import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
+  subtitle?: ReactNode;
   icon: LucideIcon;
   trend?: {
     value: number;
@@ -29,12 +30,12 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
   };
 
   return (
-    <div className={cn("card-stat border-l-4", variantStyles[variant])}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{value}</p>
-          {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+    <div className={cn("card-stat", variantStyles[variant])}>
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-normal text-muted-foreground">{title}</p>
+          <p className="mt-5 text-[30px] font-semibold tracking-[-0.03em] text-foreground">{value}</p>
+          {subtitle && <div className="mt-1.5 text-xs font-normal leading-5 text-muted-foreground">{subtitle}</div>}
           {trend && (
             <div className="mt-2 flex flex-wrap items-center gap-1">
               <span
@@ -49,8 +50,8 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
             </div>
           )}
         </div>
-        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl sm:h-12 sm:w-12", iconStyles[variant])}>
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", iconStyles[variant])}>
+          <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
         </div>
       </div>
     </div>

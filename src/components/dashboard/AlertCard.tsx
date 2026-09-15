@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, FileWarning, Archive } from "lucide-react";
+import { Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,83 +45,79 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
     return `${dias} dias restantes`;
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "mopp":
-        return <FileWarning className="h-4 w-4" />;
-      case "cnh":
-        return <Clock className="h-4 w-4" />;
-      case "antt":
-        return <AlertTriangle className="h-4 w-4" />;
-      default:
-        return <FileWarning className="h-4 w-4" />;
-    }
-  };
+  const formatName = (name: string) =>
+    name.toLocaleLowerCase("pt-BR").replace(/(^|\s)(\S)/g, (_, space, letter) => `${space}${letter.toLocaleUpperCase("pt-BR")}`);
+
+  const initials = (name: string) =>
+    name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+      .format(new Date(`${iso}T12:00:00`))
+      .replace(" de ", " ");
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="border-b border-border bg-muted/30 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-warning" />
-          <h3 className="font-semibold text-foreground">Documentos com Atenção</h3>
-          <span className="status-badge status-warning sm:ml-auto">{alerts.length} alertas</span>
-          {onVerArquivados && (
-            <Button variant="ghost" size="sm" onClick={onVerArquivados}>
-              <Archive className="mr-1.5 h-4 w-4" />
-              Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
-            </Button>
-          )}
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Pendências prioritárias</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Itens que precisam de atenção imediata</p>
         </div>
+        {onVerArquivados && (
+          <Button variant="outline" size="sm" className="rounded-xl bg-card text-xs font-normal" onClick={onVerArquivados}>
+            Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
+          </Button>
+        )}
       </div>
-      <div className="divide-y divide-border">
-        {alerts.map((alert) => (
-          <div key={alert.id} className="p-4 transition-colors hover:bg-muted/30">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                {getTypeIcon(alert.type)}
+
+      <div>
+        <div className="hidden grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-3 border-b border-border bg-muted/15 px-5 py-3 text-[11px] font-medium text-muted-foreground md:grid">
+          <span className="pl-11">Motorista</span>
+          <span>Documento</span>
+          <span>Vencimento</span>
+          <span>Prazo</span>
+          <span />
+        </div>
+        <div className="divide-y divide-border">
+          {alerts.map((alert) => (
+            <div key={alert.id} className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-muted/20 md:grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] md:items-center md:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/[0.07] text-[10px] font-semibold text-primary">
+                  {initials(alert.motorista)}
+                </div>
+                <p className="truncate text-[13px] font-medium text-foreground">{formatName(alert.motorista)}</p>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-foreground">{alert.motorista}</p>
-                <p className="text-sm text-muted-foreground">
-                  {alert.documento} • Venc: {alert.vencimento}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={cn("status-badge w-fit", getStatusColor(alert.diasRestantes))}>
-                  {getStatusText(alert.diasRestantes)}
-                </span>
-                {onArquivar && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" title="Arquivar alerta">
-                        <Archive className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Arquivar este alerta?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Este documento continuará registrado e, caso esteja vencido, continuará vencido. Apenas o
-                          alerta será removido do Dashboard.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onArquivar(alert)}>Arquivar</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
+              <span className="text-xs text-foreground">{alert.documento}</span>
+              <span className="text-xs text-foreground">{formatDate(alert.vencimentoISO)}</span>
+              <span className={cn("status-badge w-fit gap-1 text-[10px]", getStatusColor(alert.diasRestantes))}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {getStatusText(alert.diasRestantes)}
+              </span>
+              {onArquivar && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Arquivar alerta">
+                      <Archive className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Arquivar este alerta?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        O documento continuará registrado. Apenas o alerta será removido do Dashboard.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onArquivar(alert)}>Arquivar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
-          </div>
-        ))}
-      </div>
-      {alerts.length > 5 && (
-        <div className="border-t border-border p-3 text-center">
-          <button className="text-sm font-medium text-primary hover:underline">Ver todos os alertas</button>
+          ))}
         </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }

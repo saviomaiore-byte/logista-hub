@@ -16,6 +16,7 @@ import Certificados from "./pages/Certificados";
 import DocumentosEmpresa from "./pages/DocumentosEmpresa";
 import Usuarios from "./pages/Usuarios";
 import Transportadores from "./pages/Transportadores";
+import TransportadorDetalhe from "./pages/TransportadorDetalhe";
 import Seguranca from "./pages/Seguranca";
 import Relatorios from "./pages/Relatorios";
 import Assistente from "./pages/Assistente";
@@ -76,6 +77,7 @@ function AppRoutes() {
       <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
       <Route path="/conferencia-seguros" element={<ProtectedRoute><ConferenciaSeguros /></ProtectedRoute>} />
       <Route path="/transportadores" element={<ProtectedRoute><Transportadores /></ProtectedRoute>} />
+      <Route path="/transportadores/:id" element={<ProtectedRoute><TransportadorDetalhe /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
       <Route path="/conferencia" element={<ProtectedRoute><Conferencia /></ProtectedRoute>} />
       <Route path="/certificados" element={<ProtectedRoute><Certificados /></ProtectedRoute>} />

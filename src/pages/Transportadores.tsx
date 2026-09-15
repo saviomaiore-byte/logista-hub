@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -40,8 +41,11 @@ import { TransportadorDocsDialog } from "@/components/transportador/Transportado
 
 export default function Transportadores() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("transportadores");
   const [search, setSearch] = useState("");
+  const [regimeFilter, setRegimeFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const isMobile = useIsMobile();
 
   const [showTranspDialog, setShowTranspDialog] = useState(false);
@@ -173,11 +177,14 @@ export default function Transportadores() {
     deleteReboque.mutate(id, { onSuccess: () => toast({ title: "Reboque excluído" }) });
   };
 
-  const filteredTransp = transportadores.filter(
-    (t) =>
+  const filteredTransp = transportadores.filter((t) => {
+    const matchesSearch =
       t.razao_social.toLowerCase().includes(search.toLowerCase()) ||
-      t.cpf_cnpj.includes(search)
-  );
+      t.cpf_cnpj.includes(search);
+    const matchesRegime = regimeFilter === "todos" || t.inscricao_estadual === regimeFilter;
+    const matchesStatus = statusFilter === "todos" || t.status === statusFilter;
+    return matchesSearch && matchesRegime && matchesStatus;
+  });
 
   const filteredCavalos = cavalos.filter((c) =>
     c.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
@@ -200,28 +207,33 @@ export default function Transportadores() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <TransportadoresHeader total={transportadores.length} />
+        <TransportadoresHeader
+          total={transportadores.length}
+          onNew={() => { setEditingTransp(null); setShowTranspDialog(true); }}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="transportadores">Transportadores</TabsTrigger>
-            <TabsTrigger value="cavalos">Cavalos</TabsTrigger>
-            <TabsTrigger value="reboques">Reboques</TabsTrigger>
+          <TabsList className="rounded-xl bg-muted/70 p-1">
+            <TabsTrigger className="rounded-lg text-xs" value="transportadores">Transportadores</TabsTrigger>
+            <TabsTrigger className="rounded-lg text-xs" value="cavalos">Cavalos</TabsTrigger>
+            <TabsTrigger className="rounded-lg text-xs" value="reboques">Reboques</TabsTrigger>
           </TabsList>
 
-          <TransportadoresSearch value={search} onChange={setSearch} />
+          <TransportadoresSearch
+            value={search}
+            onChange={setSearch}
+            regime={regimeFilter}
+            onRegimeChange={setRegimeFilter}
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
 
-          <TabsContent value="transportadores" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => { setEditingTransp(null); setShowTranspDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Transportador
-              </Button>
-            </div>
-
+          <TabsContent value="transportadores" className="mt-0">
             <TransportadoresList
               items={filteredTransp}
               isMobile={isMobile}
               getMotoristasByTransp={getMotoristasByTransp}
+              onOpen={(t) => navigate(`/transportadores/${t.id}`)}
               onEdit={(t) => { setEditingTransp(t); setShowTranspDialog(true); }}
               onDelete={handleDeleteTransp}
               onVincular={(id) => { setVinculoTranspId(id); setShowVinculoDialog(true); }}

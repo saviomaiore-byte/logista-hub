@@ -239,11 +239,12 @@ export default function Relatorios() {
           .map((m) => {
             const temContrato = contratosSet.has(m.id);
             const temAdesao = adesoesSet.has(m.id);
+            const motoristaProprio = propriosSet.has(`${t.id}:${m.id}`);
             const { apto, motivos } = checkMotoristaAptidao(
               m,
               { contrato: temContrato, adesao: temAdesao },
               t,
-              propriosSet.has(`${t.id}:${m.id}`),
+              motoristaProprio,
             );
             return {
               id: m.id,
@@ -255,7 +256,7 @@ export default function Relatorios() {
               mopp_numero: m.mopp_numero,
               mopp_vencimento: m.mopp_vencimento,
               mopp_vitalicio: m.mopp_vitalicio,
-              tem_contrato: temContrato,
+              tem_contrato: temContrato || motoristaProprio,
               motivos_inaptidao: motivos,
               apto,
             };

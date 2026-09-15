@@ -4,117 +4,161 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard";
 import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { Users, FileText, AlertTriangle, Calendar } from "lucide-react";
+import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
+import { Users, Truck, UserCheck, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { reportDbError } from "@/lib/dbError";
-import {
-  alertaKey,
-  useAlertasArquivados,
-  useArquivarAlerta,
-} from "@/hooks/useAlertasArquivados";
+import { checkMotoristaAptidao } from "@/lib/aptidao";
+import { useAuth } from "@/contexts/AuthContext";
+import { alertaKey, useAlertasArquivados, useArquivarAlerta } from "@/hooks/useAlertasArquivados";
+import { useAtividadesRecentes } from "@/hooks/useAtividadesRecentes";
+
+type DashboardStats = {
+  transportadores: number;
+  transportadoresAtivos: number;
+  transportadoresInaptos: number;
+  motoristas: number;
+  motoristasAtivos: number;
+  motoristasInaptos: number;
+};
+
+const initialStats: DashboardStats = {
+  transportadores: 0,
+  transportadoresAtivos: 0,
+  transportadoresInaptos: 0,
+  motoristas: 0,
+  motoristasAtivos: 0,
+  motoristasInaptos: 0,
+};
+
+function diasEntreHoje(data: string, hoje: Date) {
+  const [ano, mes, dia] = String(data).slice(0, 10).split("-").map(Number);
+  const vencimento = new Date(ano, mes - 1, dia);
+  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  return Math.round((vencimento.getTime() - inicioHoje.getTime()) / 86_400_000);
+}
 
 export default function Index() {
-  const [stats, setStats] = useState({
-    motoristas: 0,
-    contratos: 0,
-    docsVencidos: 0,
-    certificados: 0,
-  });
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
+  const { user } = useAuth();
+  const displayName = user?.user_metadata?.nome || user?.email?.split("@")[0] || "Usuário";
+  const firstName = displayName.trim().split(" ")[0];
+  const dataAtual = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  }).format(new Date()).toUpperCase();
+  const [allDocuments, setAllDocuments] = useState<DashboardAlert[]>([]);
   const [allAlerts, setAllAlerts] = useState<DashboardAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [arquivadosOpen, setArquivadosOpen] = useState(false);
   const { data: arquivados = [] } = useAlertasArquivados();
   const arquivarAlerta = useArquivarAlerta();
+  const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
 
   const alerts = useMemo(() => {
     const arquivadosSet = new Set(
-      arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento))
+      arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)),
     );
     return allAlerts.filter(
-      (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO))
+      (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO)),
     );
   }, [allAlerts, arquivados]);
 
-
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboard = async () => {
       const hoje = new Date();
+      const [transportadoresResult, motoristasResult, vinculosResult, contratosResult] = await Promise.all([
+        supabase.from("transportadores").select("id, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero"),
+        supabase
+          .from("motoristas")
+          .select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio, antt_vencimento"),
+        supabase.from("transportador_motoristas").select("transportador_id, motorista_id, motorista_proprio"),
+        supabase.from("contratos").select("motorista_id, arquivo_url, tipo"),
+      ]);
 
-      const { count: motoristasCount, error: motoristasError } = await supabase
-        .from("motoristas")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "ativo");
+      const error =
+        transportadoresResult.error ||
+        motoristasResult.error ||
+        vinculosResult.error ||
+        contratosResult.error;
+      reportDbError("carregar indicadores do painel", error);
+      if (error) {
+        setLoading(false);
+        return;
+      }
 
-      const { count: contratosCount, error: contratosError } = await supabase
-        .from("contratos")
-        .select("*", { count: "exact", head: true })
-        .in("status", ["assinado", "enviado"]);
+      const transportadores = transportadoresResult.data || [];
+      const motoristas = motoristasResult.data || [];
+      const vinculos = vinculosResult.data || [];
+      const contratos = contratosResult.data || [];
+      const documentos: DashboardAlert[] = [];
 
+      const transportadoresAtivos = transportadores.filter((item) => item.status === "ativo");
+      const transportadoresPorId = new Map(transportadoresAtivos.map((item) => [item.id, item]));
+      const motoristasPorId = new Map(motoristas.map((item) => [item.id, item]));
+      const contratosSet = new Set(
+        contratos.filter((item) => !!item.arquivo_url && item.tipo === "contrato").map((item) => item.motorista_id),
+      );
+      const adesoesSet = new Set(
+        contratos.filter((item) => !!item.arquivo_url && item.tipo === "adesao").map((item) => item.motorista_id),
+      );
+      const avaliacoesMotoristas = vinculos
+        .filter((vinculo) => transportadoresPorId.has(vinculo.transportador_id))
+        .map((vinculo) => {
+          const motorista = motoristasPorId.get(vinculo.motorista_id);
+          const transportador = transportadoresPorId.get(vinculo.transportador_id);
+          if (!motorista || !transportador) return null;
+          return checkMotoristaAptidao(
+            motorista,
+            { contrato: contratosSet.has(motorista.id), adesao: adesoesSet.has(motorista.id) },
+            transportador,
+            vinculo.motorista_proprio === true,
+          );
+        })
+        .filter((resultado): resultado is NonNullable<typeof resultado> => resultado !== null);
 
-
-
-      const { data: motoristas, error: docsError } = await supabase
-        .from("motoristas")
-        .select("id, nome, cnh_vencimento, mopp_vencimento, antt_vencimento");
-
-      reportDbError("carregar indicadores do painel", motoristasError || contratosError || docsError);
-
-      let docsVencidos = 0;
-      const alertsList: DashboardAlert[] = [];
-
-      motoristas?.forEach((m) => {
-        const checkDoc = (tipo: string, vencimento: string | null) => {
+      motoristas.forEach((motorista) => {
+        const adicionarDocumento = (tipo: string, vencimento: string | null) => {
           if (!vencimento) return;
-          const venc = new Date(vencimento);
-          const diff = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-          const item: DashboardAlert = {
-            id: `${m.id}-${tipo}`,
+          const diasRestantes = diasEntreHoje(vencimento, hoje);
+          documentos.push({
+            id: `${motorista.id}-${tipo}`,
             type: tipo.toLowerCase(),
-            motorista: m.nome,
+            motorista: motorista.nome,
             documento: tipo,
-            vencimento: new Date(vencimento).toLocaleDateString("pt-BR"),
+            vencimento: new Date(`${String(vencimento).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR"),
             vencimentoISO: String(vencimento).slice(0, 10),
             entidade: "motorista",
-            entidadeId: m.id,
-            diasRestantes: diff,
-          };
-          if (diff < 0) {
-            docsVencidos++;
-            alertsList.push(item);
-          } else if (diff <= 30) {
-            alertsList.push(item);
-          }
+            entidadeId: motorista.id,
+            diasRestantes,
+          });
         };
-
-        checkDoc("CNH", m.cnh_vencimento);
-        checkDoc("MOPP", m.mopp_vencimento);
-        checkDoc("ANTT", m.antt_vencimento);
+        adicionarDocumento("CNH", motorista.cnh_vencimento);
+        if (!motorista.mopp_vitalicio) adicionarDocumento("MOPP", motorista.mopp_vencimento);
+        adicionarDocumento("ANTT", motorista.antt_vencimento);
       });
 
-      const { count: certCount, error: certError } = await supabase
-        .from("certificados")
-        .select("*", { count: "exact", head: true });
+      documentos.sort((a, b) => a.diasRestantes - b.diasRestantes);
+      const transportadoresInaptos = transportadoresAtivos.filter(
+        (item) => item.situacao_operacional === "inapto",
+      ).length;
+      const motoristasAptos = avaliacoesMotoristas.filter((resultado) => resultado.apto).length;
 
       setStats({
-        motoristas: motoristasCount || 0,
-        contratos: contratosCount || 0,
-        docsVencidos,
-        certificados: certCount || 0,
+        transportadores: transportadoresAtivos.length,
+        transportadoresAtivos: transportadoresAtivos.length - transportadoresInaptos,
+        transportadoresInaptos,
+        motoristas: avaliacoesMotoristas.length,
+        motoristasAtivos: motoristasAptos,
+        motoristasInaptos: avaliacoesMotoristas.length - motoristasAptos,
       });
-
-      alertsList.sort((a, b) => a.diasRestantes - b.diasRestantes);
-      setAllAlerts(alertsList);
-
+      setAllDocuments(documentos);
+      setAllAlerts(documentos.filter((item) => item.diasRestantes <= 30));
       setLoading(false);
     };
-
-    fetchStats();
+    fetchDashboard();
   }, []);
-
-  const mockActivities = [
-    { id: "1", type: "contrato" as const, title: "Sistema iniciado", description: "Dashboard carregado", time: "Agora" },
-  ];
 
   if (loading) {
     return (
@@ -128,55 +172,46 @@ export default function Index() {
 
   return (
     <MainLayout>
-      <div className="animate-fade-in space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">Visão geral do sistema de gestão de transportadores</p>
-        </div>
+      <div className="animate-fade-in space-y-5">
+        <header className="pb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">{dataAtual}</p>
+          <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-foreground sm:text-[30px]">Bom dia, {firstName}.</h1>
+          <p className="mt-1.5 text-sm font-normal text-muted-foreground">Acompanhe os principais indicadores da sua operação.</p>
+        </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Motoristas Ativos"
-            value={stats.motoristas}
-            subtitle="Cadastrados no sistema"
-            icon={Users}
-            variant="default"
+            title="Transportadores"
+            value={stats.transportadores}
+            subtitle={<><strong className="font-semibold text-primary">{stats.transportadoresAtivos} ativos</strong><span> · {stats.transportadoresInaptos} transportadores inaptos</span></>}
+            icon={Truck}
           />
           <StatCard
-            title="Contratos Vigentes"
-            value={stats.contratos}
-            subtitle="Assinados ou enviados"
-            icon={FileText}
+            title="Transportadores aptos"
+            value={stats.transportadoresAtivos}
+            subtitle={<strong className="font-semibold text-amber-600">{stats.transportadoresInaptos} transportadores inaptos</strong>}
+            icon={BadgeCheck}
             variant="success"
           />
           <StatCard
-            title="Docs Vencidos"
-            value={stats.docsVencidos}
-            subtitle={stats.docsVencidos > 0 ? "Requer atenção imediata" : "Todos em dia!"}
-            icon={AlertTriangle}
-            variant={stats.docsVencidos > 0 ? "danger" : "success"}
+            title="Motoristas"
+            value={stats.motoristas}
+            subtitle={<><strong className="font-semibold text-primary">{stats.motoristasAtivos} ativos</strong><span> · {stats.motoristasInaptos} motoristas inaptos</span></>}
+            icon={Users}
+          />
+          <StatCard
+            title="Motoristas aptos"
+            value={stats.motoristasAtivos}
+            subtitle={<strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>}
+            icon={UserCheck}
+            variant="success"
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <StatCard
-            title="Certificados"
-            value={stats.certificados}
-            subtitle="Cadastrados"
-            icon={Calendar}
-            variant="default"
-          />
-          <StatCard
-            title="Alertas Ativos"
-            value={alerts.length}
-            subtitle="Documentos com atenção"
-            icon={AlertTriangle}
-            variant={alerts.length > 0 ? "warning" : "success"}
-          />
-        </div>
+        <DashboardInsights documents={allDocuments} />
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+          <div>
             {alerts.length > 0 ? (
               <AlertCard
                 alerts={alerts.slice(0, 5)}
@@ -193,31 +228,20 @@ export default function Index() {
                 }
               />
             ) : (
-              <div className="rounded-xl border border-border bg-card p-8 text-center">
-                <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-success" />
-                <h3 className="mb-2 font-semibold text-foreground">Tudo em dia!</h3>
-                <p className="text-muted-foreground">Nenhum documento próximo do vencimento.</p>
-                <button
-                  className="mt-4 text-sm font-medium text-primary hover:underline"
-                  onClick={() => setArquivadosOpen(true)}
-                >
+              <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-card">
+                <BadgeCheck className="mx-auto mb-3 h-10 w-10 text-success" />
+                <h3 className="font-semibold text-foreground">Tudo em dia!</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Nenhum documento próximo do vencimento.</p>
+                <button className="mt-4 text-sm font-semibold text-primary hover:underline" onClick={() => setArquivadosOpen(true)}>
                   Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
                 </button>
               </div>
             )}
           </div>
-
-          <div>
-            <QuickActions />
-          </div>
+          <RecentActivityCard activities={atividadesRecentes} />
         </div>
 
         <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
-
-
-        <div>
-          <RecentActivityCard activities={mockActivities} />
-        </div>
       </div>
     </MainLayout>
   );

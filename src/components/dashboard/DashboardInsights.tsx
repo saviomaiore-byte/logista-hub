@@ -118,7 +118,7 @@ export function DashboardInsights({ documents }: { documents: DashboardAlert[] }
                   cursor={{ stroke: "hsl(var(--primary))", strokeDasharray: "4 4" }}
                   content={<ChartTooltip />}
                 />
-                <Area type="monotone" dataKey="documentos" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#dashboardArea)" activeDot={{ r: 6, onClick: (dot: { payload?: { payload?: never } }) => { const period = (dot.payload ?? dot) as unknown as PeriodFilter extends never ? never : Parameters<typeof setSelectedPeriod>[0]; setSelectedPeriod(period); } }} />
+                <Area type="monotone" dataKey="documentos" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#dashboardArea)" activeDot={{ r: 6, onClick: (dot) => setSelectedPeriod(((dot as { payload?: ChartPeriod }).payload ?? (dot as unknown as ChartPeriod)) as ChartPeriod) }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

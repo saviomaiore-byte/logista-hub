@@ -72,11 +72,6 @@ export function AlertCard({
           <h3 className="text-sm font-semibold text-foreground">Pendências prioritárias</h3>
           <p className="mt-1 text-xs text-muted-foreground">Itens que precisam de atenção imediata</p>
         </div>
-        {onVerArquivados && (
-          <Button variant="outline" size="sm" className="rounded-xl bg-card text-xs font-normal" onClick={onVerArquivados}>
-            Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
-          </Button>
-        )}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
@@ -126,14 +121,22 @@ export function AlertCard({
             </div>
           ))}
         </div>
-        {onVerTodas && typeof totalCount === "number" && totalCount > alerts.length && (
-          <div className="shrink-0 border-t border-border px-5 py-3 text-center">
-            <button
-              className="text-xs font-medium text-primary hover:underline"
-              onClick={onVerTodas}
-            >
-              Ver todas as pendências ({totalCount})
-            </button>
+        {(onVerTodas || onVerArquivados) && (
+          <div className="flex shrink-0 items-center justify-center gap-3 border-t border-border px-5 py-3">
+            {onVerTodas && (
+              <button className="text-xs font-medium text-primary hover:underline" onClick={onVerTodas}>
+                Ver todas{typeof totalCount === "number" && totalCount > 0 ? ` (${totalCount})` : ""}
+              </button>
+            )}
+            {onVerTodas && onVerArquivados && <span className="text-xs text-border">|</span>}
+            {onVerArquivados && (
+              <button
+                className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                onClick={onVerArquivados}
+              >
+                Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
+              </button>
+            )}
           </div>
         )}
       </div>

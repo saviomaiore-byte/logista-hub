@@ -165,8 +165,12 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
   );
 }
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+}
+
+export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -216,12 +220,15 @@ export function Sidebar() {
               </div>
             )}
           </div>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onCollapsedChange(!collapsed)}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+          </Button>
         </div>
         <SidebarContent collapsed={collapsed} />
       </div>

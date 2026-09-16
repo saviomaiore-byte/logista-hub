@@ -33,7 +33,7 @@ const initialStats: DashboardStats = {
 };
 
 const DIAS_LIMITE_VENCIDO = 60;
-const MAX_ALERTAS_VISIVEIS = 5;
+const MAX_ALERTAS_VISIVEIS = 4;
 
 function diasEntreHoje(data: string, hoje: Date) {
   const [ano, mes, dia] = String(data).slice(0, 10).split("-").map(Number);

@@ -126,6 +126,16 @@ export function AlertCard({
             </div>
           ))}
         </div>
+        {onVerTodas && typeof totalCount === "number" && totalCount > alerts.length && (
+          <div className="shrink-0 border-t border-border px-5 py-3 text-center">
+            <button
+              className="text-xs font-medium text-primary hover:underline"
+              onClick={onVerTodas}
+            >
+              Ver todas as pendências ({totalCount})
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

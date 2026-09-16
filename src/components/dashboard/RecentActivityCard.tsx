@@ -43,8 +43,8 @@ export function RecentActivityCard({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="border-b border-border px-5 py-4">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="shrink-0 border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
       </div>

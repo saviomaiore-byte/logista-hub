@@ -254,7 +254,7 @@ export default function Index() {
                 }
               />
             ) : (
-              <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-card">
+              <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 text-center shadow-card">
                 <BadgeCheck className="mx-auto mb-3 h-10 w-10 text-success" />
                 <h3 className="font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Nenhum documento próximo do vencimento.</p>

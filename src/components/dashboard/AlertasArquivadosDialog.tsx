@@ -80,6 +80,23 @@ export function AlertasArquivadosDialog({ open, onOpenChange, antigos = [] }: Pr
                 </Button>
               </div>
             ))}
+
+            {antigos.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Arquivadas automaticamente (vencidas há mais de 60 dias)
+                </p>
+                {antigos.map((a) => (
+                  <div key={a.id} className="rounded-lg border border-border bg-muted/20 p-3">
+                    <p className="truncate font-medium text-foreground">{a.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {a.tipoDocumento} • Venc: {formatDateOnly(a.vencimento)} • Vencido há{" "}
+                      {Math.abs(a.diasRestantes)} dias
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard";
 import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
+import { TodasPendenciasDialog } from "@/components/dashboard/TodasPendenciasDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { Users, Truck, UserCheck, BadgeCheck } from "lucide-react";
@@ -59,7 +60,7 @@ export default function Index() {
   const arquivarAlerta = useArquivarAlerta();
   const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
 
-  const [mostrarTodas, setMostrarTodas] = useState(false);
+  const [todasOpen, setTodasOpen] = useState(false);
 
   const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(
@@ -83,11 +84,16 @@ export default function Index() {
       });
   }, [naoArquivados]);
 
-  /** Vencidos há mais de 60 dias: saem das prioridades e ficam no histórico. */
-  const alertsAntigos = useMemo(
-    () => naoArquivados.filter((a) => a.diasRestantes < -DIAS_LIMITE_VENCIDO),
-    [naoArquivados],
-  );
+  /** Todas as pendências abertas (sem o corte de 60 dias), ordenadas por urgência. */
+  const todasPendencias = useMemo(() => {
+    const grupo = (dias: number) => (dias >= 0 ? 0 : 1);
+    return [...naoArquivados].sort((a, b) => {
+      const ga = grupo(a.diasRestantes);
+      const gb = grupo(b.diasRestantes);
+      if (ga !== gb) return ga - gb;
+      return ga === 0 ? a.diasRestantes - b.diasRestantes : b.diasRestantes - a.diasRestantes;
+    });
+  }, [naoArquivados]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -238,10 +244,10 @@ export default function Index() {
           <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard
-                alerts={mostrarTodas ? alerts : alerts.slice(0, MAX_ALERTAS_VISIVEIS)}
-                totalCount={alerts.length}
-                onVerTodas={mostrarTodas ? undefined : () => setMostrarTodas(true)}
-                arquivadosCount={arquivados.length + alertsAntigos.length}
+                alerts={alerts.slice(0, MAX_ALERTAS_VISIVEIS)}
+                totalCount={todasPendencias.length}
+                onVerTodas={() => setTodasOpen(true)}
+                arquivadosCount={arquivados.length}
                 onVerArquivados={() => setArquivadosOpen(true)}
                 onArquivar={(alert) =>
                   arquivarAlerta.mutate({
@@ -258,25 +264,36 @@ export default function Index() {
                 <BadgeCheck className="mx-auto mb-3 h-10 w-10 text-success" />
                 <h3 className="font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Nenhum documento próximo do vencimento.</p>
-                <button className="mt-4 text-sm font-semibold text-primary hover:underline" onClick={() => setArquivadosOpen(true)}>
-                  Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
-                </button>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button className="text-sm font-semibold text-primary hover:underline" onClick={() => setTodasOpen(true)}>
+                    Ver todas{todasPendencias.length > 0 ? ` (${todasPendencias.length})` : ""}
+                  </button>
+                  <span className="text-xs text-border">|</span>
+                  <button className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline" onClick={() => setArquivadosOpen(true)}>
+                    Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
+                  </button>
+                </div>
               </div>
             )}
           </div>
           <RecentActivityCard activities={atividadesRecentes} />
         </div>
 
-        <AlertasArquivadosDialog
-          open={arquivadosOpen}
-          onOpenChange={setArquivadosOpen}
-          antigos={alertsAntigos.map((a) => ({
-            id: a.id,
-            nome: a.motorista,
-            tipoDocumento: a.documento,
-            vencimento: a.vencimentoISO,
-            diasRestantes: a.diasRestantes,
-          }))}
+        <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
+
+        <TodasPendenciasDialog
+          open={todasOpen}
+          onOpenChange={setTodasOpen}
+          pendencias={todasPendencias}
+          onArquivar={(alert) =>
+            arquivarAlerta.mutate({
+              entidade: alert.entidade,
+              entidade_id: alert.entidadeId,
+              entidade_nome: alert.motorista,
+              tipo_documento: alert.documento,
+              vencimento: alert.vencimentoISO,
+            })
+          }
         />
       </div>
     </MainLayout>

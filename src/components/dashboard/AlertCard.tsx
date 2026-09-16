@@ -87,7 +87,7 @@ export function AlertCard({
           <span>Prazo</span>
           <span />
         </div>
-        <div className="divide-y divide-border">
+        <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {alerts.map((alert) => (
             <div key={alert.id} className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-muted/20 md:grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] md:items-center md:px-5">
               <div className="flex min-w-0 items-center gap-3">

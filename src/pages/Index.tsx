@@ -31,6 +31,9 @@ const initialStats: DashboardStats = {
   motoristasInaptos: 0,
 };
 
+const DIAS_LIMITE_VENCIDO = 60;
+const MAX_ALERTAS_VISIVEIS = 5;
+
 function diasEntreHoje(data: string, hoje: Date) {
   const [ano, mes, dia] = String(data).slice(0, 10).split("-").map(Number);
   const vencimento = new Date(ano, mes - 1, dia);
@@ -56,7 +59,9 @@ export default function Index() {
   const arquivarAlerta = useArquivarAlerta();
   const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
 
-  const alerts = useMemo(() => {
+  const [mostrarTodas, setMostrarTodas] = useState(false);
+
+  const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(
       arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)),
     );
@@ -64,6 +69,25 @@ export default function Index() {
       (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO)),
     );
   }, [allAlerts, arquivados]);
+
+  /** Prioridade: vence hoje, depois próximos vencimentos, depois vencidos recentes. */
+  const alerts = useMemo(() => {
+    const grupo = (dias: number) => (dias >= 0 ? 0 : 1);
+    return naoArquivados
+      .filter((a) => a.diasRestantes >= -DIAS_LIMITE_VENCIDO)
+      .sort((a, b) => {
+        const ga = grupo(a.diasRestantes);
+        const gb = grupo(b.diasRestantes);
+        if (ga !== gb) return ga - gb;
+        return ga === 0 ? a.diasRestantes - b.diasRestantes : b.diasRestantes - a.diasRestantes;
+      });
+  }, [naoArquivados]);
+
+  /** Vencidos há mais de 60 dias: saem das prioridades e ficam no histórico. */
+  const alertsAntigos = useMemo(
+    () => naoArquivados.filter((a) => a.diasRestantes < -DIAS_LIMITE_VENCIDO),
+    [naoArquivados],
+  );
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -210,12 +234,14 @@ export default function Index() {
 
         <DashboardInsights documents={allDocuments} />
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-          <div>
+        <div className="grid items-stretch gap-5 xl:h-[520px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+          <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard
-                alerts={alerts.slice(0, 5)}
-                arquivadosCount={arquivados.length}
+                alerts={mostrarTodas ? alerts : alerts.slice(0, MAX_ALERTAS_VISIVEIS)}
+                totalCount={alerts.length}
+                onVerTodas={mostrarTodas ? undefined : () => setMostrarTodas(true)}
+                arquivadosCount={arquivados.length + alertsAntigos.length}
                 onVerArquivados={() => setArquivadosOpen(true)}
                 onArquivar={(alert) =>
                   arquivarAlerta.mutate({
@@ -228,7 +254,7 @@ export default function Index() {
                 }
               />
             ) : (
-              <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-card">
+              <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 text-center shadow-card">
                 <BadgeCheck className="mx-auto mb-3 h-10 w-10 text-success" />
                 <h3 className="font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Nenhum documento próximo do vencimento.</p>
@@ -241,7 +267,17 @@ export default function Index() {
           <RecentActivityCard activities={atividadesRecentes} />
         </div>
 
-        <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
+        <AlertasArquivadosDialog
+          open={arquivadosOpen}
+          onOpenChange={setArquivadosOpen}
+          antigos={alertsAntigos.map((a) => ({
+            id: a.id,
+            nome: a.motorista,
+            tipoDocumento: a.documento,
+            vencimento: a.vencimentoISO,
+            diasRestantes: a.diasRestantes,
+          }))}
+        />
       </div>
     </MainLayout>
   );

@@ -30,9 +30,18 @@ interface AlertCardProps {
   onArquivar?: (alert: DashboardAlert) => void;
   onVerArquivados?: () => void;
   arquivadosCount?: number;
+  totalCount?: number;
+  onVerTodas?: () => void;
 }
 
-export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount = 0 }: AlertCardProps) {
+export function AlertCard({
+  alerts,
+  onArquivar,
+  onVerArquivados,
+  arquivadosCount = 0,
+  totalCount,
+  onVerTodas,
+}: AlertCardProps) {
   const getStatusColor = (dias: number) => {
     if (dias < 0) return "status-danger";
     if (dias <= 15) return "status-warning";
@@ -57,8 +66,8 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
       .replace(" de ", " ");
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Pendências prioritárias</h3>
           <p className="mt-1 text-xs text-muted-foreground">Itens que precisam de atenção imediata</p>
@@ -70,15 +79,15 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
         )}
       </div>
 
-      <div>
-        <div className="hidden grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-3 border-b border-border bg-muted/15 px-5 py-3 text-[11px] font-medium text-muted-foreground md:grid">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="hidden shrink-0 grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-3 border-b border-border bg-muted/15 px-5 py-3 text-[11px] font-medium text-muted-foreground md:grid">
           <span className="pl-11">Motorista</span>
           <span>Documento</span>
           <span>Vencimento</span>
           <span>Prazo</span>
           <span />
         </div>
-        <div className="divide-y divide-border">
+        <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {alerts.map((alert) => (
             <div key={alert.id} className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-muted/20 md:grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] md:items-center md:px-5">
               <div className="flex min-w-0 items-center gap-3">
@@ -117,6 +126,16 @@ export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount
             </div>
           ))}
         </div>
+        {onVerTodas && typeof totalCount === "number" && totalCount > alerts.length && (
+          <div className="shrink-0 border-t border-border px-5 py-3 text-center">
+            <button
+              className="text-xs font-medium text-primary hover:underline"
+              onClick={onVerTodas}
+            >
+              Ver todas as pendências ({totalCount})
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

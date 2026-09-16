@@ -43,13 +43,13 @@ export function RecentActivityCard({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="border-b border-border px-5 py-4">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="shrink-0 border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {activities.length > 0 ? (
-        <div className="divide-y divide-border">
+        <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {activities.map((activity) => (
             <div key={activity.id} className="p-4 transition-colors hover:bg-muted/30">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -71,7 +71,7 @@ export function RecentActivityCard({
           ))}
         </div>
       ) : (
-        <div className="flex min-h-44 flex-col items-center justify-center px-6 py-8 text-center">
+        <div className="flex min-h-44 flex-1 flex-col items-center justify-center px-6 py-8 text-center">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
             <CheckCircle className="h-5 w-5 text-muted-foreground" />
           </div>

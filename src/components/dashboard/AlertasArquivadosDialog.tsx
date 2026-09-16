@@ -10,12 +10,21 @@ import { ArchiveRestore } from "lucide-react";
 import { formatDateOnly } from "@/lib/utils";
 import { useAlertasArquivados, useDesarquivarAlerta } from "@/hooks/useAlertasArquivados";
 
+export interface AlertaAntigo {
+  id: string;
+  nome: string;
+  tipoDocumento: string;
+  vencimento: string;
+  diasRestantes: number;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  antigos?: AlertaAntigo[];
 }
 
-export function AlertasArquivadosDialog({ open, onOpenChange }: Props) {
+export function AlertasArquivadosDialog({ open, onOpenChange, antigos = [] }: Props) {
   const { data: arquivados = [], isLoading } = useAlertasArquivados();
   const desarquivar = useDesarquivarAlerta();
 
@@ -37,7 +46,7 @@ export function AlertasArquivadosDialog({ open, onOpenChange }: Props) {
 
         {isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
-        ) : arquivados.length === 0 ? (
+        ) : arquivados.length === 0 && antigos.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             Nenhum alerta arquivado.
           </p>
@@ -71,6 +80,23 @@ export function AlertasArquivadosDialog({ open, onOpenChange }: Props) {
                 </Button>
               </div>
             ))}
+
+            {antigos.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Arquivadas automaticamente (vencidas há mais de 60 dias)
+                </p>
+                {antigos.map((a) => (
+                  <div key={a.id} className="rounded-lg border border-border bg-muted/20 p-3">
+                    <p className="truncate font-medium text-foreground">{a.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {a.tipoDocumento} • Venc: {formatDateOnly(a.vencimento)} • Vencido há{" "}
+                      {Math.abs(a.diasRestantes)} dias
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

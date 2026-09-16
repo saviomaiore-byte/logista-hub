@@ -59,7 +59,7 @@ export default function Index() {
   const arquivarAlerta = useArquivarAlerta();
   const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
 
-  const [mostrarTodas, setMostrarTodas] = useState(false);
+  const [todasOpen, setTodasOpen] = useState(false);
 
   const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(
@@ -83,11 +83,16 @@ export default function Index() {
       });
   }, [naoArquivados]);
 
-  /** Vencidos há mais de 60 dias: saem das prioridades e ficam no histórico. */
-  const alertsAntigos = useMemo(
-    () => naoArquivados.filter((a) => a.diasRestantes < -DIAS_LIMITE_VENCIDO),
-    [naoArquivados],
-  );
+  /** Todas as pendências abertas (sem o corte de 60 dias), ordenadas por urgência. */
+  const todasPendencias = useMemo(() => {
+    const grupo = (dias: number) => (dias >= 0 ? 0 : 1);
+    return [...naoArquivados].sort((a, b) => {
+      const ga = grupo(a.diasRestantes);
+      const gb = grupo(b.diasRestantes);
+      if (ga !== gb) return ga - gb;
+      return ga === 0 ? a.diasRestantes - b.diasRestantes : b.diasRestantes - a.diasRestantes;
+    });
+  }, [naoArquivados]);
 
   useEffect(() => {
     const fetchDashboard = async () => {

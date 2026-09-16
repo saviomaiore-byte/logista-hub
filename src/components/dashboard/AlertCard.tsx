@@ -66,8 +66,8 @@ export function AlertCard({
       .replace(" de ", " ");
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Pendências prioritárias</h3>
           <p className="mt-1 text-xs text-muted-foreground">Itens que precisam de atenção imediata</p>

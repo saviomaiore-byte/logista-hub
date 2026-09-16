@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard";
 import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
+import { TodasPendenciasDialog } from "@/components/dashboard/TodasPendenciasDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { Users, Truck, UserCheck, BadgeCheck } from "lucide-react";

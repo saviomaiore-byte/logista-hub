@@ -51,7 +51,9 @@ export default function Index() {
     weekday: "long",
     day: "2-digit",
     month: "long",
-  }).format(new Date()).toUpperCase();
+  })
+    .format(new Date())
+    .toUpperCase();
   const [allDocuments, setAllDocuments] = useState<DashboardAlert[]>([]);
   const [allAlerts, setAllAlerts] = useState<DashboardAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,12 +65,8 @@ export default function Index() {
   const [todasOpen, setTodasOpen] = useState(false);
 
   const naoArquivados = useMemo(() => {
-    const arquivadosSet = new Set(
-      arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)),
-    );
-    return allAlerts.filter(
-      (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO)),
-    );
+    const arquivadosSet = new Set(arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)));
+    return allAlerts.filter((a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO)));
   }, [allAlerts, arquivados]);
 
   /** Prioridade: vence hoje, depois próximos vencimentos, depois vencidos recentes. */
@@ -99,19 +97,20 @@ export default function Index() {
     const fetchDashboard = async () => {
       const hoje = new Date();
       const [transportadoresResult, motoristasResult, vinculosResult, contratosResult] = await Promise.all([
-        supabase.from("transportadores").select("id, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero"),
+        supabase
+          .from("transportadores")
+          .select("id, status, situacao_operacional, antt_numero, alvara_numero, certificado_numero"),
         supabase
           .from("motoristas")
-          .select("id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio, antt_vencimento"),
+          .select(
+            "id, nome, status, situacao_operacional, cnh_vencimento, mopp_vencimento, mopp_vitalicio, antt_vencimento",
+          ),
         supabase.from("transportador_motoristas").select("transportador_id, motorista_id, motorista_proprio"),
         supabase.from("contratos").select("motorista_id, arquivo_url, tipo"),
       ]);
 
       const error =
-        transportadoresResult.error ||
-        motoristasResult.error ||
-        vinculosResult.error ||
-        contratosResult.error;
+        transportadoresResult.error || motoristasResult.error || vinculosResult.error || contratosResult.error;
       reportDbError("carregar indicadores do painel", error);
       if (error) {
         setLoading(false);
@@ -205,34 +204,54 @@ export default function Index() {
       <div className="animate-fade-in space-y-5">
         <header className="pb-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">{dataAtual}</p>
-          <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-foreground sm:text-[30px]">Bom dia, {firstName}.</h1>
-          <p className="mt-1.5 text-sm font-normal text-muted-foreground">Acompanhe os principais indicadores da sua operação.</p>
+          <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-foreground sm:text-[30px]">
+            Bom dia, {firstName}.
+          </h1>
+          <p className="mt-1.5 text-sm font-normal text-muted-foreground">
+            Acompanhe os principais indicadores da sua operação.
+          </p>
         </header>
 
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Transportadores"
             value={stats.transportadores}
-            subtitle={<><strong className="font-semibold text-primary">{stats.transportadoresAtivos} ativos</strong><span> · {stats.transportadoresInaptos} transportadores inaptos</span></>}
+            subtitle={
+              <>
+                <strong className="font-semibold text-primary">{stats.transportadoresAtivos} ativos</strong>
+                <span> · {stats.transportadoresInaptos} transportadores inaptos</span>
+              </>
+            }
             icon={Truck}
           />
           <StatCard
             title="Transportadores aptos"
             value={stats.transportadoresAtivos}
-            subtitle={<strong className="font-semibold text-amber-600">{stats.transportadoresInaptos} transportadores inaptos</strong>}
+            subtitle={
+              <strong className="font-semibold text-amber-600">
+                {stats.transportadoresInaptos} transportadores inaptos
+              </strong>
+            }
             icon={BadgeCheck}
             variant="success"
           />
           <StatCard
             title="Motoristas"
             value={stats.motoristas}
-            subtitle={<><strong className="font-semibold text-primary">{stats.motoristasAtivos} ativos</strong><span> · {stats.motoristasInaptos} motoristas inaptos</span></>}
+            subtitle={
+              <>
+                <strong className="font-semibold text-primary">{stats.motoristasAtivos} ativos</strong>
+                <span> · {stats.motoristasInaptos} motoristas inaptos</span>
+              </>
+            }
             icon={Users}
           />
           <StatCard
             title="Motoristas aptos"
             value={stats.motoristasAtivos}
-            subtitle={<strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>}
+            subtitle={
+              <strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>
+            }
             icon={UserCheck}
             variant="success"
           />
@@ -240,7 +259,7 @@ export default function Index() {
 
         <DashboardInsights documents={allDocuments} />
 
-        <div className="grid items-stretch gap-5 xl:h-[400px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+        <div className="grid items-stretch gap-5 xl:h-[440px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
           <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard
@@ -265,11 +284,17 @@ export default function Index() {
                 <h3 className="font-semibold text-foreground">Tudo em dia!</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Nenhum documento próximo do vencimento.</p>
                 <div className="mt-4 flex items-center justify-center gap-3">
-                  <button className="text-sm font-semibold text-primary hover:underline" onClick={() => setTodasOpen(true)}>
+                  <button
+                    className="text-sm font-semibold text-primary hover:underline"
+                    onClick={() => setTodasOpen(true)}
+                  >
                     Ver todas{todasPendencias.length > 0 ? ` (${todasPendencias.length})` : ""}
                   </button>
                   <span className="text-xs text-border">|</span>
-                  <button className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline" onClick={() => setArquivadosOpen(true)}>
+                  <button
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+                    onClick={() => setArquivadosOpen(true)}
+                  >
                     Ver arquivados{arquivados.length > 0 ? ` (${arquivados.length})` : ""}
                   </button>
                 </div>

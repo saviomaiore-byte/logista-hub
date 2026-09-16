@@ -267,7 +267,17 @@ export default function Index() {
           <RecentActivityCard activities={atividadesRecentes} />
         </div>
 
-        <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
+        <AlertasArquivadosDialog
+          open={arquivadosOpen}
+          onOpenChange={setArquivadosOpen}
+          antigos={alertsAntigos.map((a) => ({
+            id: a.id,
+            nome: a.motorista,
+            tipoDocumento: a.documento,
+            vencimento: a.vencimentoISO,
+            diasRestantes: a.diasRestantes,
+          }))}
+        />
       </div>
     </MainLayout>
   );

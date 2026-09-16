@@ -56,7 +56,9 @@ export default function Index() {
   const arquivarAlerta = useArquivarAlerta();
   const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
 
-  const alerts = useMemo(() => {
+  const [mostrarTodas, setMostrarTodas] = useState(false);
+
+  const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(
       arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)),
     );
@@ -64,6 +66,25 @@ export default function Index() {
       (a) => !arquivadosSet.has(alertaKey(a.entidadeId, a.documento, a.vencimentoISO)),
     );
   }, [allAlerts, arquivados]);
+
+  /** Prioridade: vence hoje, depois próximos vencimentos, depois vencidos recentes. */
+  const alerts = useMemo(() => {
+    const grupo = (dias: number) => (dias >= 0 ? 0 : 1);
+    return naoArquivados
+      .filter((a) => a.diasRestantes >= -DIAS_LIMITE_VENCIDO)
+      .sort((a, b) => {
+        const ga = grupo(a.diasRestantes);
+        const gb = grupo(b.diasRestantes);
+        if (ga !== gb) return ga - gb;
+        return ga === 0 ? a.diasRestantes - b.diasRestantes : b.diasRestantes - a.diasRestantes;
+      });
+  }, [naoArquivados]);
+
+  /** Vencidos há mais de 60 dias: saem das prioridades e ficam no histórico. */
+  const alertsAntigos = useMemo(
+    () => naoArquivados.filter((a) => a.diasRestantes < -DIAS_LIMITE_VENCIDO),
+    [naoArquivados],
+  );
 
   useEffect(() => {
     const fetchDashboard = async () => {

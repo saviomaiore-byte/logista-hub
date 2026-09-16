@@ -71,7 +71,7 @@ export function RecentActivityCard({
           ))}
         </div>
       ) : (
-        <div className="flex min-h-44 flex-col items-center justify-center px-6 py-8 text-center">
+        <div className="flex min-h-44 flex-1 flex-col items-center justify-center px-6 py-8 text-center">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
             <CheckCircle className="h-5 w-5 text-muted-foreground" />
           </div>

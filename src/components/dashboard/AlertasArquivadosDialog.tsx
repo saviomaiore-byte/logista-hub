@@ -46,7 +46,7 @@ export function AlertasArquivadosDialog({ open, onOpenChange, antigos = [] }: Pr
 
         {isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
-        ) : arquivados.length === 0 ? (
+        ) : arquivados.length === 0 && antigos.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             Nenhum alerta arquivado.
           </p>

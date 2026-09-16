@@ -49,7 +49,7 @@ export function RecentActivityCard({
         <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {activities.length > 0 ? (
-        <div className="divide-y divide-border">
+        <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
           {activities.map((activity) => (
             <div key={activity.id} className="p-4 transition-colors hover:bg-muted/30">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">

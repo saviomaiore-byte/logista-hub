@@ -234,12 +234,14 @@ export default function Index() {
 
         <DashboardInsights documents={allDocuments} />
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-          <div>
+        <div className="grid items-stretch gap-5 xl:h-[520px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+          <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard
-                alerts={alerts.slice(0, 5)}
-                arquivadosCount={arquivados.length}
+                alerts={mostrarTodas ? alerts : alerts.slice(0, MAX_ALERTAS_VISIVEIS)}
+                totalCount={alerts.length}
+                onVerTodas={mostrarTodas ? undefined : () => setMostrarTodas(true)}
+                arquivadosCount={arquivados.length + alertsAntigos.length}
                 onVerArquivados={() => setArquivadosOpen(true)}
                 onArquivar={(alert) =>
                   arquivarAlerta.mutate({

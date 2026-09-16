@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Bell, Search } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -27,6 +28,7 @@ const routeLabels: Record<string, string> = {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const isMobile = useIsMobile();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
@@ -39,8 +41,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className={isMobile ? "min-w-0 pt-14" : "min-w-0 pl-64 transition-all duration-300"}>
+      <Sidebar collapsed={sidebarCollapsed} onCollapsedChange={setSidebarCollapsed} />
+      <main
+        className={cn(
+          "min-w-0 transition-[padding] duration-300 ease-in-out",
+          isMobile ? "pt-14" : sidebarCollapsed ? "pl-20" : "pl-64"
+        )}
+      >
         {!isMobile && (
           <header className="flex h-[86px] items-center justify-between border-b border-border bg-card px-8">
             <div className="flex items-center gap-3 text-sm">

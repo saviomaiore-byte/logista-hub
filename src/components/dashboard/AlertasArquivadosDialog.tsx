@@ -10,12 +10,21 @@ import { ArchiveRestore } from "lucide-react";
 import { formatDateOnly } from "@/lib/utils";
 import { useAlertasArquivados, useDesarquivarAlerta } from "@/hooks/useAlertasArquivados";
 
+export interface AlertaAntigo {
+  id: string;
+  nome: string;
+  tipoDocumento: string;
+  vencimento: string;
+  diasRestantes: number;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  antigos?: AlertaAntigo[];
 }
 
-export function AlertasArquivadosDialog({ open, onOpenChange }: Props) {
+export function AlertasArquivadosDialog({ open, onOpenChange, antigos = [] }: Props) {
   const { data: arquivados = [], isLoading } = useAlertasArquivados();
   const desarquivar = useDesarquivarAlerta();
 

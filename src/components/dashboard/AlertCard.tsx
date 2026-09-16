@@ -1,4 +1,4 @@
-import { Archive } from "lucide-react";
+import { Archive, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,7 +72,34 @@ export function AlertCard({
           <h3 className="text-sm font-semibold text-foreground">Pendências prioritárias</h3>
           <p className="mt-1 text-xs text-muted-foreground">Itens que precisam de atenção imediata</p>
         </div>
+        {(onVerTodas || onVerArquivados) && (
+          <div className="flex shrink-0 items-center gap-2">
+            {onVerTodas && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-primary hover:text-primary"
+                onClick={onVerTodas}
+              >
+                <List className="h-3.5 w-3.5" />
+                Ver todas{typeof totalCount === "number" && totalCount > 0 ? ` (${totalCount})` : ""}
+              </Button>
+            )}
+            {onVerArquivados && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={onVerArquivados}
+              >
+                <Archive className="h-3.5 w-3.5" />
+                Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
+
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="hidden shrink-0 grid-cols-[minmax(0,2.4fr)_minmax(90px,0.9fr)_minmax(120px,1fr)_minmax(130px,1fr)_32px] gap-3 border-b border-border bg-muted/15 px-5 py-3 text-[11px] font-medium text-muted-foreground md:grid">
@@ -121,25 +148,8 @@ export function AlertCard({
             </div>
           ))}
         </div>
-        {(onVerTodas || onVerArquivados) && (
-          <div className="flex shrink-0 items-center justify-center gap-3 border-t border-border px-5 py-3">
-            {onVerTodas && (
-              <button className="text-xs font-medium text-primary hover:underline" onClick={onVerTodas}>
-                Ver todas{typeof totalCount === "number" && totalCount > 0 ? ` (${totalCount})` : ""}
-              </button>
-            )}
-            {onVerTodas && onVerArquivados && <span className="text-xs text-border">|</span>}
-            {onVerArquivados && (
-              <button
-                className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
-                onClick={onVerArquivados}
-              >
-                Ver arquivados{arquivadosCount > 0 ? ` (${arquivadosCount})` : ""}
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </section>
   );
 }
+

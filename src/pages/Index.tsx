@@ -33,7 +33,7 @@ const initialStats: DashboardStats = {
 };
 
 const DIAS_LIMITE_VENCIDO = 60;
-const MAX_ALERTAS_VISIVEIS = 5;
+const MAX_ALERTAS_VISIVEIS = 4;
 
 function diasEntreHoje(data: string, hoje: Date) {
   const [ano, mes, dia] = String(data).slice(0, 10).split("-").map(Number);
@@ -240,7 +240,7 @@ export default function Index() {
 
         <DashboardInsights documents={allDocuments} />
 
-        <div className="grid items-stretch gap-5 xl:h-[520px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+        <div className="grid items-stretch gap-5 xl:h-[400px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
           <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard

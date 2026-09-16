@@ -259,7 +259,7 @@ export default function Index() {
 
         <DashboardInsights documents={allDocuments} />
 
-        <div className="grid items-stretch gap-5 xl:h-[450px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
+        <div className="grid items-stretch gap-5 xl:h-[460px] xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
           <div className="min-h-0 h-full">
             {alerts.length > 0 ? (
               <AlertCard

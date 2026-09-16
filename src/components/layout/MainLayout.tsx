@@ -26,9 +26,28 @@ const routeLabels: Record<string, string> = {
   "/seguranca": "Segurança",
 };
 
+const SIDEBAR_COLLAPSED_KEY = "pactum-sidebar-collapsed";
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export function MainLayout({ children }: MainLayoutProps) {
   const isMobile = useIsMobile();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(readSidebarCollapsed);
+
+  const setSidebarCollapsed = (collapsed: boolean) => {
+    setSidebarCollapsedState(collapsed);
+    try {
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // storage indisponível: mantém apenas o estado em memória
+    }
+  };
   const location = useLocation();
   const { user } = useAuth();
   const { isAdmin } = useAdmin();

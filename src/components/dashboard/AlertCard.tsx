@@ -30,9 +30,18 @@ interface AlertCardProps {
   onArquivar?: (alert: DashboardAlert) => void;
   onVerArquivados?: () => void;
   arquivadosCount?: number;
+  totalCount?: number;
+  onVerTodas?: () => void;
 }
 
-export function AlertCard({ alerts, onArquivar, onVerArquivados, arquivadosCount = 0 }: AlertCardProps) {
+export function AlertCard({
+  alerts,
+  onArquivar,
+  onVerArquivados,
+  arquivadosCount = 0,
+  totalCount,
+  onVerTodas,
+}: AlertCardProps) {
   const getStatusColor = (dias: number) => {
     if (dias < 0) return "status-danger";
     if (dias <= 15) return "status-warning";

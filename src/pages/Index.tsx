@@ -31,6 +31,9 @@ const initialStats: DashboardStats = {
   motoristasInaptos: 0,
 };
 
+const DIAS_LIMITE_VENCIDO = 60;
+const MAX_ALERTAS_VISIVEIS = 5;
+
 function diasEntreHoje(data: string, hoje: Date) {
   const [ano, mes, dia] = String(data).slice(0, 10).split("-").map(Number);
   const vencimento = new Date(ano, mes - 1, dia);

@@ -5,64 +5,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileUpload } from "@/components/FileUpload";
 import { Formik, Form, Field } from "formik";
-import type * as Yup from "yup";
-import type { Transportador } from "./types";
+import { registroAnttSchema, type RegistroAntt, type Transportador } from "./types";
 
-type VeiculoEditing = {
+export type RegistroAnttFormValues = {
   transportador_id: string;
-  arquivo_url: string | null;
-  antt_data_emissao?: string | null;
-  antt_quantidade?: number | null;
-} | null;
+  arquivo_url: string;
+  antt_data_emissao: string;
+  qtd_cavalos: string;
+  qtd_reboques: string;
+};
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editing: VeiculoEditing;
-  title: string;
+  editing: RegistroAntt | null;
   transportadores: Transportador[];
-  validationSchema: Yup.AnyObjectSchema;
-  folder: string;
-  uploadLabel: string;
-  /** Rótulo do campo de quantidade (ex.: "Quantidade de cavalos"). */
-  quantidadeLabel: string;
-  onSubmit: (values: {
-    transportador_id: string;
-    arquivo_url?: string | null;
-    antt_data_emissao?: string | null;
-    antt_quantidade?: number | string | null;
-  }) => void;
+  onSubmit: (values: RegistroAnttFormValues) => void;
 };
 
-export function VeiculoFormDialog({
-  open,
-  onOpenChange,
-  editing,
-  title,
-  transportadores,
-  validationSchema,
-  folder,
-  uploadLabel,
-  quantidadeLabel,
-  onSubmit,
-}: Props) {
+const numToInput = (value: number | null | undefined) =>
+  value === null || value === undefined ? "" : String(value);
+
+export function RegistroAnttFormDialog({ open, onOpenChange, editing, transportadores, onSubmit }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{editing ? "Editar Registro ANTT" : "Novo Registro ANTT"}</DialogTitle>
         </DialogHeader>
-        <Formik
+        <Formik<RegistroAnttFormValues>
           initialValues={{
             transportador_id: editing?.transportador_id || "",
             arquivo_url: editing?.arquivo_url || "",
             antt_data_emissao: editing?.antt_data_emissao || "",
-            antt_quantidade:
-              editing?.antt_quantidade === null || editing?.antt_quantidade === undefined
-                ? ""
-                : String(editing.antt_quantidade),
+            qtd_cavalos: numToInput(editing?.qtd_cavalos),
+            qtd_reboques: numToInput(editing?.qtd_reboques),
           }}
-          validationSchema={validationSchema}
+          validationSchema={registroAnttSchema}
           onSubmit={(values) => onSubmit(values)}
           enableReinitialize
         >
@@ -78,31 +57,32 @@ export function VeiculoFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.transportador_id && touched.transportador_id && <p className="mt-1 text-sm text-destructive">{errors.transportador_id}</p>}
+                {errors.transportador_id && touched.transportador_id && (
+                  <p className="mt-1 text-sm text-destructive">{errors.transportador_id}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="antt_data_emissao">Data de emissão</Label>
+                <Field as={Input} id="antt_data_emissao" name="antt_data_emissao" type="date" className="mt-1" />
+                {errors.antt_data_emissao && touched.antt_data_emissao && (
+                  <p className="mt-1 text-sm text-destructive">{errors.antt_data_emissao}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="antt_data_emissao">Data de emissão do ANTT</Label>
-                  <Field as={Input} id="antt_data_emissao" name="antt_data_emissao" type="date" className="mt-1" />
-                  {errors.antt_data_emissao && touched.antt_data_emissao && (
-                    <p className="mt-1 text-sm text-destructive">{errors.antt_data_emissao as string}</p>
+                  <Label htmlFor="qtd_cavalos">Quantidade de cavalos</Label>
+                  <Field as={Input} id="qtd_cavalos" name="qtd_cavalos" type="number" min={1} step={1} placeholder="Ex.: 3" className="mt-1" />
+                  {errors.qtd_cavalos && touched.qtd_cavalos && (
+                    <p className="mt-1 text-sm text-destructive">{errors.qtd_cavalos}</p>
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="antt_quantidade">{quantidadeLabel}</Label>
-                  <Field
-                    as={Input}
-                    id="antt_quantidade"
-                    name="antt_quantidade"
-                    type="number"
-                    min={1}
-                    step={1}
-                    placeholder="Ex.: 3"
-                    className="mt-1"
-                  />
-                  {errors.antt_quantidade && touched.antt_quantidade && (
-                    <p className="mt-1 text-sm text-destructive">{errors.antt_quantidade as string}</p>
+                  <Label htmlFor="qtd_reboques">Quantidade de reboques</Label>
+                  <Field as={Input} id="qtd_reboques" name="qtd_reboques" type="number" min={1} step={1} placeholder="Ex.: 2" className="mt-1" />
+                  {errors.qtd_reboques && touched.qtd_reboques && (
+                    <p className="mt-1 text-sm text-destructive">{errors.qtd_reboques}</p>
                   )}
                 </div>
               </div>
@@ -113,11 +93,12 @@ export function VeiculoFormDialog({
                   currentUrl={values.arquivo_url || undefined}
                   onUpload={(url) => setFieldValue("arquivo_url", url)}
                   onRemove={() => setFieldValue("arquivo_url", "")}
-                  folder={folder}
+                  folder="registros-antt"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  label={uploadLabel}
+                  label="Anexar ANTT"
                 />
               </div>
+
               <DialogFooter>
                 <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>Salvar</Button>
               </DialogFooter>

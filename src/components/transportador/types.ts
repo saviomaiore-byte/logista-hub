@@ -21,38 +21,16 @@ export type Transportador = {
   motorista_id: string | null;
 };
 
-export type Cavalo = {
+/** Registro ANTT da transportadora: anexo, data de emissão e quantidades. */
+export type RegistroAntt = {
   id: string;
   created_by?: string | null;
   transportador_id: string;
-  placa: string | null;
-  renavam: string | null;
-  chassi: string | null;
-  marca_modelo: string | null;
-  ano: string | null;
-  status: string;
   arquivo_url: string | null;
-  /** Data de emissão do ANTT anexado (sem vencimento). */
   antt_data_emissao: string | null;
-  /** Quantidade de cavalos cobertos pelo ANTT anexado. */
-  antt_quantidade: number | null;
-  transportadores?: { razao_social: string } | null;
-};
-
-export type Reboque = {
-  id: string;
-  created_by?: string | null;
-  transportador_id: string;
-  placa: string | null;
-  renavam: string | null;
-  tipo: string | null;
-  ano: string | null;
-  status: string;
-  arquivo_url: string | null;
-  /** Data de emissão do ANTT anexado (sem vencimento). */
-  antt_data_emissao: string | null;
-  /** Quantidade de reboques cobertos pelo ANTT anexado. */
-  antt_quantidade: number | null;
+  qtd_cavalos: number | null;
+  qtd_reboques: number | null;
+  created_at: string;
   transportadores?: { razao_social: string } | null;
 };
 
@@ -76,23 +54,17 @@ export const transportadorSchema = Yup.object().shape({
   status: Yup.string().oneOf(["ativo", "inativo"]).required(),
 });
 
-const anttQuantidadeSchema = Yup.number()
+const quantidadeSchema = Yup.number()
   .transform((value, original) => (original === "" || original === null ? null : value))
   .typeError("Informe um número")
   .integer("Informe um número inteiro")
   .min(1, "A quantidade deve ser maior que zero")
   .nullable();
 
-export const cavaloSchema = Yup.object().shape({
+export const registroAnttSchema = Yup.object().shape({
   transportador_id: Yup.string().required("Transportador é obrigatório"),
   arquivo_url: Yup.string().trim().nullable(),
   antt_data_emissao: Yup.string().nullable(),
-  antt_quantidade: anttQuantidadeSchema,
-});
-
-export const reboqueSchema = Yup.object().shape({
-  transportador_id: Yup.string().required("Transportador é obrigatório"),
-  arquivo_url: Yup.string().trim().nullable(),
-  antt_data_emissao: Yup.string().nullable(),
-  antt_quantidade: anttQuantidadeSchema,
+  qtd_cavalos: quantidadeSchema,
+  qtd_reboques: quantidadeSchema,
 });

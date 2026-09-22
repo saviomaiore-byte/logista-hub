@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash2, FileText } from "lucide-react";
 import { openSignedFile } from "@/lib/storage";
+import { formatDate } from "@/components/relatorio/types";
 import type { Cavalo } from "./types";
 import { usePermissoes } from "@/hooks/usePermissoes";
 
@@ -27,7 +28,15 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
               <p className="text-sm text-muted-foreground">Transportador vinculado</p>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-muted-foreground">Documento</span>
+              <span className="text-sm text-muted-foreground">Data de emissão</span>
+              <span className="text-sm text-foreground">{formatDate(c.antt_data_emissao)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-muted-foreground">Quantidade</span>
+              <span className="text-sm text-foreground">{c.antt_quantidade ?? "—"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-muted-foreground">ANTT</span>
               {c.arquivo_url ? (
                 <Button variant="outline" size="sm" onClick={() => openSignedFile(c.arquivo_url!)}>
                   <FileText className="h-4 w-4 mr-1" /> Abrir anexo
@@ -57,11 +66,13 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
   return (
     <Card>
       <CardContent className="p-0 overflow-x-auto">
-        <Table className="min-w-[600px]">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Transportador</TableHead>
-              <TableHead>Documento</TableHead>
+              <TableHead>Data de emissão</TableHead>
+              <TableHead>Quantidade</TableHead>
+              <TableHead>ANTT</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -69,6 +80,8 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
             {items.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">{c.transportadores?.razao_social || "-"}</TableCell>
+                <TableCell>{formatDate(c.antt_data_emissao)}</TableCell>
+                <TableCell>{c.antt_quantidade ?? "—"}</TableCell>
                 <TableCell>
                   {c.arquivo_url ? (
                     <Button variant="outline" size="sm" onClick={() => openSignedFile(c.arquivo_url!)}>
@@ -95,7 +108,7 @@ export function CavalosList({ items, isMobile, onEdit, onDelete }: Props) {
               </TableRow>
             ))}
             {items.length === 0 && (
-              <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum cavalo encontrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

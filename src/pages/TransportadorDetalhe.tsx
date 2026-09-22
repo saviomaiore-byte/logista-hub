@@ -108,7 +108,7 @@ export default function TransportadorDetalhe() {
                 <CardHeader><CardTitle className="text-sm font-semibold">Resumo operacional</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3">
                   {[
-                    [Truck, frota.length, "Veículos"], [Users, motoristas.length, "Motoristas"],
+                    [Truck, totalVeiculos, "Veículos"], [Users, motoristas.length, "Motoristas"],
                     [FileText, contratosVinculados.length, "Contratos"], [Shield, segurosVinculados.length, "Seguros"],
                   ].map(([Icon, value, label]: any) => (
                     <div key={label} className="rounded-xl bg-muted/50 p-4">

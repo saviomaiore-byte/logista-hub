@@ -45,10 +45,8 @@ export default function Transportadores() {
   const [editingTransp, setEditingTransp] = useState<Transportador | null>(null);
   const [showVinculoDialog, setShowVinculoDialog] = useState(false);
   const [vinculoTranspId, setVinculoTranspId] = useState<string | null>(null);
-  const [showCavaloDialog, setShowCavaloDialog] = useState(false);
-  const [editingCavalo, setEditingCavalo] = useState<Cavalo | null>(null);
-  const [showReboqueDialog, setShowReboqueDialog] = useState(false);
-  const [editingReboque, setEditingReboque] = useState<Reboque | null>(null);
+  const [showAnttDialog, setShowAnttDialog] = useState(false);
+  const [editingAntt, setEditingAntt] = useState<RegistroAntt | null>(null);
   const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
   const [docsTab, setDocsTab] = useState("anexos");
 

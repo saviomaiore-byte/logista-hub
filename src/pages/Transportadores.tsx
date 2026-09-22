@@ -180,8 +180,7 @@ export default function Transportadores() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="rounded-xl bg-muted/70 p-1">
             <TabsTrigger className="rounded-lg text-xs" value="transportadores">Transportadores</TabsTrigger>
-            <TabsTrigger className="rounded-lg text-xs" value="cavalos">Cavalos</TabsTrigger>
-            <TabsTrigger className="rounded-lg text-xs" value="reboques">Reboques</TabsTrigger>
+            <TabsTrigger className="rounded-lg text-xs" value="registro-antt">Registro ANTT</TabsTrigger>
           </TabsList>
 
           <TransportadoresSearch

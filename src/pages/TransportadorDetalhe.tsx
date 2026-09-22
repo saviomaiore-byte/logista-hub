@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { useTransportadores, useTransportadorVinculos, useCavalos, useReboques } from "@/hooks/useTransportadores";
+import { useTransportadores, useTransportadorVinculos, useRegistrosAntt } from "@/hooks/useTransportadores";
 import { useContratos } from "@/hooks/useContratos";
 import { useDocumentosEmpresa } from "@/hooks/useDocumentosEmpresa";
 import { useSeguros } from "@/hooks/useSeguros";
@@ -28,8 +28,7 @@ export default function TransportadorDetalhe() {
   const navigate = useNavigate();
   const { data: transportadores = [], isLoading } = useTransportadores();
   const { data: vinculos = [] } = useTransportadorVinculos();
-  const { data: cavalos = [] } = useCavalos();
-  const { data: reboques = [] } = useReboques();
+  const { data: registrosAntt = [] } = useRegistrosAntt();
   const { data: contratos = [] } = useContratos();
   const { data: documentos = [] } = useDocumentosEmpresa();
   const { data: seguros = [] } = useSeguros();

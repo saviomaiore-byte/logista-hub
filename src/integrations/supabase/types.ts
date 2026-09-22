@@ -145,6 +145,8 @@ export type Database = {
       cavalos: {
         Row: {
           ano: string | null
+          antt_data_emissao: string | null
+          antt_quantidade: number | null
           arquivo_url: string | null
           chassi: string | null
           created_at: string
@@ -159,6 +161,8 @@ export type Database = {
         }
         Insert: {
           ano?: string | null
+          antt_data_emissao?: string | null
+          antt_quantidade?: number | null
           arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
@@ -173,6 +177,8 @@ export type Database = {
         }
         Update: {
           ano?: string | null
+          antt_data_emissao?: string | null
+          antt_quantidade?: number | null
           arquivo_url?: string | null
           chassi?: string | null
           created_at?: string
@@ -632,6 +638,8 @@ export type Database = {
       reboques: {
         Row: {
           ano: string | null
+          antt_data_emissao: string | null
+          antt_quantidade: number | null
           arquivo_url: string | null
           created_at: string
           created_by: string | null
@@ -645,6 +653,8 @@ export type Database = {
         }
         Insert: {
           ano?: string | null
+          antt_data_emissao?: string | null
+          antt_quantidade?: number | null
           arquivo_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -658,6 +668,8 @@ export type Database = {
         }
         Update: {
           ano?: string | null
+          antt_data_emissao?: string | null
+          antt_quantidade?: number | null
           arquivo_url?: string | null
           created_at?: string
           created_by?: string | null

@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { reportDbError } from "@/lib/dbError";
 import { motoristaVinculosKey } from "@/hooks/useMotoristas";
-import type { Cavalo, Reboque, Transportador } from "@/components/transportador/types";
+import type { RegistroAntt, Transportador } from "@/components/transportador/types";
 
 /**
  * Entidade Transportadores.
  *
  * Cobre a listagem central (`transportadores`), os vínculos N:N com motoristas
  * (`transportador_motoristas`, com join de motorista para exibição), a frota
- * (`cavalos` e `reboques`, ambas com join de `transportadores(razao_social)`)
+ * o Registro ANTT (`registros_antt`, com join de `transportadores(razao_social)`)
  * e os anexos do transportador (`transportador_arquivos` + storage `documentos`).
  *
  * O seletor de transportadores do formulário de contrato continua em
@@ -23,8 +23,7 @@ export const transportadoresKey = ["transportadores"] as const;
 /** Vínculos transportador ↔ motorista, com o motorista embutido. */
 export const transportadorVinculosKey = ["transportadores", "vinculos"] as const;
 
-export const cavalosKey = ["cavalos"] as const;
-export const reboquesKey = ["reboques"] as const;
+export const registrosAnttKey = ["registros_antt"] as const;
 
 /** Anexos de um transportador específico. */
 export const transportadorArquivosKey = (transportadorId: string) =>
@@ -79,34 +78,18 @@ export function useTransportadorVinculos() {
   });
 }
 
-/** Cavalos com a razão social do transportador. */
-export function useCavalos() {
+/** Registros ANTT com a razão social do transportador. */
+export function useRegistrosAntt() {
   return useQuery({
-    queryKey: cavalosKey,
+    queryKey: registrosAnttKey,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cavalos")
+        .from("registros_antt")
         .select("*, transportadores(razao_social)")
         .order("created_at", { ascending: false });
 
-      if (reportDbError("carregar cavalos", error, toast.error)) throw error;
-      return (data as unknown as Cavalo[]) || [];
-    },
-  });
-}
-
-/** Reboques com a razão social do transportador. */
-export function useReboques() {
-  return useQuery({
-    queryKey: reboquesKey,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reboques")
-        .select("*, transportadores(razao_social)")
-        .order("created_at", { ascending: false });
-
-      if (reportDbError("carregar reboques", error, toast.error)) throw error;
-      return (data as unknown as Reboque[]) || [];
+      if (reportDbError("carregar registros ANTT", error, toast.error)) throw error;
+      return (data as unknown as RegistroAntt[]) || [];
     },
   });
 }
@@ -251,108 +234,65 @@ export function useMarcarMotoristaProprio() {
 }
 
 
-interface VeiculoPayload {
+interface RegistroAnttPayload {
   transportador_id: string;
   arquivo_url?: string | null;
   /** Data de emissão do ANTT (sem vencimento). */
   antt_data_emissao?: string | null;
-  /** Quantidade coberta pelo ANTT; vazio grava null. */
-  antt_quantidade?: number | string | null;
+  qtd_cavalos?: number | string | null;
+  qtd_reboques?: number | string | null;
 }
 
-/** Normaliza data e quantidade do ANTT: vazio sempre grava null. */
-function anttFields(values: VeiculoPayload) {
-  const quantidade =
-    values.antt_quantidade === "" || values.antt_quantidade === null || values.antt_quantidade === undefined
-      ? null
-      : Number(values.antt_quantidade);
+/** Vazio sempre grava null; quantidades inválidas também. */
+function toQuantidade(value: number | string | null | undefined) {
+  if (value === "" || value === null || value === undefined) return null;
+  const numero = Number(value);
+  return Number.isFinite(numero) ? numero : null;
+}
 
+function registroAnttPayload(values: RegistroAnttPayload) {
   return {
+    transportador_id: values.transportador_id,
+    arquivo_url: values.arquivo_url?.trim() || null,
     antt_data_emissao: values.antt_data_emissao?.trim() || null,
-    antt_quantidade: quantidade !== null && Number.isFinite(quantidade) ? quantidade : null,
+    qtd_cavalos: toQuantidade(values.qtd_cavalos),
+    qtd_reboques: toQuantidade(values.qtd_reboques),
   };
 }
 
-/** Criação/atualização de cavalo — payload idêntico ao anterior + campos do ANTT. */
-export function useSalvarCavalo() {
+/** Criação/atualização do Registro ANTT. */
+export function useSalvarRegistroAntt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, values }: { id?: string; values: VeiculoPayload }) => {
-      const payload = {
-        transportador_id: values.transportador_id,
-        arquivo_url: values.arquivo_url?.trim() || null,
-        ...anttFields(values),
-      };
-
+    mutationFn: async ({ id, values }: { id?: string; values: RegistroAnttPayload }) => {
+      const payload = registroAnttPayload(values);
 
       if (id) {
-        const { error } = await supabase.from("cavalos").update(payload).eq("id", id);
-        if (reportDbError("atualizar cavalo", error)) throw error;
+        const { error } = await supabase.from("registros_antt").update(payload).eq("id", id);
+        if (reportDbError("atualizar registro ANTT", error)) throw error;
       } else {
-        const { error } = await supabase.from("cavalos").insert(payload);
-        if (reportDbError("salvar cavalo", error)) throw error;
+        const { error } = await supabase.from("registros_antt").insert(payload);
+        if (reportDbError("salvar registro ANTT", error)) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cavalosKey });
+      queryClient.invalidateQueries({ queryKey: registrosAnttKey });
     },
   });
 }
 
-/** Exclusão de cavalo. */
-export function useExcluirCavalo() {
+/** Exclusão do Registro ANTT. */
+export function useExcluirRegistroAntt() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("cavalos").delete().eq("id", id);
-      if (reportDbError("excluir cavalo", error)) throw error;
+      const { error } = await supabase.from("registros_antt").delete().eq("id", id);
+      if (reportDbError("excluir registro ANTT", error)) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cavalosKey });
-    },
-  });
-}
-
-/** Criação/atualização de reboque — payload idêntico ao anterior + campos do ANTT. */
-export function useSalvarReboque() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, values }: { id?: string; values: VeiculoPayload }) => {
-      const payload = {
-        transportador_id: values.transportador_id,
-        arquivo_url: values.arquivo_url?.trim() || null,
-        ...anttFields(values),
-      };
-
-
-      if (id) {
-        const { error } = await supabase.from("reboques").update(payload).eq("id", id);
-        if (reportDbError("atualizar reboque", error)) throw error;
-      } else {
-        const { error } = await supabase.from("reboques").insert(payload);
-        if (reportDbError("salvar reboque", error)) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: reboquesKey });
-    },
-  });
-}
-
-/** Exclusão de reboque. */
-export function useExcluirReboque() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reboques").delete().eq("id", id);
-      if (reportDbError("excluir reboque", error)) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: reboquesKey });
+      queryClient.invalidateQueries({ queryKey: registrosAnttKey });
     },
   });
 }

@@ -4,23 +4,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pencil, Trash2, FileText } from "lucide-react";
 import { openSignedFile } from "@/lib/storage";
 import { formatDate } from "@/components/relatorio/types";
-import type { Reboque } from "./types";
+import type { RegistroAntt } from "./types";
 import { usePermissoes } from "@/hooks/usePermissoes";
 
 type Props = {
-  items: Reboque[];
+  items: RegistroAntt[];
   isMobile: boolean;
-  onEdit: (reboque: Reboque) => void;
+  onEdit: (registro: RegistroAntt) => void;
   onDelete: (id: string) => void;
 };
 
-export function ReboquesList({ items, isMobile, onEdit, onDelete }: Props) {
+export function RegistrosAnttList({ items, isMobile, onEdit, onDelete }: Props) {
   const { isAdmin, podeEditar } = usePermissoes();
+
   if (isMobile) {
     return (
       <div className="space-y-3">
         {items.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</div>
+          <div className="text-center py-8 text-muted-foreground">Nenhum registro ANTT encontrado</div>
         ) : items.map((r) => (
           <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
             <div>
@@ -32,8 +33,12 @@ export function ReboquesList({ items, isMobile, onEdit, onDelete }: Props) {
               <span className="text-sm text-foreground">{formatDate(r.antt_data_emissao)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-muted-foreground">Quantidade</span>
-              <span className="text-sm text-foreground">{r.antt_quantidade ?? "—"}</span>
+              <span className="text-sm text-muted-foreground">Cavalos</span>
+              <span className="text-sm text-foreground">{r.qtd_cavalos ?? "—"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-muted-foreground">Reboques</span>
+              <span className="text-sm text-foreground">{r.qtd_reboques ?? "—"}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm text-muted-foreground">ANTT</span>
@@ -66,12 +71,13 @@ export function ReboquesList({ items, isMobile, onEdit, onDelete }: Props) {
   return (
     <Card>
       <CardContent className="p-0 overflow-x-auto">
-        <Table className="min-w-[700px]">
+        <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow>
               <TableHead>Transportador</TableHead>
               <TableHead>Data de emissão</TableHead>
-              <TableHead>Quantidade</TableHead>
+              <TableHead>Cavalos</TableHead>
+              <TableHead>Reboques</TableHead>
               <TableHead>ANTT</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -81,7 +87,8 @@ export function ReboquesList({ items, isMobile, onEdit, onDelete }: Props) {
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.transportadores?.razao_social || "-"}</TableCell>
                 <TableCell>{formatDate(r.antt_data_emissao)}</TableCell>
-                <TableCell>{r.antt_quantidade ?? "—"}</TableCell>
+                <TableCell>{r.qtd_cavalos ?? "—"}</TableCell>
+                <TableCell>{r.qtd_reboques ?? "—"}</TableCell>
                 <TableCell>
                   {r.arquivo_url ? (
                     <Button variant="outline" size="sm" onClick={() => openSignedFile(r.arquivo_url!)}>
@@ -108,7 +115,7 @@ export function ReboquesList({ items, isMobile, onEdit, onDelete }: Props) {
               </TableRow>
             ))}
             {items.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum reboque encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro ANTT encontrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

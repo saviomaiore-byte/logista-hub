@@ -7,35 +7,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import {
-  cavaloSchema,
-  reboqueSchema,
-  type Cavalo,
-  type Reboque,
+  type RegistroAntt,
   type Transportador,
 } from "@/components/transportador/types";
 import { useMotoristas } from "@/hooks/useMotoristas";
 import {
   useTransportadores,
   useTransportadorVinculos,
-  useCavalos,
-  useReboques,
+  useRegistrosAntt,
   useSalvarTransportador,
   useExcluirTransportador,
   useVincularMotorista,
   useDesvincularMotorista,
   useMarcarMotoristaProprio,
-  useSalvarCavalo,
-  useExcluirCavalo,
-  useSalvarReboque,
-  useExcluirReboque,
+  useSalvarRegistroAntt,
+  useExcluirRegistroAntt,
 } from "@/hooks/useTransportadores";
 import { TransportadoresHeader } from "@/components/transportador/TransportadoresHeader";
 import { TransportadoresSearch } from "@/components/transportador/TransportadoresSearch";
 import { TransportadoresList } from "@/components/transportador/TransportadoresList";
-import { CavalosList } from "@/components/transportador/CavalosList";
-import { ReboquesList } from "@/components/transportador/ReboquesList";
+import { RegistrosAnttList } from "@/components/transportador/RegistrosAnttList";
 import { TransportadorFormDialog } from "@/components/transportador/TransportadorFormDialog";
-import { VeiculoFormDialog } from "@/components/transportador/VeiculoFormDialog";
+import { RegistroAnttFormDialog } from "@/components/transportador/RegistroAnttFormDialog";
 import { VincularMotoristaDialog } from "@/components/transportador/VincularMotoristaDialog";
 import { TransportadorDocsDialog } from "@/components/transportador/TransportadorDocsDialog";
 
@@ -52,10 +45,8 @@ export default function Transportadores() {
   const [editingTransp, setEditingTransp] = useState<Transportador | null>(null);
   const [showVinculoDialog, setShowVinculoDialog] = useState(false);
   const [vinculoTranspId, setVinculoTranspId] = useState<string | null>(null);
-  const [showCavaloDialog, setShowCavaloDialog] = useState(false);
-  const [editingCavalo, setEditingCavalo] = useState<Cavalo | null>(null);
-  const [showReboqueDialog, setShowReboqueDialog] = useState(false);
-  const [editingReboque, setEditingReboque] = useState<Reboque | null>(null);
+  const [showAnttDialog, setShowAnttDialog] = useState(false);
+  const [editingAntt, setEditingAntt] = useState<RegistroAntt | null>(null);
   const [docsTransp, setDocsTransp] = useState<Transportador | null>(null);
   const [docsTab, setDocsTab] = useState("anexos");
 
@@ -63,8 +54,7 @@ export default function Transportadores() {
   // Reutiliza a listagem central de motoristas (mesma queryKey ["motoristas"]).
   const { data: motoristas = [] } = useMotoristas();
   const { data: vinculos = [] } = useTransportadorVinculos();
-  const { data: cavalos = [] } = useCavalos();
-  const { data: reboques = [] } = useReboques();
+  const { data: registrosAntt = [] } = useRegistrosAntt();
 
   const errorToast = (e: any) =>
     toast({ title: "Erro", description: e?.message, variant: "destructive" });
@@ -74,10 +64,8 @@ export default function Transportadores() {
   const addVinculo = useVincularMotorista();
   const removeVinculo = useDesvincularMotorista();
   const marcarProprio = useMarcarMotoristaProprio();
-  const saveCavalo = useSalvarCavalo();
-  const deleteCavalo = useExcluirCavalo();
-  const saveReboque = useSalvarReboque();
-  const deleteReboque = useExcluirReboque();
+  const saveAntt = useSalvarRegistroAntt();
+  const deleteAntt = useExcluirRegistroAntt();
 
   const handleSaveTransp = (values: any) => {
     const editando = !!editingTransp;
@@ -139,42 +127,23 @@ export default function Transportadores() {
     );
   };
 
-  const handleSaveCavalo = (values: any) => {
-    const editando = !!editingCavalo;
-    saveCavalo.mutate(
-      { id: editingCavalo?.id, values },
+  const handleSaveAntt = (values: any) => {
+    const editando = !!editingAntt;
+    saveAntt.mutate(
+      { id: editingAntt?.id, values },
       {
         onSuccess: () => {
-          setShowCavaloDialog(false);
-          setEditingCavalo(null);
-          toast({ title: editando ? "Cavalo atualizado" : "Cavalo cadastrado" });
+          setShowAnttDialog(false);
+          setEditingAntt(null);
+          toast({ title: editando ? "Registro ANTT atualizado" : "Registro ANTT cadastrado" });
         },
         onError: errorToast,
       },
     );
   };
 
-  const handleDeleteCavalo = (id: string) => {
-    deleteCavalo.mutate(id, { onSuccess: () => toast({ title: "Cavalo excluído" }) });
-  };
-
-  const handleSaveReboque = (values: any) => {
-    const editando = !!editingReboque;
-    saveReboque.mutate(
-      { id: editingReboque?.id, values },
-      {
-        onSuccess: () => {
-          setShowReboqueDialog(false);
-          setEditingReboque(null);
-          toast({ title: editando ? "Reboque atualizado" : "Reboque cadastrado" });
-        },
-        onError: errorToast,
-      },
-    );
-  };
-
-  const handleDeleteReboque = (id: string) => {
-    deleteReboque.mutate(id, { onSuccess: () => toast({ title: "Reboque excluído" }) });
+  const handleDeleteAntt = (id: string) => {
+    deleteAntt.mutate(id, { onSuccess: () => toast({ title: "Registro ANTT excluído" }) });
   };
 
   const filteredTransp = transportadores.filter((t) => {
@@ -186,11 +155,7 @@ export default function Transportadores() {
     return matchesSearch && matchesRegime && matchesStatus;
   });
 
-  const filteredCavalos = cavalos.filter((c) =>
-    c.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const filteredReboques = reboques.filter((r) =>
+  const filteredAntt = registrosAntt.filter((r) =>
     r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -215,8 +180,7 @@ export default function Transportadores() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="rounded-xl bg-muted/70 p-1">
             <TabsTrigger className="rounded-lg text-xs" value="transportadores">Transportadores</TabsTrigger>
-            <TabsTrigger className="rounded-lg text-xs" value="cavalos">Cavalos</TabsTrigger>
-            <TabsTrigger className="rounded-lg text-xs" value="reboques">Reboques</TabsTrigger>
+            <TabsTrigger className="rounded-lg text-xs" value="registro-antt">Registro ANTT</TabsTrigger>
           </TabsList>
 
           <TransportadoresSearch
@@ -243,33 +207,18 @@ export default function Transportadores() {
             />
           </TabsContent>
 
-          <TabsContent value="cavalos" className="space-y-4">
+          <TabsContent value="registro-antt" className="space-y-4">
             <div className="flex justify-end">
-              <Button onClick={() => { setEditingCavalo(null); setShowCavaloDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Cavalo
+              <Button onClick={() => { setEditingAntt(null); setShowAnttDialog(true); }}>
+                <Plus className="h-4 w-4 mr-2" /> Novo Registro ANTT
               </Button>
             </div>
 
-            <CavalosList
-              items={filteredCavalos}
+            <RegistrosAnttList
+              items={filteredAntt}
               isMobile={isMobile}
-              onEdit={(c) => { setEditingCavalo(c); setShowCavaloDialog(true); }}
-              onDelete={handleDeleteCavalo}
-            />
-          </TabsContent>
-
-          <TabsContent value="reboques" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => { setEditingReboque(null); setShowReboqueDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Reboque
-              </Button>
-            </div>
-
-            <ReboquesList
-              items={filteredReboques}
-              isMobile={isMobile}
-              onEdit={(r) => { setEditingReboque(r); setShowReboqueDialog(true); }}
-              onDelete={handleDeleteReboque}
+              onEdit={(r) => { setEditingAntt(r); setShowAnttDialog(true); }}
+              onDelete={handleDeleteAntt}
             />
           </TabsContent>
         </Tabs>
@@ -290,30 +239,12 @@ export default function Transportadores() {
         onVincular={handleAddVinculo}
       />
 
-      <VeiculoFormDialog
-        open={showCavaloDialog}
-        onOpenChange={setShowCavaloDialog}
-        editing={editingCavalo}
-        title={editingCavalo ? "Editar Cavalo" : "Novo Cavalo"}
+      <RegistroAnttFormDialog
+        open={showAnttDialog}
+        onOpenChange={setShowAnttDialog}
+        editing={editingAntt}
         transportadores={transportadores}
-        validationSchema={cavaloSchema}
-        folder="cavalos"
-        uploadLabel="Anexar ANTT do cavalo"
-        quantidadeLabel="Quantidade de cavalos"
-        onSubmit={handleSaveCavalo}
-      />
-
-      <VeiculoFormDialog
-        open={showReboqueDialog}
-        onOpenChange={setShowReboqueDialog}
-        editing={editingReboque}
-        title={editingReboque ? "Editar Reboque" : "Novo Reboque"}
-        transportadores={transportadores}
-        validationSchema={reboqueSchema}
-        folder="reboques"
-        uploadLabel="Anexar ANTT do reboque"
-        quantidadeLabel="Quantidade de reboques"
-        onSubmit={handleSaveReboque}
+        onSubmit={handleSaveAntt}
       />
 
       <TransportadorDocsDialog

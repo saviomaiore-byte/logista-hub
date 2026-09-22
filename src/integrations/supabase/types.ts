@@ -691,6 +691,50 @@ export type Database = {
           },
         ]
       }
+      registros_antt: {
+        Row: {
+          antt_data_emissao: string | null
+          arquivo_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          qtd_cavalos: number | null
+          qtd_reboques: number | null
+          transportador_id: string
+          updated_at: string
+        }
+        Insert: {
+          antt_data_emissao?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          qtd_cavalos?: number | null
+          qtd_reboques?: number | null
+          transportador_id: string
+          updated_at?: string
+        }
+        Update: {
+          antt_data_emissao?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          qtd_cavalos?: number | null
+          qtd_reboques?: number | null
+          transportador_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_antt_transportador_id_fkey"
+            columns: ["transportador_id"]
+            isOneToOne: false
+            referencedRelation: "transportadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       relatorio_config: {
         Row: {
           assunto_padrao: string | null

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { useTransportadores, useTransportadorVinculos, useCavalos, useReboques } from "@/hooks/useTransportadores";
+import { useTransportadores, useTransportadorVinculos, useRegistrosAntt } from "@/hooks/useTransportadores";
 import { useContratos } from "@/hooks/useContratos";
 import { useDocumentosEmpresa } from "@/hooks/useDocumentosEmpresa";
 import { useSeguros } from "@/hooks/useSeguros";
@@ -28,8 +28,7 @@ export default function TransportadorDetalhe() {
   const navigate = useNavigate();
   const { data: transportadores = [], isLoading } = useTransportadores();
   const { data: vinculos = [] } = useTransportadorVinculos();
-  const { data: cavalos = [] } = useCavalos();
-  const { data: reboques = [] } = useReboques();
+  const { data: registrosAntt = [] } = useRegistrosAntt();
   const { data: contratos = [] } = useContratos();
   const { data: documentos = [] } = useDocumentosEmpresa();
   const { data: seguros = [] } = useSeguros();
@@ -41,7 +40,11 @@ export default function TransportadorDetalhe() {
   const transportador = transportadores.find((item) => item.id === id);
   const motoristas = vinculos.filter((item) => item.transportador_id === id);
   const motoristaIds = useMemo(() => new Set(motoristas.map((item) => item.motorista_id)), [motoristas]);
-  const frota = [...cavalos.filter((item) => item.transportador_id === id), ...reboques.filter((item) => item.transportador_id === id)];
+  const anttDoTransportador = registrosAntt.filter((item) => item.transportador_id === id);
+  const totalVeiculos = anttDoTransportador.reduce(
+    (total, item) => total + (item.qtd_cavalos || 0) + (item.qtd_reboques || 0),
+    0,
+  );
   const contratosVinculados = contratos.filter((item) => item.transportador_id === id);
   const documentosVinculados = documentos.filter((item) => item.empresa === transportador?.razao_social);
   const segurosVinculados = seguros.filter((item) => item.motorista_id && motoristaIds.has(item.motorista_id));
@@ -105,7 +108,7 @@ export default function TransportadorDetalhe() {
                 <CardHeader><CardTitle className="text-sm font-semibold">Resumo operacional</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3">
                   {[
-                    [Truck, frota.length, "Veículos"], [Users, motoristas.length, "Motoristas"],
+                    [Truck, totalVeiculos, "Veículos"], [Users, motoristas.length, "Motoristas"],
                     [FileText, contratosVinculados.length, "Contratos"], [Shield, segurosVinculados.length, "Seguros"],
                   ].map(([Icon, value, label]: any) => (
                     <div key={label} className="rounded-xl bg-muted/50 p-4">

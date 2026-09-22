@@ -40,7 +40,11 @@ export default function TransportadorDetalhe() {
   const transportador = transportadores.find((item) => item.id === id);
   const motoristas = vinculos.filter((item) => item.transportador_id === id);
   const motoristaIds = useMemo(() => new Set(motoristas.map((item) => item.motorista_id)), [motoristas]);
-  const frota = [...cavalos.filter((item) => item.transportador_id === id), ...reboques.filter((item) => item.transportador_id === id)];
+  const anttDoTransportador = registrosAntt.filter((item) => item.transportador_id === id);
+  const totalVeiculos = anttDoTransportador.reduce(
+    (total, item) => total + (item.qtd_cavalos || 0) + (item.qtd_reboques || 0),
+    0,
+  );
   const contratosVinculados = contratos.filter((item) => item.transportador_id === id);
   const documentosVinculados = documentos.filter((item) => item.empresa === transportador?.razao_social);
   const segurosVinculados = seguros.filter((item) => item.motorista_id && motoristaIds.has(item.motorista_id));

@@ -21,7 +21,7 @@ export function RegistrosAnttList({ items, isMobile, onEdit, onDelete }: Props) 
     return (
       <div className="space-y-3">
         {items.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Nenhum registro ANTT encontrado</div>
+          <div className="text-center py-8 text-muted-foreground">Nenhum extrato ANTT encontrado</div>
         ) : items.map((r) => (
           <div key={r.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
             <div>
@@ -115,7 +115,7 @@ export function RegistrosAnttList({ items, isMobile, onEdit, onDelete }: Props) 
               </TableRow>
             ))}
             {items.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro ANTT encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum extrato ANTT encontrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

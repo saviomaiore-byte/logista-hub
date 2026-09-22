@@ -298,7 +298,8 @@ export default function Transportadores() {
         transportadores={transportadores}
         validationSchema={cavaloSchema}
         folder="cavalos"
-        uploadLabel="Anexar documento do cavalo"
+        uploadLabel="Anexar ANTT do cavalo"
+        quantidadeLabel="Quantidade de cavalos"
         onSubmit={handleSaveCavalo}
       />
 
@@ -310,7 +311,8 @@ export default function Transportadores() {
         transportadores={transportadores}
         validationSchema={reboqueSchema}
         folder="reboques"
-        uploadLabel="Anexar documento do reboque"
+        uploadLabel="Anexar ANTT do reboque"
+        quantidadeLabel="Quantidade de reboques"
         onSubmit={handleSaveReboque}
       />
 

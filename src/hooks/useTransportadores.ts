@@ -254,9 +254,26 @@ export function useMarcarMotoristaProprio() {
 interface VeiculoPayload {
   transportador_id: string;
   arquivo_url?: string | null;
+  /** Data de emissão do ANTT (sem vencimento). */
+  antt_data_emissao?: string | null;
+  /** Quantidade coberta pelo ANTT; vazio grava null. */
+  antt_quantidade?: number | string | null;
 }
 
-/** Criação/atualização de cavalo — payload idêntico ao anterior. */
+/** Normaliza data e quantidade do ANTT: vazio sempre grava null. */
+function anttFields(values: VeiculoPayload) {
+  const quantidade =
+    values.antt_quantidade === "" || values.antt_quantidade === null || values.antt_quantidade === undefined
+      ? null
+      : Number(values.antt_quantidade);
+
+  return {
+    antt_data_emissao: values.antt_data_emissao?.trim() || null,
+    antt_quantidade: quantidade !== null && Number.isFinite(quantidade) ? quantidade : null,
+  };
+}
+
+/** Criação/atualização de cavalo — payload idêntico ao anterior + campos do ANTT. */
 export function useSalvarCavalo() {
   const queryClient = useQueryClient();
 
@@ -265,7 +282,9 @@ export function useSalvarCavalo() {
       const payload = {
         transportador_id: values.transportador_id,
         arquivo_url: values.arquivo_url?.trim() || null,
+        ...anttFields(values),
       };
+
 
       if (id) {
         const { error } = await supabase.from("cavalos").update(payload).eq("id", id);
@@ -296,7 +315,7 @@ export function useExcluirCavalo() {
   });
 }
 
-/** Criação/atualização de reboque — payload idêntico ao anterior. */
+/** Criação/atualização de reboque — payload idêntico ao anterior + campos do ANTT. */
 export function useSalvarReboque() {
   const queryClient = useQueryClient();
 
@@ -305,7 +324,9 @@ export function useSalvarReboque() {
       const payload = {
         transportador_id: values.transportador_id,
         arquivo_url: values.arquivo_url?.trim() || null,
+        ...anttFields(values),
       };
+
 
       if (id) {
         const { error } = await supabase.from("reboques").update(payload).eq("id", id);

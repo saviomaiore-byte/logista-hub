@@ -54,8 +54,7 @@ export default function Transportadores() {
   // Reutiliza a listagem central de motoristas (mesma queryKey ["motoristas"]).
   const { data: motoristas = [] } = useMotoristas();
   const { data: vinculos = [] } = useTransportadorVinculos();
-  const { data: cavalos = [] } = useCavalos();
-  const { data: reboques = [] } = useReboques();
+  const { data: registrosAntt = [] } = useRegistrosAntt();
 
   const errorToast = (e: any) =>
     toast({ title: "Erro", description: e?.message, variant: "destructive" });
@@ -65,10 +64,8 @@ export default function Transportadores() {
   const addVinculo = useVincularMotorista();
   const removeVinculo = useDesvincularMotorista();
   const marcarProprio = useMarcarMotoristaProprio();
-  const saveCavalo = useSalvarCavalo();
-  const deleteCavalo = useExcluirCavalo();
-  const saveReboque = useSalvarReboque();
-  const deleteReboque = useExcluirReboque();
+  const saveAntt = useSalvarRegistroAntt();
+  const deleteAntt = useExcluirRegistroAntt();
 
   const handleSaveTransp = (values: any) => {
     const editando = !!editingTransp;
@@ -130,42 +127,23 @@ export default function Transportadores() {
     );
   };
 
-  const handleSaveCavalo = (values: any) => {
-    const editando = !!editingCavalo;
-    saveCavalo.mutate(
-      { id: editingCavalo?.id, values },
+  const handleSaveAntt = (values: any) => {
+    const editando = !!editingAntt;
+    saveAntt.mutate(
+      { id: editingAntt?.id, values },
       {
         onSuccess: () => {
-          setShowCavaloDialog(false);
-          setEditingCavalo(null);
-          toast({ title: editando ? "Cavalo atualizado" : "Cavalo cadastrado" });
+          setShowAnttDialog(false);
+          setEditingAntt(null);
+          toast({ title: editando ? "Registro ANTT atualizado" : "Registro ANTT cadastrado" });
         },
         onError: errorToast,
       },
     );
   };
 
-  const handleDeleteCavalo = (id: string) => {
-    deleteCavalo.mutate(id, { onSuccess: () => toast({ title: "Cavalo excluído" }) });
-  };
-
-  const handleSaveReboque = (values: any) => {
-    const editando = !!editingReboque;
-    saveReboque.mutate(
-      { id: editingReboque?.id, values },
-      {
-        onSuccess: () => {
-          setShowReboqueDialog(false);
-          setEditingReboque(null);
-          toast({ title: editando ? "Reboque atualizado" : "Reboque cadastrado" });
-        },
-        onError: errorToast,
-      },
-    );
-  };
-
-  const handleDeleteReboque = (id: string) => {
-    deleteReboque.mutate(id, { onSuccess: () => toast({ title: "Reboque excluído" }) });
+  const handleDeleteAntt = (id: string) => {
+    deleteAntt.mutate(id, { onSuccess: () => toast({ title: "Registro ANTT excluído" }) });
   };
 
   const filteredTransp = transportadores.filter((t) => {
@@ -177,11 +155,7 @@ export default function Transportadores() {
     return matchesSearch && matchesRegime && matchesStatus;
   });
 
-  const filteredCavalos = cavalos.filter((c) =>
-    c.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const filteredReboques = reboques.filter((r) =>
+  const filteredAntt = registrosAntt.filter((r) =>
     r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -234,33 +208,18 @@ export default function Transportadores() {
             />
           </TabsContent>
 
-          <TabsContent value="cavalos" className="space-y-4">
+          <TabsContent value="registro-antt" className="space-y-4">
             <div className="flex justify-end">
-              <Button onClick={() => { setEditingCavalo(null); setShowCavaloDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Cavalo
+              <Button onClick={() => { setEditingAntt(null); setShowAnttDialog(true); }}>
+                <Plus className="h-4 w-4 mr-2" /> Novo Registro ANTT
               </Button>
             </div>
 
-            <CavalosList
-              items={filteredCavalos}
+            <RegistrosAnttList
+              items={filteredAntt}
               isMobile={isMobile}
-              onEdit={(c) => { setEditingCavalo(c); setShowCavaloDialog(true); }}
-              onDelete={handleDeleteCavalo}
-            />
-          </TabsContent>
-
-          <TabsContent value="reboques" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => { setEditingReboque(null); setShowReboqueDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Reboque
-              </Button>
-            </div>
-
-            <ReboquesList
-              items={filteredReboques}
-              isMobile={isMobile}
-              onEdit={(r) => { setEditingReboque(r); setShowReboqueDialog(true); }}
-              onDelete={handleDeleteReboque}
+              onEdit={(r) => { setEditingAntt(r); setShowAnttDialog(true); }}
+              onDelete={handleDeleteAntt}
             />
           </TabsContent>
         </Tabs>
@@ -281,30 +240,12 @@ export default function Transportadores() {
         onVincular={handleAddVinculo}
       />
 
-      <VeiculoFormDialog
-        open={showCavaloDialog}
-        onOpenChange={setShowCavaloDialog}
-        editing={editingCavalo}
-        title={editingCavalo ? "Editar Cavalo" : "Novo Cavalo"}
+      <RegistroAnttFormDialog
+        open={showAnttDialog}
+        onOpenChange={setShowAnttDialog}
+        editing={editingAntt}
         transportadores={transportadores}
-        validationSchema={cavaloSchema}
-        folder="cavalos"
-        uploadLabel="Anexar ANTT do cavalo"
-        quantidadeLabel="Quantidade de cavalos"
-        onSubmit={handleSaveCavalo}
-      />
-
-      <VeiculoFormDialog
-        open={showReboqueDialog}
-        onOpenChange={setShowReboqueDialog}
-        editing={editingReboque}
-        title={editingReboque ? "Editar Reboque" : "Novo Reboque"}
-        transportadores={transportadores}
-        validationSchema={reboqueSchema}
-        folder="reboques"
-        uploadLabel="Anexar ANTT do reboque"
-        quantidadeLabel="Quantidade de reboques"
-        onSubmit={handleSaveReboque}
+        onSubmit={handleSaveAntt}
       />
 
       <TransportadorDocsDialog

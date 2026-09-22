@@ -36,7 +36,7 @@ const tableLabels: Record<string, [string, RecentActivity["type"]]> = {
   pins_confins: ["PIS/COFINS", "cobranca"],
   cavalos: ["Cavalo", "cadastro"],
   reboques: ["Reboque", "cadastro"],
-  registros_antt: ["Registro ANTT", "cadastro"],
+  registros_antt: ["Extrato ANTT", "cadastro"],
   motorista_arquivos: ["Arquivo de motorista", "documento"],
   transportador_arquivos: ["Arquivo de transportadora", "documento"],
   transportador_motoristas: ["Vínculo de motorista", "cadastro"],

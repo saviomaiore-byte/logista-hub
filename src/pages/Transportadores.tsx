@@ -135,7 +135,7 @@ export default function Transportadores() {
         onSuccess: () => {
           setShowAnttDialog(false);
           setEditingAntt(null);
-          toast({ title: editando ? "Registro ANTT atualizado" : "Registro ANTT cadastrado" });
+          toast({ title: editando ? "Extrato ANTT atualizado" : "Extrato ANTT cadastrado" });
         },
         onError: errorToast,
       },
@@ -143,7 +143,7 @@ export default function Transportadores() {
   };
 
   const handleDeleteAntt = (id: string) => {
-    deleteAntt.mutate(id, { onSuccess: () => toast({ title: "Registro ANTT excluído" }) });
+    deleteAntt.mutate(id, { onSuccess: () => toast({ title: "Extrato ANTT excluído" }) });
   };
 
   const filteredTransp = transportadores.filter((t) => {
@@ -180,7 +180,7 @@ export default function Transportadores() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="rounded-xl bg-muted/70 p-1">
             <TabsTrigger className="rounded-lg text-xs" value="transportadores">Transportadores</TabsTrigger>
-            <TabsTrigger className="rounded-lg text-xs" value="registro-antt">Registro ANTT</TabsTrigger>
+            <TabsTrigger className="rounded-lg text-xs" value="registro-antt">Extrato ANTT</TabsTrigger>
           </TabsList>
 
           <TransportadoresSearch
@@ -210,7 +210,7 @@ export default function Transportadores() {
           <TabsContent value="registro-antt" className="space-y-4">
             <div className="flex justify-end">
               <Button onClick={() => { setEditingAntt(null); setShowAnttDialog(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Novo Registro ANTT
+                <Plus className="h-4 w-4 mr-2" /> Novo Extrato ANTT
               </Button>
             </div>
 

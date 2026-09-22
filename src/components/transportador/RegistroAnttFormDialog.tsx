@@ -31,7 +31,7 @@ export function RegistroAnttFormDialog({ open, onOpenChange, editing, transporta
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{editing ? "Editar Registro ANTT" : "Novo Registro ANTT"}</DialogTitle>
+          <DialogTitle>{editing ? "Editar Extrato ANTT" : "Novo Extrato ANTT"}</DialogTitle>
         </DialogHeader>
         <Formik<RegistroAnttFormValues>
           initialValues={{

@@ -270,10 +270,10 @@ export function useSalvarRegistroAntt() {
 
       if (id) {
         const { error } = await supabase.from("registros_antt").update(payload).eq("id", id);
-        if (reportDbError("atualizar registro ANTT", error)) throw error;
+        if (reportDbError("atualizar extrato ANTT", error)) throw error;
       } else {
         const { error } = await supabase.from("registros_antt").insert(payload);
-        if (reportDbError("salvar registro ANTT", error)) throw error;
+        if (reportDbError("salvar extrato ANTT", error)) throw error;
       }
     },
     onSuccess: () => {
@@ -289,7 +289,7 @@ export function useExcluirRegistroAntt() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("registros_antt").delete().eq("id", id);
-      if (reportDbError("excluir registro ANTT", error)) throw error;
+      if (reportDbError("excluir extrato ANTT", error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: registrosAnttKey });

@@ -7,35 +7,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import {
-  cavaloSchema,
-  reboqueSchema,
-  type Cavalo,
-  type Reboque,
+  type RegistroAntt,
   type Transportador,
 } from "@/components/transportador/types";
 import { useMotoristas } from "@/hooks/useMotoristas";
 import {
   useTransportadores,
   useTransportadorVinculos,
-  useCavalos,
-  useReboques,
+  useRegistrosAntt,
   useSalvarTransportador,
   useExcluirTransportador,
   useVincularMotorista,
   useDesvincularMotorista,
   useMarcarMotoristaProprio,
-  useSalvarCavalo,
-  useExcluirCavalo,
-  useSalvarReboque,
-  useExcluirReboque,
+  useSalvarRegistroAntt,
+  useExcluirRegistroAntt,
 } from "@/hooks/useTransportadores";
 import { TransportadoresHeader } from "@/components/transportador/TransportadoresHeader";
 import { TransportadoresSearch } from "@/components/transportador/TransportadoresSearch";
 import { TransportadoresList } from "@/components/transportador/TransportadoresList";
-import { CavalosList } from "@/components/transportador/CavalosList";
-import { ReboquesList } from "@/components/transportador/ReboquesList";
+import { RegistrosAnttList } from "@/components/transportador/RegistrosAnttList";
 import { TransportadorFormDialog } from "@/components/transportador/TransportadorFormDialog";
-import { VeiculoFormDialog } from "@/components/transportador/VeiculoFormDialog";
+import { RegistroAnttFormDialog } from "@/components/transportador/RegistroAnttFormDialog";
 import { VincularMotoristaDialog } from "@/components/transportador/VincularMotoristaDialog";
 import { TransportadorDocsDialog } from "@/components/transportador/TransportadorDocsDialog";
 

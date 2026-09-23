@@ -5,7 +5,14 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { ArrowUpDown, Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   type RegistroAntt,
   type Transportador,
@@ -39,6 +46,7 @@ export default function Transportadores() {
   const [search, setSearch] = useState("");
   const [regimeFilter, setRegimeFilter] = useState("todos");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [anttOrder, setAnttOrder] = useState("az");
   const isMobile = useIsMobile();
 
   const [showTranspDialog, setShowTranspDialog] = useState(false);
@@ -155,9 +163,17 @@ export default function Transportadores() {
     return matchesSearch && matchesRegime && matchesStatus;
   });
 
-  const filteredAntt = registrosAntt.filter((r) =>
-    r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAntt = registrosAntt
+    .filter((r) =>
+      r.transportadores?.razao_social?.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      const nomeA = a.transportadores?.razao_social?.toLowerCase() ?? "";
+      const nomeB = b.transportadores?.razao_social?.toLowerCase() ?? "";
+      return anttOrder === "az"
+        ? nomeA.localeCompare(nomeB, "pt-BR")
+        : nomeB.localeCompare(nomeA, "pt-BR");
+    });
 
   const getMotoristasByTransp = (transpId: string) =>
     vinculos.filter((v: any) => v.transportador_id === transpId);
@@ -208,7 +224,17 @@ export default function Transportadores() {
           </TabsContent>
 
           <TabsContent value="registro-antt" className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+              <Select value={anttOrder} onValueChange={setAnttOrder}>
+                <SelectTrigger className="h-10 w-full rounded-xl bg-card text-xs sm:w-48">
+                  <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Ordem: A-Z" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="az">Ordem: A-Z</SelectItem>
+                  <SelectItem value="za">Ordem: Z-A</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={() => { setEditingAntt(null); setShowAnttDialog(true); }}>
                 <Plus className="h-4 w-4 mr-2" /> Novo Extrato ANTT
               </Button>

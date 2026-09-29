@@ -135,11 +135,42 @@ export function useAtividadesRecentes(options?: {
 
       if (reportDbError("carregar atividades recentes", error)) throw error;
 
-      const rows = (data || []) as AuditRow[];
-      return rows
+      const rows = ((data || []) as AuditRow[])
         .filter((row) => !transportadorId || belongsToTransportador(row, transportadorId))
-        .slice(0, limit)
-        .map(formatActivity);
+        .slice(0, limit);
+
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[];
+      const nomes = new Map<string, string>();
+      if (userIds.length) {
+        const { data: perfis } = await supabase
+          .from("profiles")
+          .select("user_id, nome, email")
+          .in("user_id", userIds);
+        (perfis || []).forEach((p) => {
+          const partes = (p.nome || p.email?.split("@")[0] || "").trim().split(/\s+/);
+          const nome = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : partes[0];
+          if (nome) nomes.set(p.user_id, nome);
+        });
+      }
+
+      const fmt = new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      return rows.map((row) => {
+        const a = formatActivity(row);
+        const autor = (row.user_id && nomes.get(row.user_id)) || "Sistema";
+        return {
+          ...a,
+          time: row.created_at ? fmt.format(new Date(row.created_at)).replace(",", " às") : "—",
+          description: `${a.description} Por ${autor}.`,
+        };
+      });
     },
     staleTime: 30_000,
     refetchInterval: 60_000,

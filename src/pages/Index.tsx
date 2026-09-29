@@ -65,6 +65,7 @@ export default function Index() {
   const { data: todasAtividades = [] } = useAtividadesRecentes({ limit: 200 });
 
   const [todasOpen, setTodasOpen] = useState(false);
+  const [atividadesOpen, setAtividadesOpen] = useState(false);
 
   const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)));

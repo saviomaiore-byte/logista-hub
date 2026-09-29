@@ -5,6 +5,7 @@ import { AlertCard, type DashboardAlert } from "@/components/dashboard/AlertCard
 import { AlertasArquivadosDialog } from "@/components/dashboard/AlertasArquivadosDialog";
 import { TodasPendenciasDialog } from "@/components/dashboard/TodasPendenciasDialog";
 import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
+import { TodasAtividadesDialog } from "@/components/dashboard/TodasAtividadesDialog";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { Users, Truck, UserCheck, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,8 +62,10 @@ export default function Index() {
   const { data: arquivados = [] } = useAlertasArquivados();
   const arquivarAlerta = useArquivarAlerta();
   const { data: atividadesRecentes = [] } = useAtividadesRecentes({ limit: 4 });
+  const { data: todasAtividades = [] } = useAtividadesRecentes({ limit: 200 });
 
   const [todasOpen, setTodasOpen] = useState(false);
+  const [atividadesOpen, setAtividadesOpen] = useState(false);
 
   const naoArquivados = useMemo(() => {
     const arquivadosSet = new Set(arquivados.map((a) => alertaKey(a.entidade_id, a.tipo_documento, a.vencimento)));
@@ -301,8 +304,18 @@ export default function Index() {
               </div>
             )}
           </div>
-          <RecentActivityCard activities={atividadesRecentes} />
+          <RecentActivityCard
+            activities={atividadesRecentes}
+            totalCount={todasAtividades.length}
+            onVerMais={() => setAtividadesOpen(true)}
+          />
         </div>
+
+        <TodasAtividadesDialog
+          open={atividadesOpen}
+          onOpenChange={setAtividadesOpen}
+          activities={todasAtividades}
+        />
 
         <AlertasArquivadosDialog open={arquivadosOpen} onOpenChange={setArquivadosOpen} />
 

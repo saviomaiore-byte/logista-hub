@@ -167,8 +167,8 @@ export function useAtividadesRecentes(options?: {
         const autor = (row.user_id && nomes.get(row.user_id)) || "Sistema";
         return {
           ...a,
+          title: `${a.title} por ${autor}`,
           time: row.created_at ? fmt.format(new Date(row.created_at)).replace(",", " às") : "—",
-          description: `${a.description} Por ${autor}.`,
         };
       });
     },

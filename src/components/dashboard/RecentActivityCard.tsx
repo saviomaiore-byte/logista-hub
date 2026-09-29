@@ -1,5 +1,6 @@
-import { FileText, Send, UserPlus, CheckCircle } from "lucide-react";
+import { FileText, Send, UserPlus, CheckCircle, History } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export interface Activity {
   id: string;
@@ -14,6 +15,8 @@ interface RecentActivityCardProps {
   title?: string;
   subtitle?: string;
   emptyText?: string;
+  onVerMais?: () => void;
+  totalCount?: number;
 }
 
 export function RecentActivityCard({
@@ -21,6 +24,8 @@ export function RecentActivityCard({
   title = "Atividades recentes",
   subtitle = "Movimentações realizadas no sistema",
   emptyText = "As movimentações realizadas no sistema aparecerão aqui.",
+  onVerMais,
+  totalCount,
 }: RecentActivityCardProps) {
   const getActivityIcon = (type: Activity["type"]) => {
     const icons = {
@@ -44,9 +49,22 @@ export function RecentActivityCard({
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="shrink-0 border-b border-border px-5 py-4">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        {onVerMais && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 shrink-0 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={onVerMais}
+          >
+            <History className="h-3.5 w-3.5" />
+            Ver mais{typeof totalCount === "number" && totalCount > 0 ? ` (${totalCount})` : ""}
+          </Button>
+        )}
       </div>
       {activities.length > 0 ? (
         <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">

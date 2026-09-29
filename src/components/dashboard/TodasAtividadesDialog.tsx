@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle, Search } from "lucide-react";
+import { CheckCircle, FileText, Search, Send, UserPlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,

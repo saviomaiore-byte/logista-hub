@@ -53,9 +53,9 @@ export function TodasAtividadesDialog({ open, onOpenChange, activities }: Props)
 
   const getActivityIcon = (type: Activity["type"]) => {
     const icons = {
-      contrato: <FileTextIcon />,
-      cadastro: <UserPlusIcon />,
-      documento: <SendIcon />,
+      contrato: <FileText className="h-4 w-4" />,
+      cadastro: <UserPlus className="h-4 w-4" />,
+      documento: <Send className="h-4 w-4" />,
       cobranca: <CheckCircle className="h-4 w-4" />,
     };
     return icons[type];
@@ -151,14 +151,4 @@ export function TodasAtividadesDialog({ open, onOpenChange, activities }: Props)
       </DialogContent>
     </Dialog>
   );
-}
-
-function FileTextIcon() {
-  return <FileText className="h-4 w-4" />;
-}
-function UserPlusIcon() {
-  return <UserPlus className="h-4 w-4" />;
-}
-function SendIcon() {
-  return <Send className="h-4 w-4" />;
 }

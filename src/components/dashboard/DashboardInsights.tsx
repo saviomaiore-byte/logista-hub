@@ -3,7 +3,6 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Area, 
 import { format, startOfMonth, endOfMonth, addMonths, addDays, isWithinInterval, parseISO, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { type DashboardAlert } from "./AlertCard";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--warning))", "hsl(var(--destructive))"];
@@ -109,7 +108,15 @@ export function DashboardInsights({ documents }: { documents: DashboardAlert[] }
           </div>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ left: -20, right: 12, top: 10 }}>
+              <AreaChart
+                data={chartData}
+                margin={{ left: -20, right: 12, top: 10 }}
+                style={{ cursor: "pointer" }}
+                onClick={(state) => {
+                  const index = Number((state as { activeTooltipIndex?: number | string } | null)?.activeTooltipIndex);
+                  if (Number.isInteger(index) && chartData[index]) setSelectedPeriod(chartData[index]);
+                }}
+              >
                 <defs><linearGradient id="dashboardArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.28}/><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" axisLine={false} tickLine={false} fontSize={12} />
@@ -118,7 +125,7 @@ export function DashboardInsights({ documents }: { documents: DashboardAlert[] }
                   cursor={{ stroke: "hsl(var(--primary))", strokeDasharray: "4 4" }}
                   content={<ChartTooltip />}
                 />
-                <Area type="monotone" dataKey="documentos" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#dashboardArea)" activeDot={{ r: 6, onClick: (dot) => setSelectedPeriod(((dot as { payload?: ChartPeriod }).payload ?? (dot as unknown as ChartPeriod)) as ChartPeriod) }} />
+                <Area type="monotone" dataKey="documentos" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#dashboardArea)" activeDot={{ r: 6, cursor: "pointer" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -147,7 +154,7 @@ export function DashboardInsights({ documents }: { documents: DashboardAlert[] }
             <DialogTitle>Vencimentos de {selectedPeriod?.fullLabel || ""}</DialogTitle>
             <DialogDescription>{selectedDocuments.length} documentos encontrados neste período.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] px-6">
+          <div className="max-h-[60vh] overflow-y-auto px-6">
             <div className="divide-y divide-border">
               {selectedDocuments.map((doc) => (
                 <div key={doc.id} className="grid gap-2 py-4 sm:grid-cols-[1fr_90px_110px_auto] sm:items-center">
@@ -156,7 +163,7 @@ export function DashboardInsights({ documents }: { documents: DashboardAlert[] }
               ))}
               {selectedDocuments.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Nenhum vencimento neste mês.</p>}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </>

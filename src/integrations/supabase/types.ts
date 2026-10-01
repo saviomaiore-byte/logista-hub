@@ -541,6 +541,7 @@ export type Database = {
           mopp_vencimento: string | null
           mopp_vitalicio: boolean
           nome: string
+          projeto_start: boolean
           rg: string | null
           situacao_operacional: string | null
           status: string | null
@@ -573,6 +574,7 @@ export type Database = {
           mopp_vencimento?: string | null
           mopp_vitalicio?: boolean
           nome: string
+          projeto_start?: boolean
           rg?: string | null
           situacao_operacional?: string | null
           status?: string | null
@@ -605,6 +607,7 @@ export type Database = {
           mopp_vencimento?: string | null
           mopp_vitalicio?: boolean
           nome?: string
+          projeto_start?: boolean
           rg?: string | null
           situacao_operacional?: string | null
           status?: string | null

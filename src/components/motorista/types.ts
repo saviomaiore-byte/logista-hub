@@ -20,6 +20,7 @@ export interface Motorista {
   status: string;
   tipo_pessoa?: string | null;
   cnpj?: string | null;
+  projeto_start: boolean;
 
   cnh_numero: string | null;
   cnh_vencimento: string | null;
@@ -48,6 +49,7 @@ export const initialValues = {
   status: "ativo",
   tipo_pessoa: "fisica",
   cnpj: "",
+  projeto_start: false,
 
   cnh_numero: "",
   cnh_vencimento: "",
@@ -79,6 +81,7 @@ export function motoristaToFormValues(m: Motorista): MotoristaFormValues {
     status: m.status || "ativo",
     tipo_pessoa: m.tipo_pessoa || "fisica",
     cnpj: m.cnpj || "",
+    projeto_start: m.projeto_start ?? false,
 
     cnh_numero: m.cnh_numero || "",
     cnh_vencimento: m.cnh_vencimento || "",
@@ -109,6 +112,7 @@ export function formValuesToRow(values: MotoristaFormValues) {
     status: values.status,
     tipo_pessoa: values.tipo_pessoa,
     cnpj: values.tipo_pessoa === "juridica" ? values.cnpj || null : null,
+    projeto_start: values.projeto_start,
     cnh_numero: values.cnh_numero || null,
     cnh_vencimento: values.cnh_vencimento || null,
     mopp_numero: values.mopp_numero || null,

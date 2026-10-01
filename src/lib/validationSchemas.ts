@@ -62,6 +62,7 @@ export const motoristaSchema = Yup.object().shape({
   rg: optionalString(30),
   status: Yup.string().oneOf(['ativo', 'inativo', 'pendente']).required(),
   tipo_pessoa: Yup.string().oneOf(['fisica', 'juridica']).required(),
+  projeto_start: Yup.boolean().required(),
   cnpj: Yup.string().trim().when('tipo_pessoa', {
     is: 'juridica',
     then: (s) => s.required('CNPJ é obrigatório para pessoa jurídica').matches(cnpjRegex, 'CNPJ inválido (use 00.000.000/0000-00)'),

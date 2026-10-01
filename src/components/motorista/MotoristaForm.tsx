@@ -102,6 +102,23 @@ export function MotoristaForm({
             </FormSelectWrapper>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormSelectWrapper name="projeto_start" label="Projeto Start">
+              <Select
+                value={values.projeto_start ? "sim" : "nao"}
+                onValueChange={(value) => setFieldValue("projeto_start", value === "sim")}
+              >
+                <SelectTrigger aria-label="Projeto Start">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormSelectWrapper>
+          </div>
+
           <TransportadorasSelector
             transportadoras={transportadoras}
             selected={selectedTransportadoras}

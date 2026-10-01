@@ -36,6 +36,28 @@ export function MotoristaForm({
             <FormField name="cpf" label="CPF" placeholder="000.000.000-00" mask="cpf" required />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormSelectWrapper name="tipo_pessoa" label="Tipo de Pessoa">
+              <Select
+                value={values.tipo_pessoa}
+                onValueChange={(value) => {
+                  setFieldValue("tipo_pessoa", value);
+                  if (value !== "juridica") setFieldValue("cnpj", "");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fisica">Pessoa Física</SelectItem>
+                  <SelectItem value="juridica">Pessoa Jurídica</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormSelectWrapper>
+            {values.tipo_pessoa === "juridica" && (
+              <FormField name="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" mask="cnpj" required />
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField name="telefone" label="Telefone" placeholder="(00) 00000-0000" mask="telefone" />
             <FormField name="email" label="Email" type="email" />
           </div>

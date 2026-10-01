@@ -111,7 +111,7 @@ export function useContratos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contratos")
-        .select("*, motoristas(nome), transportadores(razao_social)")
+        .select("*, motoristas(nome, tipo_pessoa), transportadores(razao_social)")
         .order("created_at", { ascending: false });
 
       if (reportDbError("carregar contratos", error, toast.error)) throw error;

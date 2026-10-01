@@ -18,6 +18,8 @@ export interface Motorista {
   estado_civil: string | null;
   rg: string | null;
   status: string;
+  tipo_pessoa?: string | null;
+  cnpj?: string | null;
 
   cnh_numero: string | null;
   cnh_vencimento: string | null;
@@ -44,6 +46,8 @@ export const initialValues = {
   estado_civil: "",
   rg: "",
   status: "ativo",
+  tipo_pessoa: "fisica",
+  cnpj: "",
 
   cnh_numero: "",
   cnh_vencimento: "",
@@ -73,6 +77,8 @@ export function motoristaToFormValues(m: Motorista): MotoristaFormValues {
     estado_civil: m.estado_civil || "",
     rg: m.rg || "",
     status: m.status || "ativo",
+    tipo_pessoa: m.tipo_pessoa || "fisica",
+    cnpj: m.cnpj || "",
 
     cnh_numero: m.cnh_numero || "",
     cnh_vencimento: m.cnh_vencimento || "",
@@ -101,6 +107,8 @@ export function formValuesToRow(values: MotoristaFormValues) {
     estado_civil: values.estado_civil || null,
     rg: values.rg || null,
     status: values.status,
+    tipo_pessoa: values.tipo_pessoa,
+    cnpj: values.tipo_pessoa === "juridica" ? values.cnpj || null : null,
     cnh_numero: values.cnh_numero || null,
     cnh_vencimento: values.cnh_vencimento || null,
     mopp_numero: values.mopp_numero || null,

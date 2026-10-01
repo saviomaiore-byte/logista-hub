@@ -1,0 +1,1 @@
+ALTER TABLE public.motoristas ADD COLUMN tipo_pessoa text NOT NULL DEFAULT 'fisica' CHECK (tipo_pessoa IN ('fisica','juridica')), ADD COLUMN cnpj text;

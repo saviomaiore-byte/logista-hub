@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FileText,
@@ -28,6 +29,7 @@ import {
   Users,
   Building2,
   Filter,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/FileUpload";
@@ -197,13 +199,44 @@ export default function Contratos() {
     const modeloOk = filtroModelo === "todos" || contrato.modelo === filtroModelo;
     const vinculoOk =
       filtroVinculo === "todos" ||
-      (filtroVinculo === "pessoa_fisica" && (contrato as any).motoristas?.tipo_pessoa === "fisica") ||
-      (filtroVinculo === "pessoa_juridica" && (contrato as any).motoristas?.tipo_pessoa === "juridica");
+      (filtroVinculo === "pessoa_fisica" && contrato.motoristas?.tipo_pessoa === "fisica") ||
+      (filtroVinculo === "pessoa_juridica" && contrato.motoristas?.tipo_pessoa === "juridica");
     return tipoOk && modeloOk && vinculoOk;
   });
 
   const isMobile = useIsMobile();
 
+  const renderAcoes = (contrato: Contrato) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Ações do contrato">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {contrato.arquivo_url && (
+          <DropdownMenuItem onClick={() => openSignedFile(contrato.arquivo_url!)}>
+            <Download className="mr-2 h-4 w-4" /> Baixar arquivo
+          </DropdownMenuItem>
+        )}
+        {podeEditar(contrato) && (
+          <DropdownMenuItem onClick={() => handleEdit(contrato)}>
+            <Pencil className="mr-2 h-4 w-4" /> Editar
+          </DropdownMenuItem>
+        )}
+        {contrato.status === "pendente" && (
+          <DropdownMenuItem onClick={() => enviarContrato(contrato.id)}>
+            <Send className="mr-2 h-4 w-4" /> Marcar como enviado
+          </DropdownMenuItem>
+        )}
+        {isAdmin && (
+          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(contrato.id)}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   const ContratoCards = ({ contratos }: { contratos: Contrato[] }) => (
     <div className="space-y-3">
       {contratos.length === 0 ? (
@@ -217,7 +250,7 @@ export default function Contratos() {
               <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">{contrato.empresa}</p>
-                {contrato.cnpj && <p className="text-sm text-muted-foreground">{contrato.cnpj}</p>}
+                <p className="text-sm text-muted-foreground">CNPJ: <span>{contrato.motoristas?.cnpj || "—"}</span></p>
               </div>
             </div>
 
@@ -241,28 +274,7 @@ export default function Contratos() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1 border-t border-border pt-1">
-              {contrato.arquivo_url && (
-                <Button variant="ghost" size="sm" onClick={() => openSignedFile(contrato.arquivo_url!)}>
-                  <Download className="mr-1 h-4 w-4" /> Baixar
-                </Button>
-              )}
-              {podeEditar(contrato) && (
-                <Button variant="ghost" size="sm" onClick={() => handleEdit(contrato)}>
-                  <Pencil className="mr-1 h-4 w-4" /> Editar
-                </Button>
-              )}
-              {contrato.status === "pendente" && (
-                <Button variant="ghost" size="sm" onClick={() => enviarContrato(contrato.id)}>
-                  <Send className="mr-1 h-4 w-4" /> Enviar
-                </Button>
-              )}
-              {isAdmin && (
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(contrato.id)}>
-                  <Trash2 className="mr-1 h-4 w-4 text-destructive" />
-                </Button>
-              )}
-            </div>
+            <div className="flex justify-end border-t border-border pt-1">{renderAcoes(contrato)}</div>
           </div>
         ))
       )}
@@ -284,9 +296,9 @@ export default function Contratos() {
               <th className="px-6 py-4 text-left">Modelo</th>
               <th className="px-6 py-4 text-left">Empresa</th>
               <th className="px-6 py-4 text-left">Vinculado a</th>
-              <th className="px-6 py-4 text-left">CNPJ</th>
+              <th className="px-6 py-4 text-left whitespace-nowrap">CNPJ do motorista</th>
               <th className="px-6 py-4 text-left">Data Envio</th>
-              <th className="px-6 py-4 text-right">Ações</th>
+              <th className="w-16 px-4 py-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -312,39 +324,11 @@ export default function Contratos() {
                   )}
                   {!contrato.motoristas?.nome && !contrato.transportadores?.razao_social && "-"}
                 </td>
-                <td className="px-6 py-4 text-muted-foreground">{contrato.cnpj || "-"}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">{contrato.motoristas?.cnpj || "—"}</td>
                 <td className="px-6 py-4 text-muted-foreground">
                   {contrato.data_envio ? new Date(contrato.data_envio).toLocaleDateString("pt-BR") : "-"}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    {contrato.arquivo_url && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openSignedFile(contrato.arquivo_url!)}
-                        title="Baixar Arquivo"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {podeEditar(contrato) && (
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(contrato)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {contrato.status === "pendente" && (
-                      <Button variant="ghost" size="icon" onClick={() => enviarContrato(contrato.id)} title="Enviar">
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {isAdmin && (
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(contrato.id)} title="Excluir">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                </td>
+                <td className="px-4 py-4 text-right">{renderAcoes(contrato)}</td>
               </tr>
             ))}
           </tbody>

@@ -29,7 +29,7 @@ export interface ContratoComVinculos {
   arquivo_url: string | null;
   motorista_id: string | null;
   transportador_id: string | null;
-  motoristas?: { nome: string } | null;
+  motoristas?: { nome: string; tipo_pessoa: string; cnpj: string | null } | null;
   transportadores?: { razao_social: string } | null;
 }
 
@@ -111,7 +111,7 @@ export function useContratos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contratos")
-        .select("*, motoristas(nome, tipo_pessoa), transportadores(razao_social)")
+        .select("*, motoristas(nome, tipo_pessoa, cnpj), transportadores(razao_social)")
         .order("created_at", { ascending: false });
 
       if (reportDbError("carregar contratos", error, toast.error)) throw error;

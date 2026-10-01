@@ -76,6 +76,7 @@ export default function Contratos() {
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroModelo, setFiltroModelo] = useState("todos");
+  const [filtroVinculo, setFiltroVinculo] = useState("todos");
 
   const { data: contratos = [], isLoading: loadingContratos } = useContratos();
   const { data: transportadores = [], isLoading: loadingTransportadores } =
@@ -190,10 +191,18 @@ export default function Contratos() {
     return <span className="status-badge bg-secondary text-secondary-foreground">{modelo}</span>;
   };
 
+  /**
+   * Filtro por vínculo: "pessoa_fisica" = contrato vinculado ao motorista (CPF);
+   * "pessoa_juridica" = contrato vinculado apenas à transportadora (CNPJ).
+   */
   const contratosFiltrados = contratos.filter((contrato) => {
     const tipoOk = filtroTipo === "todos" || contrato.tipo === filtroTipo;
     const modeloOk = filtroModelo === "todos" || contrato.modelo === filtroModelo;
-    return tipoOk && modeloOk;
+    const vinculoOk =
+      filtroVinculo === "todos" ||
+      (filtroVinculo === "pessoa_fisica" && !!contrato.motorista_id) ||
+      (filtroVinculo === "pessoa_juridica" && !contrato.motorista_id && !!contrato.transportador_id);
+    return tipoOk && modeloOk && vinculoOk;
   });
 
   const isMobile = useIsMobile();
@@ -460,7 +469,7 @@ export default function Contratos() {
           </Dialog>
         </div>
 
-        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Filter className="h-4 w-4" />
@@ -496,14 +505,29 @@ export default function Contratos() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-foreground">Filtrar por vínculo</div>
+            <Select value={filtroVinculo} onValueChange={setFiltroVinculo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os vínculos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os vínculos</SelectItem>
+                <SelectItem value="pessoa_fisica">Pessoa Física (Motorista)</SelectItem>
+                <SelectItem value="pessoa_juridica">Pessoa Jurídica (Transportadora)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             type="button"
             variant="outline"
             onClick={() => {
               setFiltroTipo("todos");
               setFiltroModelo("todos");
+              setFiltroVinculo("todos");
             }}
-            disabled={filtroTipo === "todos" && filtroModelo === "todos"}
+            disabled={filtroTipo === "todos" && filtroModelo === "todos" && filtroVinculo === "todos"}
           >
             Limpar filtros
           </Button>

@@ -76,6 +76,7 @@ export default function Contratos() {
   const [formInitialValues, setFormInitialValues] = useState(initialValues);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroModelo, setFiltroModelo] = useState("todos");
+  const [filtroVinculo, setFiltroVinculo] = useState("todos");
 
   const { data: contratos = [], isLoading: loadingContratos } = useContratos();
   const { data: transportadores = [], isLoading: loadingTransportadores } =

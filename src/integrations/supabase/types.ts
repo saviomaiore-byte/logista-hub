@@ -526,6 +526,7 @@ export type Database = {
           cidade: string | null
           cnh_numero: string | null
           cnh_vencimento: string | null
+          cnpj: string | null
           cpf: string
           created_at: string
           created_by: string | null
@@ -544,6 +545,7 @@ export type Database = {
           situacao_operacional: string | null
           status: string | null
           telefone: string | null
+          tipo_pessoa: string
           updated_at: string
         }
         Insert: {
@@ -556,6 +558,7 @@ export type Database = {
           cidade?: string | null
           cnh_numero?: string | null
           cnh_vencimento?: string | null
+          cnpj?: string | null
           cpf: string
           created_at?: string
           created_by?: string | null
@@ -574,6 +577,7 @@ export type Database = {
           situacao_operacional?: string | null
           status?: string | null
           telefone?: string | null
+          tipo_pessoa?: string
           updated_at?: string
         }
         Update: {
@@ -586,6 +590,7 @@ export type Database = {
           cidade?: string | null
           cnh_numero?: string | null
           cnh_vencimento?: string | null
+          cnpj?: string | null
           cpf?: string
           created_at?: string
           created_by?: string | null
@@ -604,6 +609,7 @@ export type Database = {
           situacao_operacional?: string | null
           status?: string | null
           telefone?: string | null
+          tipo_pessoa?: string
           updated_at?: string
         }
         Relationships: []

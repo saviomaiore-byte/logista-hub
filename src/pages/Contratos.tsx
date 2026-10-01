@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FileText,
@@ -79,6 +80,9 @@ export default function Contratos() {
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroModelo, setFiltroModelo] = useState("todos");
   const [filtroVinculo, setFiltroVinculo] = useState("todos");
+  const [busca, setBusca] = useState("");
+  const [ordenacao, setOrdenacao] = useState("recentes");
+  const mostrarCnpj = filtroVinculo !== "pessoa_fisica";
 
   const { data: contratos = [], isLoading: loadingContratos } = useContratos();
   const { data: transportadores = [], isLoading: loadingTransportadores } =
@@ -193,7 +197,12 @@ export default function Contratos() {
     return <span className="status-badge bg-secondary text-secondary-foreground">{modelo}</span>;
   };
 
-  /** Filtro pelo tipo de pessoa cadastrado no motorista do contrato. */
+  const normalizarNome = (valor: string) =>
+    valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+  const termo = normalizarNome(busca);
+  const digitosBusca = busca.replace(/\D/g, "");
+
+  /** Combina busca e filtros sem modificar a ordem dos dados no cache. */
   const contratosFiltrados = contratos.filter((contrato) => {
     const tipoOk = filtroTipo === "todos" || contrato.tipo === filtroTipo;
     const modeloOk = filtroModelo === "todos" || contrato.modelo === filtroModelo;
@@ -201,8 +210,21 @@ export default function Contratos() {
       filtroVinculo === "todos" ||
       (filtroVinculo === "pessoa_fisica" && contrato.motoristas?.tipo_pessoa === "fisica") ||
       (filtroVinculo === "pessoa_juridica" && contrato.motoristas?.tipo_pessoa === "juridica");
-    return tipoOk && modeloOk && vinculoOk;
+    const nomeOk = normalizarNome(contrato.motoristas?.nome || "").includes(termo);
+    const cnpjOk = /^[\d\s./-]+$/.test(busca.trim()) && digitosBusca.length > 0 &&
+      (contrato.motoristas?.cnpj || "").replace(/\D/g, "").includes(digitosBusca);
+    return tipoOk && modeloOk && vinculoOk && (!termo || nomeOk || cnpjOk);
   });
+
+  if (ordenacao !== "recentes") {
+    contratosFiltrados.sort((a, b) => {
+      const nomeA = a.motoristas?.nome?.trim() || "";
+      const nomeB = b.motoristas?.nome?.trim() || "";
+      if (!nomeA || !nomeB) return nomeA ? -1 : nomeB ? 1 : 0;
+      const comparacao = nomeA.localeCompare(nomeB, "pt-BR", { sensitivity: "base" });
+      return ordenacao === "az" ? comparacao : -comparacao;
+    });
+  }
 
   const isMobile = useIsMobile();
 
@@ -250,7 +272,7 @@ export default function Contratos() {
               <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">{contrato.empresa}</p>
-                <p className="text-sm text-muted-foreground">CNPJ: <span>{contrato.motoristas?.cnpj || "—"}</span></p>
+                {mostrarCnpj && <p className="text-sm text-muted-foreground">CNPJ: <span>{contrato.motoristas?.cnpj || "—"}</span></p>}
               </div>
             </div>
 
@@ -296,7 +318,7 @@ export default function Contratos() {
               <th className="px-6 py-4 text-left">Modelo</th>
               <th className="px-6 py-4 text-left">Empresa</th>
               <th className="px-6 py-4 text-left">Vinculado a</th>
-              <th className="px-6 py-4 text-left whitespace-nowrap">CNPJ do motorista</th>
+              {mostrarCnpj && <th className="px-6 py-4 text-left whitespace-nowrap">CNPJ do motorista</th>}
               <th className="px-6 py-4 text-left">Data Envio</th>
               <th className="w-16 px-4 py-4 text-right">Ações</th>
             </tr>
@@ -324,7 +346,7 @@ export default function Contratos() {
                   )}
                   {!contrato.motoristas?.nome && !contrato.transportadores?.razao_social && "-"}
                 </td>
-                <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">{contrato.motoristas?.cnpj || "—"}</td>
+                {mostrarCnpj && <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">{contrato.motoristas?.cnpj || "—"}</td>}
                 <td className="px-6 py-4 text-muted-foreground">
                   {contrato.data_envio ? new Date(contrato.data_envio).toLocaleDateString("pt-BR") : "-"}
                 </td>
@@ -450,14 +472,14 @@ export default function Contratos() {
           </Dialog>
         </div>
 
-        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-3 md:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Filter className="h-4 w-4" />
               Filtrar por tipo
             </div>
             <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Filtrar por tipo">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -473,7 +495,7 @@ export default function Contratos() {
           <div className="space-y-2">
             <div className="text-sm font-medium text-foreground">Filtrar por modelo</div>
             <Select value={filtroModelo} onValueChange={setFiltroModelo}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Filtrar por modelo">
                 <SelectValue placeholder="Selecione o modelo" />
               </SelectTrigger>
               <SelectContent>
@@ -489,7 +511,7 @@ export default function Contratos() {
           <div className="space-y-2">
             <div className="text-sm font-medium text-foreground">Filtrar por vínculo</div>
             <Select value={filtroVinculo} onValueChange={setFiltroVinculo}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Filtrar por vínculo">
                 <SelectValue placeholder="Todos os vínculos" />
               </SelectTrigger>
               <SelectContent>
@@ -500,6 +522,29 @@ export default function Contratos() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <label htmlFor="busca-contratos" className="text-sm font-medium text-foreground">
+              Pesquisar motorista ou CNPJ
+            </label>
+            <Input
+              id="busca-contratos"
+              type="search"
+              placeholder="Nome do motorista ou CNPJ"
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-foreground">Ordenar por</div>
+            <Select value={ordenacao} onValueChange={setOrdenacao}>
+              <SelectTrigger aria-label="Ordenar por"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recentes">Mais recentes</SelectItem>
+                <SelectItem value="az">Motorista A–Z</SelectItem>
+                <SelectItem value="za">Motorista Z–A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -507,8 +552,10 @@ export default function Contratos() {
               setFiltroTipo("todos");
               setFiltroModelo("todos");
               setFiltroVinculo("todos");
+              setBusca("");
+              setOrdenacao("recentes");
             }}
-            disabled={filtroTipo === "todos" && filtroModelo === "todos" && filtroVinculo === "todos"}
+            disabled={filtroTipo === "todos" && filtroModelo === "todos" && filtroVinculo === "todos" && busca === "" && ordenacao === "recentes"}
           >
             Limpar filtros
           </Button>

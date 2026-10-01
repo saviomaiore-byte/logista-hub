@@ -469,7 +469,7 @@ export default function Contratos() {
           </Dialog>
         </div>
 
-        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <div className="mb-6 grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Filter className="h-4 w-4" />
@@ -505,14 +505,29 @@ export default function Contratos() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-foreground">Filtrar por vínculo</div>
+            <Select value={filtroVinculo} onValueChange={setFiltroVinculo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os vínculos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os vínculos</SelectItem>
+                <SelectItem value="pessoa_fisica">Pessoa Física (Motorista)</SelectItem>
+                <SelectItem value="pessoa_juridica">Pessoa Jurídica (Transportadora)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             type="button"
             variant="outline"
             onClick={() => {
               setFiltroTipo("todos");
               setFiltroModelo("todos");
+              setFiltroVinculo("todos");
             }}
-            disabled={filtroTipo === "todos" && filtroModelo === "todos"}
+            disabled={filtroTipo === "todos" && filtroModelo === "todos" && filtroVinculo === "todos"}
           >
             Limpar filtros
           </Button>

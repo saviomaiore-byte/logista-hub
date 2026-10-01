@@ -191,10 +191,18 @@ export default function Contratos() {
     return <span className="status-badge bg-secondary text-secondary-foreground">{modelo}</span>;
   };
 
+  /**
+   * Filtro por vínculo: "pessoa_fisica" = contrato vinculado ao motorista (CPF);
+   * "pessoa_juridica" = contrato vinculado apenas à transportadora (CNPJ).
+   */
   const contratosFiltrados = contratos.filter((contrato) => {
     const tipoOk = filtroTipo === "todos" || contrato.tipo === filtroTipo;
     const modeloOk = filtroModelo === "todos" || contrato.modelo === filtroModelo;
-    return tipoOk && modeloOk;
+    const vinculoOk =
+      filtroVinculo === "todos" ||
+      (filtroVinculo === "pessoa_fisica" && !!contrato.motorista_id) ||
+      (filtroVinculo === "pessoa_juridica" && !contrato.motorista_id && !!contrato.transportador_id);
+    return tipoOk && modeloOk && vinculoOk;
   });
 
   const isMobile = useIsMobile();

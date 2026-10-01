@@ -1,0 +1,1 @@
+ALTER TABLE public.motoristas ADD COLUMN IF NOT EXISTS projeto_start boolean NOT NULL DEFAULT false;

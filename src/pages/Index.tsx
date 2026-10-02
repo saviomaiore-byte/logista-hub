@@ -10,29 +10,13 @@ import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { Users, Truck, UserCheck, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { reportDbError } from "@/lib/dbError";
-import { checkMotoristaAptidao } from "@/lib/aptidao";
+import { calcularDashboardStats } from "@/lib/dashboardStats";
 import { useAuth } from "@/contexts/AuthContext";
 import { alertaKey, useAlertasArquivados, useArquivarAlerta } from "@/hooks/useAlertasArquivados";
 import { useAtividadesRecentes } from "@/hooks/useAtividadesRecentes";
 
-type DashboardStats = {
-  transportadores: number;
-  transportadoresAtivos: number;
-  transportadoresInaptos: number;
-  motoristas: number;
-  motoristasAtivos: number;
-  motoristasInaptos: number;
-};
-
-const initialStats: DashboardStats = {
-  transportadores: 0,
-  transportadoresAtivos: 0,
-  transportadoresInaptos: 0,
-  motoristas: 0,
-  motoristasAtivos: 0,
-  motoristasInaptos: 0,
-};
-
+type DashboardStats = ReturnType<typeof calcularDashboardStats>;
+const initialStats: DashboardStats = calcularDashboardStats([], [], [], []);
 const DIAS_LIMITE_VENCIDO = 60;
 const MAX_ALERTAS_VISIVEIS = 4;
 
@@ -126,30 +110,6 @@ export default function Index() {
       const contratos = contratosResult.data || [];
       const documentos: DashboardAlert[] = [];
 
-      const transportadoresAtivos = transportadores.filter((item) => item.status === "ativo");
-      const transportadoresPorId = new Map(transportadoresAtivos.map((item) => [item.id, item]));
-      const motoristasPorId = new Map(motoristas.map((item) => [item.id, item]));
-      const contratosSet = new Set(
-        contratos.filter((item) => !!item.arquivo_url && item.tipo === "contrato").map((item) => item.motorista_id),
-      );
-      const adesoesSet = new Set(
-        contratos.filter((item) => !!item.arquivo_url && item.tipo === "adesao").map((item) => item.motorista_id),
-      );
-      const avaliacoesMotoristas = vinculos
-        .filter((vinculo) => transportadoresPorId.has(vinculo.transportador_id))
-        .map((vinculo) => {
-          const motorista = motoristasPorId.get(vinculo.motorista_id);
-          const transportador = transportadoresPorId.get(vinculo.transportador_id);
-          if (!motorista || !transportador) return null;
-          return checkMotoristaAptidao(
-            motorista,
-            { contrato: contratosSet.has(motorista.id), adesao: adesoesSet.has(motorista.id) },
-            transportador,
-            vinculo.motorista_proprio === true,
-          );
-        })
-        .filter((resultado): resultado is NonNullable<typeof resultado> => resultado !== null);
-
       motoristas.forEach((motorista) => {
         const adicionarDocumento = (tipo: string, vencimento: string | null) => {
           if (!vencimento) return;
@@ -172,19 +132,7 @@ export default function Index() {
       });
 
       documentos.sort((a, b) => a.diasRestantes - b.diasRestantes);
-      const transportadoresInaptos = transportadoresAtivos.filter(
-        (item) => item.situacao_operacional === "inapto",
-      ).length;
-      const motoristasAptos = avaliacoesMotoristas.filter((resultado) => resultado.apto).length;
-
-      setStats({
-        transportadores: transportadoresAtivos.length,
-        transportadoresAtivos: transportadoresAtivos.length - transportadoresInaptos,
-        transportadoresInaptos,
-        motoristas: avaliacoesMotoristas.length,
-        motoristasAtivos: motoristasAptos,
-        motoristasInaptos: avaliacoesMotoristas.length - motoristasAptos,
-      });
+      setStats(calcularDashboardStats(transportadores, motoristas, vinculos, contratos));
       setAllDocuments(documentos);
       setAllAlerts(documentos.filter((item) => item.diasRestantes <= 30));
       setLoading(false);
@@ -222,17 +170,17 @@ export default function Index() {
             subtitle={
               <>
                 <strong className="font-semibold text-primary">{stats.transportadoresAtivos} ativos</strong>
-                <span> · {stats.transportadoresInaptos} transportadores inaptos</span>
+                <span> · {stats.transportadores - stats.transportadoresAtivos} demais cadastros</span>
               </>
             }
             icon={Truck}
           />
           <StatCard
             title="Transportadores aptos"
-            value={stats.transportadoresAtivos}
+            value={stats.transportadoresAptos}
             subtitle={
               <strong className="font-semibold text-amber-600">
-                {stats.transportadoresInaptos} transportadores inaptos
+                {stats.transportadoresInaptos} inaptos entre os ativos
               </strong>
             }
             icon={BadgeCheck}
@@ -244,16 +192,20 @@ export default function Index() {
             subtitle={
               <>
                 <strong className="font-semibold text-primary">{stats.motoristasAtivos} ativos</strong>
-                <span> · {stats.motoristasInaptos} motoristas inaptos</span>
+                <span> · {stats.motoristas - stats.motoristasAtivos} demais cadastros</span>
               </>
             }
             icon={Users}
           />
           <StatCard
             title="Motoristas aptos"
-            value={stats.motoristasAtivos}
+            value={stats.motoristasAptos}
             subtitle={
-              <strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>
+              <>
+                <strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>
+                <span className="block">{stats.motoristasSemVinculoAtivo} sem vínculo com transportadora ativa</span>
+                <span className="block">Apto em pelo menos um vínculo ativo</span>
+              </>
             }
             icon={UserCheck}
             variant="success"

@@ -23,8 +23,8 @@ describe("indicadores do dashboard", () => {
   it("conta todos os cadastros e cada motorista uma vez, mesmo com múltiplos vínculos", () => {
     expect(calcularDashboardStats(transportadores, motoristas, vinculos, [])).toEqual({
       transportadores: 3, transportadoresAtivos: 2, transportadoresAptos: 1, transportadoresInaptos: 1,
-      motoristas: 4, motoristasAtivos: 2, motoristasAptos: 1, motoristasInaptos: 1,
-      motoristasSemVinculoAtivo: 2,
+      motoristas: 4, motoristasAtivos: 2, motoristasInativos: 1, motoristasAptos: 1, motoristasInaptos: 0,
+      motoristasSemVinculoAtivo: 1,
     });
   });
   it("não transforma ausência de vínculo em inaptidão e ignora vínculos órfãos", () => {
@@ -32,9 +32,23 @@ describe("indicadores do dashboard", () => {
       { motorista_id: "ausente", transportador_id: "t1" },
       { motorista_id: "m1", transportador_id: "ausente" },
     ], []);
-    expect(stats.motoristasSemVinculoAtivo).toBe(4);
+    expect(stats.motoristasSemVinculoAtivo).toBe(2);
     expect(stats.motoristasAptos).toBe(0);
     expect(stats.motoristasInaptos).toBe(0);
+  });
+  it("separa motorista inativo dos inaptos por pendências", () => {
+    const stats = calcularDashboardStats(transportadores, motoristas, vinculos, []);
+    expect(stats.motoristasInativos).toBe(1);
+    expect(stats.motoristasInaptos).toBe(0);
+
+    const comPendencia = calcularDashboardStats(
+      transportadores,
+      motoristas,
+      [{ motorista_id: "m3", transportador_id: "t1", motorista_proprio: false }],
+      [],
+    );
+    expect(comPendencia.motoristasInativos).toBe(1);
+    expect(comPendencia.motoristasInaptos).toBe(1);
   });
   it("mantém exigência de contrato e adesão para motorista não próprio", () => {
     const links = [{ motorista_id: "m1", transportador_id: "t1" }];

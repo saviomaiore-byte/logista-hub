@@ -7,6 +7,7 @@ export function calcularDashboardStats(transportadores: Transportador[], motoris
   const ativos = transportadores.filter(item => item.status === "ativo");
   const transportadoresPorId = new Map(ativos.map(item => [item.id, item]));
   const motoristasPorId = new Map(motoristas.map(item => [item.id, item]));
+  const motoristasAtivos = motoristas.filter(item => item.status === "ativo");
   const contratosSet = new Set(contratos.filter(item => item.arquivo_url && item.tipo === "contrato").map(item => item.motorista_id));
   const adesoesSet = new Set(contratos.filter(item => item.arquivo_url && item.tipo === "adesao").map(item => item.motorista_id));
   const avaliados = new Set<string>();
@@ -15,7 +16,9 @@ export function calcularDashboardStats(transportadores: Transportador[], motoris
   for (const vinculo of vinculos) {
     const motorista = motoristasPorId.get(vinculo.motorista_id);
     const transportador = transportadoresPorId.get(vinculo.transportador_id);
-    if (!motorista || !transportador) continue;
+    // Inatividade é uma categoria cadastral separada; inaptidão mede apenas
+    // pendências dos motoristas ativos em vínculos com transportadoras ativas.
+    if (!motorista || motorista.status !== "ativo" || !transportador) continue;
     avaliados.add(motorista.id);
     const resultado = checkMotoristaAptidao(
       motorista,
@@ -34,9 +37,10 @@ export function calcularDashboardStats(transportadores: Transportador[], motoris
     transportadoresAptos: ativos.length - transportadoresInaptos,
     transportadoresInaptos,
     motoristas: motoristas.length,
-    motoristasAtivos: motoristas.filter(item => item.status === "ativo").length,
+    motoristasAtivos: motoristasAtivos.length,
+    motoristasInativos: motoristas.filter(item => item.status === "inativo").length,
     motoristasAptos: aptos.size,
     motoristasInaptos: avaliados.size - aptos.size,
-    motoristasSemVinculoAtivo: motoristas.length - avaliados.size,
+    motoristasSemVinculoAtivo: motoristasAtivos.length - avaliados.size,
   };
 }

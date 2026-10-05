@@ -18,7 +18,8 @@ export function calcularDashboardStats(transportadores: Transportador[], motoris
     const transportador = transportadoresPorId.get(vinculo.transportador_id);
     // Inatividade é uma categoria cadastral separada; inaptidão mede apenas
     // pendências dos motoristas ativos em vínculos com transportadoras ativas.
-    if (!motorista || motorista.status !== "ativo" || !transportador) continue;
+    // Mesma regra do relatório: só "inativo" fica fora (ex.: "pendente" é avaliado).
+    if (!motorista || motorista.status === "inativo" || !transportador) continue;
     avaliados.add(motorista.id);
     const resultado = checkMotoristaAptidao(
       motorista,

@@ -283,23 +283,26 @@ export default function Relatorios() {
   }
 
   const resumo = useMemo(() => {
-    let totalMotoristas = 0;
-    let aptos = 0;
-    let inaptos = 0;
     let emPraca = 0;
     let emViagem = 0;
+    // Conta cada pessoa uma vez (mesma regra do Dashboard):
+    // apta quando pode operar em pelo menos uma transportadora.
+    const todos = new Set<string>();
+    const aptosSet = new Set<string>();
 
     dados.forEach((t) => {
       const sit = t.situacao_operacional || "em_praca_apto";
       if (sit === "em_praca" || sit === "em_praca_apto") emPraca++;
       if (sit === "em_viagem" || sit === "em_viagem_apto") emViagem++;
       t.motoristas.forEach((m) => {
-        totalMotoristas++;
-        if (m.apto) aptos++;
-        else inaptos++;
+        todos.add(m.id);
+        if (m.apto) aptosSet.add(m.id);
       });
     });
 
+    const totalMotoristas = todos.size;
+    const aptos = aptosSet.size;
+    const inaptos = totalMotoristas - aptos;
     return { totalMotoristas, aptos, inaptos, emPraca, emViagem, totalTransportadoras: dados.length };
   }, [dados]);
 

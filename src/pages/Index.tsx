@@ -192,7 +192,10 @@ export default function Index() {
             subtitle={
               <>
                 <strong className="font-semibold text-primary">{stats.motoristasAtivos} ativos</strong>
-                <span> · {stats.motoristas - stats.motoristasAtivos} demais cadastros</span>
+                <span> · {stats.motoristasInativos} inativos</span>
+                {stats.motoristas - stats.motoristasAtivos - stats.motoristasInativos > 0 && (
+                  <span> · {stats.motoristas - stats.motoristasAtivos - stats.motoristasInativos} demais cadastros</span>
+                )}
               </>
             }
             icon={Users}
@@ -202,9 +205,9 @@ export default function Index() {
             value={stats.motoristasAptos}
             subtitle={
               <>
-                <strong className="font-semibold text-amber-600">{stats.motoristasInaptos} motoristas inaptos</strong>
-                <span className="block">{stats.motoristasSemVinculoAtivo} sem vínculo com transportadora ativa</span>
-                <span className="block">Apto em pelo menos um vínculo ativo</span>
+                <strong className="font-semibold text-amber-600">{stats.motoristasInaptos} ativos inaptos por pendências</strong>
+                <span className="block">{stats.motoristasSemVinculoAtivo} ativos sem vínculo com transportadora ativa</span>
+                <span className="block">Inativos não entram na inaptidão</span>
               </>
             }
             icon={UserCheck}

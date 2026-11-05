@@ -1,0 +1,2 @@
+CREATE POLICY "Admins gerenciam exportacao-storage (select)" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'exportacao-storage' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins gerenciam exportacao-storage (insert)" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'exportacao-storage' AND public.has_role(auth.uid(), 'admin'));
